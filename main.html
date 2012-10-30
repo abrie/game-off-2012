@@ -21,31 +21,30 @@
 		//cross browser issues exist, says EaselJS
 		if(!e){ var e = window.event; }
 		switch(e.keyCode) {
-			case KEYCODE_step1: moveForward(1); return false;
-			case KEYCODE_step2: moveForward(1); return false; 
-			case KEYCODE_step3: moveForward(1); return false; 
-			case KEYCODE_step4: moveForward(1); return false; 
+			case KEYCODE_step1: impelPlayer(1); return false;
+			case KEYCODE_step2: impelPlayer(1.5); return false; 
+			case KEYCODE_step3: impelPlayer(2.0); return false; 
+			case KEYCODE_step4: impelPlayer(2.5); return false; 
 			case KEYCODE_SPACE:	turnClockwise(); return false;
 		}
 	}
 
-	var player = undefined;
-	var playerXDirection = 0;
-	var playerYDirection = 0;
+	var playerImage = undefined;
+	var player = {pX:100,pY:100,vX:0,vY:0}
 	function initPlayer() {
-		player = new Shape();
-		player.graphics.beginFill("red").drawCircle(0, 0, 10);
-		player.x = 100;
-		player.y = 100;
-		stage.addChild(player);
+		playerImage = new Shape();
+		playerImage.graphics.beginFill("red").drawCircle(0, 0, 10);
+		playerImage.x = 100;
+		playerImage.y = 100;
+		stage.addChild(playerImage);
 	}
 
-	function moveForward() {
+	function impelPlayer(val) {
 		switch(dir) {
-			case 0:playerXDirection++; break;
-			case 1: playerYDirection++; break;
-			case 2: playerXDirection--; break;
-			case 3: playerYDirection--; break;
+			case 0: player.vX+=val*1; break;
+			case 1: player.vY+=val*1; break;
+			case 2: player.vX-=val*1; break;
+			case 3: player.vY-=val*1; break;
 		}
 	}
 
@@ -68,14 +67,27 @@
 		Ticker.addListener(window);
 	}
 
+	function tickPlayer(elapsedTime) {
+		if( player.vX > 0 ) {
+			player.vX-=0.5;
+		}
+		if( player.vX < 0 ) {
+			player.vX+=0.5;
+		}
+		if( player.vY > 0 ) {
+			player.vY-=0.5;
+		}
+		if( player.vY < 0 ) {
+			player.vY+=0.5;
+		}
+	}
+
 	function tick(elapsedTime) {
 		// time based
-		player.x = player.x + playerXDirection*elapsedTime/1000*10;
-		player.y = player.y + playerYDirection*elapsedTime/1000*10;
-		if (player.x > stage.canvas.width) { player.x = 0; }
-		playerXDirection = playerXDirection != 0 ? playerXDirection-playerXDirection/playerXDirection : 0;
-		playerYDirection = playerYDirection != 0 ? playerYDirection-playerYDirection/playerYDirection : 0;
-		
+		playerImage.x = playerImage.x + Math.ceil( player.vX*elapsedTime/1000*10 );
+		playerImage.y = playerImage.y + Math.ceil( player.vY*elapsedTime/1000*10 );
+		if (playerImage.x > stage.canvas.width) { playerImage.x = 0; }
+		tickPlayer(elapsedTime);
 		stage.update();
 	}
 	</script>
