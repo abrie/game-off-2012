@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+	<title>test</title>
+
+	<link href="styles.css" rel="stylesheet" type="text/css" />
+	<script>
+		var createjs = window;
+	</script>
+	<script type="text/javascript" src="lib/easeljs-0.5.0.min.js"></script>
+
+	<script>
+	var KEYCODE_step1 = 76;
+	var KEYCODE_step2 = 75
+	var KEYCODE_step3 = 74;
+	var KEYCODE_step4 = 72;
+	var KEYCODE_SPACE = 32;
+
+	function handleKeyDown(e) {
+		//cross browser issues exist, says EaselJS
+		if(!e){ var e = window.event; }
+		switch(e.keyCode) {
+			case KEYCODE_step1: moveForward(1); return false;
+			case KEYCODE_step2: moveForward(1); return false; 
+			case KEYCODE_step3: moveForward(1); return false; 
+			case KEYCODE_step4: moveForward(1); return false; 
+			case KEYCODE_SPACE:	turnClockwise(); return false;
+		}
+	}
+
+	var player = undefined;
+	var playerXDirection = 0;
+	var playerYDirection = 0;
+	function initPlayer() {
+		player = new Shape();
+		player.graphics.beginFill("red").drawCircle(0, 0, 10);
+		player.x = 100;
+		player.y = 100;
+		stage.addChild(player);
+	}
+
+	function moveForward() {
+		switch(dir) {
+			case 0:playerXDirection++; break;
+			case 1: playerYDirection++; break;
+			case 2: playerXDirection--; break;
+			case 3: playerYDirection--; break;
+		}
+	}
+
+	var dir = 0;
+	function turnClockwise() {
+		dir = dir >= 3 ? 0 : dir+1;
+	}
+
+	var stage = undefined;
+	function init() {
+		document.onkeydown = handleKeyDown;
+		var canvas = document.getElementById("testCanvas");
+
+		stage = new Stage(canvas);
+		initPlayer();
+
+		stage.update();
+		Ticker.setFPS(20);
+		Ticker.useRAF = true;
+		Ticker.addListener(window);
+	}
+
+	function tick(elapsedTime) {
+		// time based
+		player.x = player.x + playerXDirection*elapsedTime/1000*10;
+		player.y = player.y + playerYDirection*elapsedTime/1000*10;
+		if (player.x > stage.canvas.width) { player.x = 0; }
+		playerXDirection = playerXDirection != 0 ? playerXDirection-playerXDirection/playerXDirection : 0;
+		playerYDirection = playerYDirection != 0 ? playerYDirection-playerYDirection/playerYDirection : 0;
+		
+		stage.update();
+	}
+	</script>
+</head>
+	
+<body onload="init();">
+
+	<header id="header" class="EaselJS">
+		just playin'
+	</header>
+
+	<div class="canvasHolder">
+		<canvas id="testCanvas" width="960" height="400"></canvas>
+	</div>
+</body>
+</html>
