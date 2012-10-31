@@ -9,6 +9,7 @@
 		var createjs = window;
 	</script>
 	<script type="text/javascript" src="lib/easeljs-0.5.0.min.js"></script>
+	<script type="text/javascript" src="lib/underscore-min.js"></script>
 
 	<script>
 	var KEYCODE_step1 = 76;
@@ -17,15 +18,60 @@
 	var KEYCODE_step4 = 72;
 	var KEYCODE_SPACE = 32;
 
+	var checkImpel = false;
 	function handleKeyDown(e) {
 		//cross browser issues exist, says EaselJS
 		if(!e){ var e = window.event; }
 		switch(e.keyCode) {
-			case KEYCODE_step1: impelPlayer(1); return false;
-			case KEYCODE_step2: impelPlayer(1.5); return false; 
-			case KEYCODE_step3: impelPlayer(2.0); return false; 
-			case KEYCODE_step4: impelPlayer(2.5); return false; 
+			case KEYCODE_step1: storekey(1); return false;
+			case KEYCODE_step2: storekey(2); return false; 
+			case KEYCODE_step3: storekey(3); return false; 
+			case KEYCODE_step4: storekey(4); checkImpel = true; return false; 
 			case KEYCODE_SPACE:	turnClockwise(); return false;
+		}
+	}
+
+	function handleKeyUp(e) {
+		return;
+
+		//cross browser issues exist, says EaselJS
+		if(!e){ var e = window.event; }
+		switch(e.keyCode) {
+			case KEYCODE_step1: removekey(1); return false;
+			case KEYCODE_step2: removekey(2); return false; 
+			case KEYCODE_step3: removekey(3); return false; 
+			case KEYCODE_step4: removekey(4); return false; 
+			case KEYCODE_SPACE:	turnClockwise(); return false;
+		}
+	}
+
+	var keyTimes = {};
+	var walk = 0;
+	function storekey(v) {
+		keyTimes[v] = +new Date;
+	}
+
+	function removekey(v) {
+		delete keyTimes[v];
+	}
+
+	function clearImpel() {
+		delete keyTimes[1];
+		delete keyTimes[2];
+		delete keyTimes[3];
+		delete keyTimes[4];
+	}
+
+	function shouldImpel() {
+		if( keyTimes[1] < keyTimes[2] &&
+			keyTimes[2] < keyTimes[3] &&
+			keyTimes[3] < keyTimes[4] )
+		{
+			return true;
+		}
+		else
+		{
+			return false;
 		}
 	}
 
@@ -41,10 +87,10 @@
 
 	function impelPlayer(val) {
 		switch(dir) {
-			case 0: player.vX+=val*1; break;
-			case 1: player.vY+=val*1; break;
-			case 2: player.vX-=val*1; break;
-			case 3: player.vY-=val*1; break;
+			case 0: player.vX=val*1; break;
+			case 1: player.vY=val*1; break;
+			case 2: player.vX=val*-1; break;
+			case 3: player.vY=val*-1; break;
 		}
 	}
 
@@ -56,6 +102,7 @@
 	var stage = undefined;
 	function init() {
 		document.onkeydown = handleKeyDown;
+		document.onkeyup = handleKeyUp;
 		var canvas = document.getElementById("testCanvas");
 
 		stage = new Stage(canvas);
@@ -69,21 +116,29 @@
 
 	function tickPlayer(elapsedTime) {
 		if( player.vX > 0 ) {
-			player.vX-=0.5;
+			player.vX-=1;
 		}
 		if( player.vX < 0 ) {
-			player.vX+=0.5;
+			player.vX+=1;
 		}
 		if( player.vY > 0 ) {
-			player.vY-=0.5;
+			player.vY-=1;
 		}
 		if( player.vY < 0 ) {
-			player.vY+=0.5;
+			player.vY+=1;
 		}
 	}
 
 	function tick(elapsedTime) {
 		// time based
+		if (checkImpel) {
+				if (shouldImpel()) 
+				{
+					impelPlayer(12);
+				} 
+				checkImpel = false;
+				clearImpel();
+		}
 		playerImage.x = playerImage.x + Math.ceil( player.vX*elapsedTime/1000*10 );
 		playerImage.y = playerImage.y + Math.ceil( player.vY*elapsedTime/1000*10 );
 		if (playerImage.x > stage.canvas.width) { playerImage.x = 0; }
