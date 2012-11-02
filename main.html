@@ -12,67 +12,84 @@
 	<script type="text/javascript" src="lib/underscore-min.js"></script>
 
 	<script>
-	var KEYCODE_step1 = 76;
-	var KEYCODE_step2 = 75
-	var KEYCODE_step3 = 74;
-	var KEYCODE_step4 = 72;
-	var KEYCODE_SPACE = 32;
+	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, FOOT4 = 4;
+	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:FOOT4};
 
-	var checkImpel = false;
+	var intentionSequence = [];
+	function newIntentionSequence() {
+		intentionSequence.length = 0;
+	}
+
+	var currentIntention = [];
+	function newIntention() {
+		intentionSequence.push(currentIntention);
+		currentIntention = [];
+		console.log("newIntention:");
+		_.each( intentionSequence, function(v) { console.log(v); } );
+		console.log("---");
+		
+	}
+
+	function addIntentionToSequence() {
+		if (currentIntention.length > 0) {
+			newIntention();
+		}
+	}
+
+	function mostRecentIntention() {
+		if (currentIntention.length >= 1 ) {
+			return currentIntention;
+		}
+		else if (intentionSequence.length >= 1) {
+			return intentionSequence[ intentionSequence.length-1 ];
+		}
+		else {
+			return undefined;
+		}
+	}
+
+	var ACTION_STEP_FORWARD = 1;
+	var ACTION_NOTHING = 0;
+	function evaluateIntentionSequence() {
+		var lastIntention = mostRecentIntention();
+		var result = ACTION_NOTHING;
+		if(lastIntention) {
+			if (_.contains(lastIntention, FOOT4)) {
+				if(intentionSequence.length == 4) {
+					if( _.contains(intentionSequence[0], FOOT1) &&
+						_.contains(intentionSequence[1], FOOT2) &&
+						_.contains(intentionSequence[2], FOOT3) &&
+						_.contains(intentionSequence[3], FOOT4))
+						result = ACTION_STEP_FORWARD;
+					newIntentionSequence();
+				}
+			}
+			else if(_.contains(lastIntention, FOOT1)) {
+				if(intentionSequence.length > 1) {
+					newIntentionSequence();
+					currentIntention.push(FOOT1);
+				}
+			}
+		}
+		return result;
+	}
+
+	function onKeyDown(keyCode) {
+		var mapped = keyMap[keyCode];
+		if (mapped) {
+			currentIntention.push(mapped);
+			return false;
+		}
+	}
+
 	function handleKeyDown(e) {
 		//cross browser issues exist, says EaselJS
 		if(!e){ var e = window.event; }
-		switch(e.keyCode) {
-			case KEYCODE_step1: storekey(1); return false;
-			case KEYCODE_step2: storekey(2); return false; 
-			case KEYCODE_step3: storekey(3); return false; 
-			case KEYCODE_step4: storekey(4); checkImpel = true; return false; 
-			case KEYCODE_SPACE:	turnClockwise(); return false;
-		}
+		return onKeyDown(e.keyCode);
 	}
 
 	function handleKeyUp(e) {
 		return;
-
-		//cross browser issues exist, says EaselJS
-		if(!e){ var e = window.event; }
-		switch(e.keyCode) {
-			case KEYCODE_step1: removekey(1); return false;
-			case KEYCODE_step2: removekey(2); return false; 
-			case KEYCODE_step3: removekey(3); return false; 
-			case KEYCODE_step4: removekey(4); return false; 
-			case KEYCODE_SPACE:	turnClockwise(); return false;
-		}
-	}
-
-	var keyTimes = {};
-	var walk = 0;
-	function storekey(v) {
-		keyTimes[v] = +new Date;
-	}
-
-	function removekey(v) {
-		delete keyTimes[v];
-	}
-
-	function clearImpel() {
-		delete keyTimes[1];
-		delete keyTimes[2];
-		delete keyTimes[3];
-		delete keyTimes[4];
-	}
-
-	function shouldImpel() {
-		if( keyTimes[1] < keyTimes[2] &&
-			keyTimes[2] < keyTimes[3] &&
-			keyTimes[3] < keyTimes[4] )
-		{
-			return true;
-		}
-		else
-		{
-			return false;
-		}
 	}
 
 	var playerImage = undefined;
@@ -85,20 +102,6 @@
 		stage.addChild(playerImage);
 	}
 
-	function impelPlayer(val) {
-		switch(dir) {
-			case 0: player.vX=val*1; break;
-			case 1: player.vY=val*1; break;
-			case 2: player.vX=val*-1; break;
-			case 3: player.vY=val*-1; break;
-		}
-	}
-
-	var dir = 0;
-	function turnClockwise() {
-		dir = dir >= 3 ? 0 : dir+1;
-	}
-
 	var stage = undefined;
 	function init() {
 		document.onkeydown = handleKeyDown;
@@ -109,41 +112,22 @@
 		initPlayer();
 
 		stage.update();
-		Ticker.setFPS(20);
+		Ticker.setFPS(40);
 		Ticker.useRAF = true;
 		Ticker.addListener(window);
 	}
 
-	function tickPlayer(elapsedTime) {
-		if( player.vX > 0 ) {
-			player.vX-=1;
-		}
-		if( player.vX < 0 ) {
-			player.vX+=1;
-		}
-		if( player.vY > 0 ) {
-			player.vY-=1;
-		}
-		if( player.vY < 0 ) {
-			player.vY+=1;
-		}
-	}
-
 	function tick(elapsedTime) {
-		// time based
-		if (checkImpel) {
-				if (shouldImpel()) 
-				{
-					impelPlayer(12);
-				} 
-				checkImpel = false;
-				clearImpel();
+		addIntentionToSequence();
+		var nextAction = evaluateIntentionSequence();
+		if( nextAction === ACTION_STEP_FORWARD ) {
+			console.log("action:",nextAction);
+			playerImage.x = playerImage.x + 10;
+			playerImage.y = playerImage.y;
 		}
-		playerImage.x = playerImage.x + Math.ceil( player.vX*elapsedTime/1000*10 );
-		playerImage.y = playerImage.y + Math.ceil( player.vY*elapsedTime/1000*10 );
 		if (playerImage.x > stage.canvas.width) { playerImage.x = 0; }
-		tickPlayer(elapsedTime);
 		stage.update();
+		
 	}
 	</script>
 </head>
