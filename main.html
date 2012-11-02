@@ -49,34 +49,16 @@
 	}
 
 	var ACTION_STEP_FORWARD = 1;
-	var ACTION_JUMP_FORWARD = 2;
 	var ACTION_NOTHING = 0;
 	function evaluateIntentionSequence() {
 		var lastIntention = mostRecentIntention();
 		var result = ACTION_NOTHING;
 		if(lastIntention) {
-			if (_.contains(lastIntention, FOOT4)) {
-				if(intentionSequence.length == 2) { // a jumping motion,  2 feet - 2 feet
-					if( _.contains(intentionSequence[0], FOOT1) &&
-						_.contains(intentionSequence[0], FOOT2) &&
-						_.contains(intentionSequence[1], FOOT3) &&
-						_.contains(intentionSequence[1], FOOT4))
-						result = ACTION_JUMP_FORWARD;
-					newIntentionSequence();
-				}
-				if(intentionSequence.length == 3) { // steps 1 and 2 are simultaneous (seems common)
-					if( _.contains(intentionSequence[0], FOOT1) &&
-						_.contains(intentionSequence[0], FOOT2) &&
-						_.contains(intentionSequence[1], FOOT3) &&
-						_.contains(intentionSequence[2], FOOT4))
-						result = ACTION_STEP_FORWARD;
-					newIntentionSequence();
-				}
-				else if(intentionSequence.length == 4) { // all the steps are on seperate frames
+			if (_.contains(lastIntention, FOOT3)) {
+				if(intentionSequence.length == 3) { // all the steps are on seperate frames
 					if( _.contains(intentionSequence[0], FOOT1) &&
 						_.contains(intentionSequence[1], FOOT2) &&
-						_.contains(intentionSequence[2], FOOT3) &&
-						_.contains(intentionSequence[3], FOOT4))
+						_.contains(intentionSequence[2], FOOT3)) 
 						result = ACTION_STEP_FORWARD;
 					newIntentionSequence();
 				}
@@ -142,10 +124,6 @@
 			console.log("action:",nextAction);
 			if( nextAction === ACTION_STEP_FORWARD ) {
 				playerImage.x = playerImage.x + 10;
-				playerImage.y = playerImage.y;
-			}
-			else if( nextAction === ACTION_JUMP_FORWARD ) {
-				playerImage.x = playerImage.x + 20;
 				playerImage.y = playerImage.y;
 			}
 		}
