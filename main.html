@@ -119,6 +119,8 @@
 		} catch (e) {
 			alert('There is no audio oscillator support in this browser');
 		}
+		initFrequencyMap();
+		initOscillators();
 		document.onkeydown = handleKeyDown;
 		document.onkeyup = handleKeyUp;
 		var canvas = document.getElementById("testCanvas");
@@ -132,45 +134,83 @@
 		Ticker.addListener(window);
 	}
 
-	var frequencies = [261.63, 329.63, 392]
-	function newSound( id, duration ) {
-		var volumeNode = audio_context.createGainNode();
-		var o = audio_context.createOscillator()
-		o.frequency.value = frequencies[id-1];
-		o.connect(volumeNode);
-		volumeNode.connect(audio_context.destination);
-		var start = function() {
-			o.noteOn(0);
-		}
-		var stop = function() {
-			volumeNode.gain.value = 0.0;
-			o.noteOff(audio_context.currentTime+0.01);
-		}
-		var cull = function() {
-			o.disconnect();
-			volumeNode.disconnect();
-		}
-		return {start:start,stop:stop,cull:cull,duration:duration,oscillator:o};
+	var frequencyMap = {};
+	function initFrequencyMap() {
+		frequencyMap[FOOT1] = 261.63;
+		frequencyMap[FOOT2] = 329.63;
+		frequencyMap[FOOT3] = 392;
 	}
 
-	var sounds = [];
+	function newOscillator( id, duration ) {
+		var result = {
+			id: id,
+			duration: duration,
+			volumeNode: audio_context.createGainNode(),
+			o : undefined,
+			createOscillator : function() {
+				this.duration = duration;
+				this.o = audio_context.createOscillator();
+				this.o.frequency.value = frequencyMap[id];
+				this.o.connect(this.volumeNode);
+			},
+			initialize : function() {
+				this.volumeNode.connect(audio_context.destination);
+				this.createOscillator();
+			},
+			active : false,
+			start : function() {
+				if (this.active)
+					return;
+				this.volumeNode.gain.value = 1.0;
+				this.active = true;
+				this.o.noteOn(0);
+			},
+			stop : function() {
+				if (!this.active)
+					return;
+				this.volumeNode.gain.value = 0.0;
+				this.o.noteOff(audio_context.currentTime+0.01);
+				this.active = false;
+				this.needsReset = true;
+			},
+			needsReset:false,
+			reset : function() {
+				this.o.disconnect();
+				this.o = undefined;
+				this.createOscillator();
+				this.needsReset = false;
+			},
+			advance : function() {
+				if (this.needsReset) {
+					this.reset();
+				}
+				else if(this.active) {
+					this.duration--;
+					if (this.duration == 0) {
+						this.stop();
+					}
+				}
+			},
+		}
+		result.initialize();
+		return result;
+	}
+
+	var oscillators = {}
+	function initOscillators() {
+		oscillators[FOOT1] = newOscillator(FOOT1, 3);
+		oscillators[FOOT2] = newOscillator(FOOT2, 3);
+		oscillators[FOOT3] = newOscillator(FOOT3, 3);
+	}
+
 	function soundOn(which, length) {
-		var sound = newSound(which,length);
-		sound.start();
-		sounds.push( sound );
+		oscillators[which].start();
 	}
 
 	function advanceSounds() {
-		_.each(sounds, function(sound) {
-			sound.duration--;
-			if(sound.duration == 0) {
-				sound.stop();
-			}
-			else if(sound.duration < 0) {
-				sound.cull();
-			}
+		_.each(oscillators, function(v,k) {
+			v.advance();
 		});
-		sounds = _.filter(sounds, function(sound) { return sound.duration >= 0; });
 	}
 
     function processIntentionSequences() {
