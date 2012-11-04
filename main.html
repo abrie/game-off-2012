@@ -137,16 +137,20 @@
 		var volumeNode = audio_context.createGainNode();
 		var o = audio_context.createOscillator()
 		o.frequency.value = frequencies[id-1];
-		console.log("connect:",o.connect(volumeNode));
+		o.connect(volumeNode);
 		volumeNode.connect(audio_context.destination);
 		var start = function() {
 			o.noteOn(0);
 		}
 		var stop = function() {
 			volumeNode.gain.value = 0.0;
-			o.noteOff(audio_context.currentTime+0.5);
+			o.noteOff(audio_context.currentTime+0.01);
 		}
-		return {start:start,stop:stop,duration:duration,oscillator:o};
+		var cull = function() {
+			o.disconnect();
+			volumeNode.disconnect();
+		}
+		return {start:start,stop:stop,cull:cull,duration:duration,oscillator:o};
 	}
 
 	var sounds = [];
@@ -162,8 +166,11 @@
 			if(sound.duration == 0) {
 				sound.stop();
 			}
+			else if(sound.duration < 0) {
+				sound.cull();
+			}
 		});
-		sounds = _.filter(sounds, function(sound) { return sound.duration > 0; });
+		sounds = _.filter(sounds, function(sound) { return sound.duration >= 0; });
 	}
 
     function processIntentionSequences() {
