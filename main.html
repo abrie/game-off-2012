@@ -102,13 +102,39 @@
 	}
 
 	var playerImage = undefined;
-	var player = {pX:100,pY:100,tX:100,tY:100}
+	var player = {pX:500,pY:100,tX:500,tY:100}
 	function initPlayer() {
 		playerImage = new Shape();
 		playerImage.graphics.beginFill("red").drawCircle(0, 0, 10);
 		playerImage.x = player.pX;
 		playerImage.y = player.pY;
 		stage.addChild(playerImage);
+
+		playerSprite.onload = onImageLoaded;
+		playerSprite.onerror = onImageError;
+		playerSprite.src = "assets/chin.png";
+	}
+
+	function onImageError(event) {
+		console.log("Image load error:",event);
+	}
+
+	var playerSprite = new Image();
+	var playerSpriteList = undefined;
+	function onImageLoaded(event) {
+		var spriteSheet  = new createjs.SpriteSheet({
+			images: [playerSprite],
+			frames: {width:100, height:88, regX:50, regY:44},
+			animations: {
+				test:[0,0,"test"],
+			}
+		});
+
+		playerSpriteList = new createjs.BitmapAnimation(spriteSheet);
+		playerSpriteList.gotoAndPlay("test");		
+		playerSpriteList.x = player.pX;
+		playerSpriteList.y = player.pY;
+		stage.addChild(playerSpriteList);
 	}
 
 	var stage = undefined;
@@ -219,10 +245,10 @@
 		if( nextAction != ACTION_NOTHING )
 		{
 			if( nextAction === ACTION_STEP_FORWARD ) {
-				player.tX = player.tX + 20;
+				player.tX = player.tX - 60;
 			}
 			else if( nextAction === ACTION_STEP_BACKWARD ) {
-				player.tX = player.tX - 20;
+				player.tX = player.tX + 60;
 			}
 		}
 	}
@@ -231,11 +257,13 @@
 		processIntentionSequences();
 		advanceSounds();
 		if (player.pX != player.tX) {
-			player.pX = player.tX;
+			player.pX += (player.tX - player.pX)/2 ;
 		}
 		playerImage.x = player.pX;
 		playerImage.y = player.pY;
-		if (playerImage.x > stage.canvas.width) { playerImage.x = 0; }
+		playerSpriteList.x = player.pX;
+		playerSpriteList.y = player.pY;
+		if (player.pX > stage.canvas.width) { player.pX = 0; }
 		stage.update();
 	}
 	</script>
