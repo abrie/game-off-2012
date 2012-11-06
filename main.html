@@ -101,24 +101,17 @@
 		return;
 	}
 
-	var playerImage = undefined;
 	var player = {pX:500,pY:100,tX:500,tY:100}
 	var playerSprite = undefined;
 	function initPlayer() {
-		playerImage = new Shape();
-		playerImage.graphics.beginFill("red").drawCircle(0, 0, 10);
-		playerImage.x = player.pX;
-		playerImage.y = player.pY;
-		stage.addChild(playerImage);
-
-		var spriteSheet  = new createjs.SpriteSheet({
+		var playerSpriteParameters = {
 			images: ["assets/chin.png"],
 			frames: {count:4, width:99, height:88, regX:50, regY:44},
 			animations: {
-				run: { frames:[0,1,2,3] },
+				run: { frames:[0,1,2,3], next:false },
 			}
-		});
-
+		};
+		var spriteSheet  = new createjs.SpriteSheet(playerSpriteParameters);
 		playerSprite = new createjs.BitmapAnimation(spriteSheet);
 		playerSprite.gotoAndPlay("test");		
 		playerSprite.x = player.pX;
@@ -246,10 +239,8 @@
 		processIntentionSequences();
 		advanceSounds();
 		if (player.pX != player.tX) {
-			player.pX += (player.tX - player.pX)/2 ;
+			player.pX += (player.tX - player.pX)/3 ;
 		}
-		playerImage.x = player.pX;
-		playerImage.y = player.pY;
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
 		if (player.pX > stage.canvas.width) { player.pX = 0; }
