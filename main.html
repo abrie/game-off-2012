@@ -113,7 +113,7 @@
 		};
 		var spriteSheet  = new createjs.SpriteSheet(playerSpriteParameters);
 		playerSprite = new createjs.BitmapAnimation(spriteSheet);
-		playerSprite.gotoAndPlay("test");		
+		playerSprite.gotoAndPlay("run");		
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
 		stage.addChild(playerSprite);
@@ -228,9 +228,11 @@
 		{
 			if( nextAction === ACTION_STEP_FORWARD ) {
 				player.tX = player.tX - 60;
+				playerSprite.gotoAndPlay("run");		
 			}
 			else if( nextAction === ACTION_STEP_BACKWARD ) {
 				player.tX = player.tX + 60;
+				playerSprite.gotoAndPlay("run");		
 			}
 		}
 	}
