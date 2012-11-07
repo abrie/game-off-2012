@@ -120,7 +120,8 @@
 				stand: {frames:[1,0], next:false, frequency:3},
 				step1: {frames:[2], next:false, frequency:1 },
 				step2: {frames:[3], next:false, frequency:1 },
-				step3: {frames:[3,4,3,2], next:false, frequency:1 },
+				step3: {frames:[3,4], next:"land", frequency:1 },
+				land: {frames:[4,3,2], next:false, frequency:2},
 			}
 		};
 		var spriteSheet  = new createjs.SpriteSheet(playerSpriteParameters);
@@ -269,7 +270,8 @@
 		}
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
-		if (player.pX > stage.canvas.width) { player.pX = 0; }
+		if (player.tX > stage.canvas.width) { player.tX = 0; }
+		if (player.tX < 0) { player.tX = stage.canvas.width; }
 		stage.update();
 	}
 	</script>
