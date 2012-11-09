@@ -7,16 +7,16 @@ var audio = (function () {
 			id: id,
 			duration: duration,
 			frequency: frequency,
-			volumeNode: audio_context.createGainNode(),
+			volumeNode: audioContext.createGainNode(),
 			o : undefined,
 			createOscillator : function() {
 				this.duration = duration;
-				this.o = audio_context.createOscillator();
+				this.o = audioContext.createOscillator();
 				this.o.frequency.value = frequency;
 				this.o.connect(this.volumeNode);
 			},
 			initialize : function() {
-				this.volumeNode.connect(audio_context.destination);
+				this.volumeNode.connect(audioContext.destination);
 				this.createOscillator();
 			},
 			active : false,
@@ -31,7 +31,7 @@ var audio = (function () {
 				if (!this.active)
 					return;
 				this.volumeNode.gain.value = 0.0;
-				this.o.noteOff(audio_context.currentTime+0.01);
+				this.o.noteOff(audioContext.currentTime+0.01);
 				this.active = false;
 			},
 			reset : function() {
@@ -57,11 +57,11 @@ var audio = (function () {
 
 	var oscillators = {}
 
-	var audio_context = undefined;
+	var audioContext = undefined;
 	return {
 		initialize: function() {
 			try {
-				audio_context = new (window.AudioContext || window.webkitAudioContext);
+				audioContext = new (window.AudioContext || window.webkitAudioContext);
 			} catch (e) {
 				alert('There is no audio oscillator support in this browser');
 			}
