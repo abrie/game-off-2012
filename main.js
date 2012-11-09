@@ -94,13 +94,10 @@ var input = (function () {
 		inputState = {},
 		inputHistory = [];
 
-	function notifyOnInput(id) {
-		currentInputFrame.push(id);
-	}
-
 	function inputOn(id) {
 		if (!inputState[id]) {
-			notifyOnInput(id);
+			currentInputFrame.push(id);
+			inputDelegate(id);
 		}
 		inputState[id] = true;
 	}
@@ -154,7 +151,6 @@ var input = (function () {
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOn(mapped);
-			audio.soundOn(mapped,3);
 			return false;
 		}
 	}
@@ -168,21 +164,21 @@ var input = (function () {
 	}
 
 	function handleKeyDown(e) {
-		//cross browser issues exist, says EaselJS
 		if(!e){ var e = window.event; }
 		return onKeyDown(e.keyCode);
 	}
 
 	function handleKeyUp(e) {
-		//cross browser issues exist, says EaselJS
 		if(!e){ var e = window.event; }
 		return onKeyUp(e.keyCode);
 	}
 
 	var actionDelegate;
+	var inputDelegate;
 	return {
-		initialize: function (delegate) {
-			actionDelegate = delegate;
+		initialize: function (onAction,onInput) {
+			actionDelegate = onAction;
+			inputDelegate = onInput;
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
@@ -245,6 +241,10 @@ var main = (function () {
 		}
 	}
 
+	function notifyOnInput(id) {
+		audio.soundOn(id,3);
+	}
+
 	var stage = undefined;
 	return {
 		init: function () {
@@ -253,7 +253,7 @@ var main = (function () {
 			audio.addSound(FOOT2, 329.63, 3); 
 			audio.addSound(FOOT3, 392.00, 3); 
 			audio.addSound(STAND, 400.00, 3); 
-			input.initialize(fireAction);
+			input.initialize(fireAction,notifyOnInput);
 			var canvas = document.getElementById("testCanvas");
 
 			stage = new Stage(canvas);
