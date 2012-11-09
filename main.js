@@ -87,7 +87,7 @@ var audio = (function () {
 		soundOn : function (which, length) {
 			oscillators[which].start();
 		},
-		advanceSounds : function () {
+		advance : function () {
 			_.each(oscillators, function(v,k) {
 				v.advance();
 			});
@@ -97,6 +97,13 @@ var audio = (function () {
 
 var input = (function () {
 	"use strict";
+
+	var ACTIONS = [
+		{action:"COMBO",	sequence:[[3],[1,2],[1]]},
+		{action:"FORWARD",	sequence:[[3],[2],[1]]},
+		{action:"WOBBLE",	sequence:[[3],[1],[2]]},
+		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
+	];
 
 	var currentInputFrame = [],
 		inputState = {},
@@ -132,13 +139,6 @@ var input = (function () {
 			idleInputFrameCount++;
 		}
 	}
-
-	var ACTIONS = [
-		{action:"COMBO",	sequence:[[3],[1,2],[1]]},
-		{action:"FORWARD",	sequence:[[3],[2],[1]]},
-		{action:"WOBBLE",	sequence:[[3],[1],[2]]},
-		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
-	];
 
 	function scanForAction() {
 		ACTIONS.every( function(element) {
@@ -279,7 +279,7 @@ var main = (function () {
 		},
 		tick: function (elapsedTime) {
 			input.advance();
-			audio.advanceSounds();
+			audio.advance();
 			if (player.pX != player.tX) {
 				player.pX += (player.tX - player.pX)/2 ;
 			}
