@@ -1,25 +1,18 @@
+var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 var audio = (function () {
 	"use strict";
 
-	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
-	var frequencyMap = {};
-	function initFrequencyMap() {
-		frequencyMap[FOOT1] = 261.63;
-		frequencyMap[FOOT2] = 329.63;
-		frequencyMap[FOOT3] = 392;
-		frequencyMap[STAND] = 400;
-	}
-
-	function newOscillator( id, duration ) {
+	function newOscillator( id, frequency, duration ) {
 		var result = {
 			id: id,
 			duration: duration,
+			frequency: frequency,
 			volumeNode: audio_context.createGainNode(),
 			o : undefined,
 			createOscillator : function() {
 				this.duration = duration;
 				this.o = audio_context.createOscillator();
-				this.o.frequency.value = frequencyMap[id];
+				this.o.frequency.value = frequency;
 				this.o.connect(this.volumeNode);
 			},
 			initialize : function() {
@@ -66,28 +59,23 @@ var audio = (function () {
 	}
 
 	var oscillators = {}
-	function initOscillators() {
-		oscillators[FOOT1] = newOscillator(FOOT1, 3);
-		oscillators[FOOT2] = newOscillator(FOOT2, 3);
-		oscillators[FOOT3] = newOscillator(FOOT3, 3);
-		oscillators[STAND] = newOscillator(STAND, 3);
-	}
 
 	var audio_context = undefined;
 	return {
-		initialize : function() {
+		initialize: function() {
 			try {
 				audio_context = new (window.AudioContext || window.webkitAudioContext);
 			} catch (e) {
 				alert('There is no audio oscillator support in this browser');
 			}
-			initFrequencyMap();
-			initOscillators();
 		},
-		soundOn : function (which, length) {
+		addSound: function( id, frequency, duration ) {
+			oscillators[id] = newOscillator(id, frequency, duration);
+		},
+		soundOn: function (which, length) {
 			oscillators[which].start();
 		},
-		advance : function () {
+		advance: function () {
 			_.each(oscillators, function(v,k) {
 				v.advance();
 			});
@@ -162,8 +150,6 @@ var input = (function () {
 			return frame ? arrays_equal(element,frame) : false;
 		});
 	}
-
-	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 
 	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
 
@@ -247,8 +233,8 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
-				playerSprite.gotoAndPlay("step1");		
 				player.tX = player.tX - 100;
+				playerSprite.gotoAndPlay("step1");		
 				break;
 			case "BACKWARD":
 				player.tX = player.tX + 100;
@@ -266,6 +252,10 @@ var main = (function () {
 	return {
 		init: function () {
 			audio.initialize();
+			audio.addSound(FOOT1, 261.63, 3); 
+			audio.addSound(FOOT2, 329.63, 3); 
+			audio.addSound(FOOT3, 392.00, 3); 
+			audio.addSound(STAND, 400.00, 3); 
 			input.initialize(fireAction);
 			var canvas = document.getElementById("testCanvas");
 
