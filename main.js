@@ -33,17 +33,14 @@ var audio = (function () {
 				this.volumeNode.gain.value = 0.0;
 				this.o.noteOff(audio_context.currentTime+0.01);
 				this.active = false;
-				this.needsReset = true;
 			},
-			needsReset:false,
 			reset : function() {
 				this.o.disconnect();
 				this.o = undefined;
 				this.createOscillator();
-				this.needsReset = false;
 			},
 			advance : function() {
-				if (this.needsReset) {
+				if (this.o.playbackState === this.o.FINISHED_STATE) {
 					this.reset();
 				}
 				else if(this.active) {
