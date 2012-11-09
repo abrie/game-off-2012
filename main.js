@@ -73,8 +73,6 @@ var audio = (function () {
 		oscillators[STAND] = newOscillator(STAND, 3);
 	}
 
-
-
 	var audio_context = undefined;
 	return {
 		initialize : function() {
@@ -97,12 +95,13 @@ var audio = (function () {
 	}
 }());
 
-var main = (function () {
+var input = (function () {
 	"use strict";
 
 	var currentInputFrame = [],
 		inputState = {},
 		inputHistory = [];
+
 	function notifyOnInput(id) {
 		currentInputFrame.push(id);
 	}
@@ -144,7 +143,8 @@ var main = (function () {
 	function scanForAction() {
 		ACTIONS.every( function(element) {
 			if(matchSequence(element.sequence)) {
-				fireAction(element.action);
+				clearInputHistory();
+				actionDelegate(element.action);
 				return false;
 			}
 			else {
@@ -164,6 +164,7 @@ var main = (function () {
 	}
 
 	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
+
 	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
 
 	function onKeyDown(keyCode) {
@@ -194,6 +195,23 @@ var main = (function () {
 		if(!e){ var e = window.event; }
 		return onKeyUp(e.keyCode);
 	}
+
+	var actionDelegate;
+	return {
+		initialize: function (delegate) {
+			actionDelegate = delegate;
+			document.onkeydown = handleKeyDown;
+			document.onkeyup = handleKeyUp;
+		},
+		advance: function () {
+			pushInputFrame();
+			scanForAction();
+		}
+	};
+}());
+
+var main = (function () {
+	"use strict";
 
 	var player = {pX:500,pY:100,tX:500,tY:100}
 	function initPlayer() {
@@ -226,58 +244,50 @@ var main = (function () {
 		stage.addChild(playerSprite);
 	}
 
-
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
 				playerSprite.gotoAndPlay("step1");		
 				player.tX = player.tX - 100;
-				clearInputHistory();
 				break;
 			case "BACKWARD":
 				player.tX = player.tX + 100;
-				clearInputHistory();
 				break;
 			case "STAND":
 				playerSprite.gotoAndPlay("stand");		
-				clearInputHistory();
 				break;
 			default:
 				console.log("action unhandled:",action);
-				clearInputHistory();
 				break;
 		}
 	}
 
-var stage = undefined;
-		return {
-			init: function () {
-				audio.initialize();
-				document.onkeydown = handleKeyDown;
-				document.onkeyup = handleKeyUp;
-				var canvas = document.getElementById("testCanvas");
+	var stage = undefined;
+	return {
+		init: function () {
+			audio.initialize();
+			input.initialize(fireAction);
+			var canvas = document.getElementById("testCanvas");
 
-				stage = new Stage(canvas);
-				initPlayer();
+			stage = new Stage(canvas);
+			initPlayer();
 
-				stage.update();
-				Ticker.setFPS(30);
-				Ticker.useRAF = true;
-				Ticker.addListener(this);
-			},
-			tick: function (elapsedTime) {
-				pushInputFrame();
-				scanForAction();
-				audio.advanceSounds();
-				if (player.pX != player.tX) {
-					player.pX += (player.tX - player.pX)/2 ;
-				}
-				playerSprite.x = player.pX;
-				playerSprite.y = player.pY;
-				if (player.tX > stage.canvas.width) { player.tX = 0; }
-				if (player.tX < 0) { player.tX = stage.canvas.width; }
-				stage.update();
+			stage.update();
+			Ticker.setFPS(30);
+			Ticker.useRAF = true;
+			Ticker.addListener(this);
+		},
+		tick: function (elapsedTime) {
+			input.advance();
+			audio.advanceSounds();
+			if (player.pX != player.tX) {
+				player.pX += (player.tX - player.pX)/2 ;
 			}
+			playerSprite.x = player.pX;
+			playerSprite.y = player.pY;
+			if (player.tX > stage.canvas.width) { player.tX = 0; }
+			if (player.tX < 0) { player.tX = stage.canvas.width; }
+			stage.update();
 		}
-
+	}
 }());
