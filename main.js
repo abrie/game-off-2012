@@ -1,3 +1,102 @@
+var audio = (function () {
+	"use strict";
+
+	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
+	var frequencyMap = {};
+	function initFrequencyMap() {
+		frequencyMap[FOOT1] = 261.63;
+		frequencyMap[FOOT2] = 329.63;
+		frequencyMap[FOOT3] = 392;
+		frequencyMap[STAND] = 400;
+	}
+
+	function newOscillator( id, duration ) {
+		var result = {
+			id: id,
+			duration: duration,
+			volumeNode: audio_context.createGainNode(),
+			o : undefined,
+			createOscillator : function() {
+				this.duration = duration;
+				this.o = audio_context.createOscillator();
+				this.o.frequency.value = frequencyMap[id];
+				this.o.connect(this.volumeNode);
+			},
+			initialize : function() {
+				this.volumeNode.connect(audio_context.destination);
+				this.createOscillator();
+			},
+			active : false,
+			start : function() {
+				if (this.active)
+					return;
+				this.volumeNode.gain.value = 1.0;
+				this.active = true;
+				this.o.noteOn(0);
+			},
+			stop : function() {
+				if (!this.active)
+					return;
+				this.volumeNode.gain.value = 0.0;
+				this.o.noteOff(audio_context.currentTime+0.01);
+				this.active = false;
+				this.needsReset = true;
+			},
+			needsReset:false,
+			reset : function() {
+				this.o.disconnect();
+				this.o = undefined;
+				this.createOscillator();
+				this.needsReset = false;
+			},
+			advance : function() {
+				if (this.needsReset) {
+					this.reset();
+				}
+				else if(this.active) {
+					this.duration--;
+					if (this.duration == 0) {
+						this.stop();
+					}
+				}
+			},
+		}
+		result.initialize();
+		return result;
+	}
+
+	var oscillators = {}
+	function initOscillators() {
+		oscillators[FOOT1] = newOscillator(FOOT1, 3);
+		oscillators[FOOT2] = newOscillator(FOOT2, 3);
+		oscillators[FOOT3] = newOscillator(FOOT3, 3);
+		oscillators[STAND] = newOscillator(STAND, 3);
+	}
+
+
+
+	var audio_context = undefined;
+	return {
+		initialize : function() {
+			try {
+				audio_context = new (window.AudioContext || window.webkitAudioContext);
+			} catch (e) {
+				alert('There is no audio oscillator support in this browser');
+			}
+			initFrequencyMap();
+			initOscillators();
+		},
+		soundOn : function (which, length) {
+			oscillators[which].start();
+		},
+		advanceSounds : function () {
+			_.each(oscillators, function(v,k) {
+				v.advance();
+			});
+		}
+	}
+}());
+
 var main = (function () {
 	"use strict";
 
@@ -71,7 +170,7 @@ var main = (function () {
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOn(mapped);
-			soundOn(mapped,3);
+			audio.soundOn(mapped,3);
 			return false;
 		}
 	}
@@ -127,86 +226,6 @@ var main = (function () {
 		stage.addChild(playerSprite);
 	}
 
-	var frequencyMap = {};
-	function initFrequencyMap() {
-		frequencyMap[FOOT1] = 261.63;
-		frequencyMap[FOOT2] = 329.63;
-		frequencyMap[FOOT3] = 392;
-		frequencyMap[STAND] = 400;
-	}
-
-	function newOscillator( id, duration ) {
-		var result = {
-			id: id,
-			duration: duration,
-			volumeNode: audio_context.createGainNode(),
-			o : undefined,
-			createOscillator : function() {
-				this.duration = duration;
-				this.o = audio_context.createOscillator();
-				this.o.frequency.value = frequencyMap[id];
-				this.o.connect(this.volumeNode);
-			},
-			initialize : function() {
-				this.volumeNode.connect(audio_context.destination);
-				this.createOscillator();
-			},
-			active : false,
-			start : function() {
-				if (this.active)
-					return;
-				this.volumeNode.gain.value = 1.0;
-				this.active = true;
-				this.o.noteOn(0);
-			},
-			stop : function() {
-				if (!this.active)
-					return;
-				this.volumeNode.gain.value = 0.0;
-				this.o.noteOff(audio_context.currentTime+0.01);
-				this.active = false;
-				this.needsReset = true;
-			},
-			needsReset:false,
-			reset : function() {
-				this.o.disconnect();
-				this.o = undefined;
-				this.createOscillator();
-				this.needsReset = false;
-			},
-			advance : function() {
-				if (this.needsReset) {
-					this.reset();
-				}
-				else if(this.active) {
-					this.duration--;
-					if (this.duration == 0) {
-						this.stop();
-					}
-				}
-			},
-		}
-		result.initialize();
-		return result;
-	}
-
-	var oscillators = {}
-	function initOscillators() {
-		oscillators[FOOT1] = newOscillator(FOOT1, 3);
-		oscillators[FOOT2] = newOscillator(FOOT2, 3);
-		oscillators[FOOT3] = newOscillator(FOOT3, 3);
-		oscillators[STAND] = newOscillator(STAND, 3);
-	}
-
-	function soundOn(which, length) {
-		oscillators[which].start();
-	}
-
-	function advanceSounds() {
-		_.each(oscillators, function(v,k) {
-			v.advance();
-		});
-	}
 
 	function fireAction(action) {
 		switch(action) {
@@ -231,16 +250,9 @@ var main = (function () {
 	}
 
 var stage = undefined;
-var audio_context = undefined;
 		return {
 			init: function () {
-				try {
-					audio_context = new (window.AudioContext || window.webkitAudioContext);
-				} catch (e) {
-					alert('There is no audio oscillator support in this browser');
-				}
-				initFrequencyMap();
-				initOscillators();
+				audio.initialize();
 				document.onkeydown = handleKeyDown;
 				document.onkeyup = handleKeyUp;
 				var canvas = document.getElementById("testCanvas");
@@ -256,7 +268,7 @@ var audio_context = undefined;
 			tick: function (elapsedTime) {
 				pushInputFrame();
 				scanForAction();
-				advanceSounds();
+				audio.advanceSounds();
 				if (player.pX != player.tX) {
 					player.pX += (player.tX - player.pX)/2 ;
 				}
