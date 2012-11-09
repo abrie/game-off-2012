@@ -12,91 +12,80 @@
 	<script type="text/javascript" src="lib/underscore-min.js"></script>
 
 	<script>
+	var inputState = {};
+	function inputOn(id) {
+		if( !inputState[id] ) {
+			notifyOnInput(id);
+		}
+		inputState[id] = true;
+	}
+
+	function inputOff(id) {
+		inputState[id] = false;
+	}
+
+	var inputHistory = [];
+	function clearInputHistory() {
+		inputHistory.length = 0;
+	}
+
+	var currentInputFrame = [];
+	function notifyOnInput(id) {
+		currentInputFrame.push(id);
+	}
+
+	function pushInputFrame() {
+		if(currentInputFrame.length > 0) {
+			inputHistory.push(currentInputFrame.sort());
+			currentInputFrame = [];
+		}
+	}
+
+	var ACTIONS = [
+		{action:"COMBO",	sequence:[[3],[1,2],[1]]},
+		{action:"FORWARD",	sequence:[[3],[2],[1]]},
+		{action:"WOBBLE",	sequence:[[3],[1],[2]]},
+		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
+	];
+
+	function scanForAction() {
+		ACTIONS.every( function(element) {
+			if(matchSequence(element.sequence)) {
+				fireAction(element.action);
+				return false;
+			}
+			else {
+				return true;
+			}
+		});
+	}
+
+	// thanks to http://stackoverflow.com/a/5115066
+	function arrays_equal(a,b) { return !(a<b || b<a); }
+
+	function matchSequence(sequence) {
+		return sequence.every( function(element,index) {
+			var frame = inputHistory[ inputHistory.length - 1 - index];
+			return frame ? arrays_equal(element,frame) : false;
+		});
+	}
+
 	var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
-
-	var intentionSequence = [];
-	function newIntentionSequence() {
-		intentionSequence.length = 0;
-	}
-
-	var currentIntention = [];
-	function newIntention() {
-		intentionSequence.push(currentIntention);
-		currentIntention = [];
-		
-	}
-
-	function addIntentionToSequence() {
-		if (currentIntention.length > 0) {
-			newIntention();
-		}
-	}
-
-	function mostRecentIntention() {
-		if (currentIntention.length >= 1 ) {
-			return currentIntention;
-		}
-		else if (intentionSequence.length >= 1) {
-			return intentionSequence[ intentionSequence.length-1 ];
-		}
-		else {
-			return undefined;
-		}
-	}
-
-	var ACTION_STEP_FORWARD = 1;
-	var ACTION_STEP_BACKWARD = 2;
-	var ACTION_STAND = 3;
-	var ACTION_NOTHING = 0;
-	function evaluateIntentionSequence() {
-		var lastIntention = mostRecentIntention();
-		var result = ACTION_NOTHING;
-		if(lastIntention) {
-			if (_.contains(lastIntention, FOOT3)) {
-				playerSprite.gotoAndPlay("step3");		
-				if(intentionSequence.length == 3) { // all the steps are on seperate frames
-					if( _.contains(intentionSequence[0], FOOT1) &&
-						_.contains(intentionSequence[1], FOOT2) &&
-						_.contains(intentionSequence[2], FOOT3)) 
-						result = ACTION_STEP_FORWARD;
-					newIntentionSequence();
-				}
-				else if(intentionSequence.length > 1) {
-					newIntentionSequence();
-					currentIntention.push(FOOT3);
-				}
-			}
-			else if (_.contains(lastIntention, FOOT2)) {
-				playerSprite.gotoAndPlay("step2");		
-			}
-			else if(_.contains(lastIntention, FOOT1)) {
-				playerSprite.gotoAndPlay("step1");		
-				if(intentionSequence.length == 3) { // all the steps are on seperate frames
-					if( _.contains(intentionSequence[0], FOOT3) &&
-						_.contains(intentionSequence[1], FOOT2) &&
-						_.contains(intentionSequence[2], FOOT1)) 
-						result = ACTION_STEP_BACKWARD;
-					newIntentionSequence();
-				}
-				else if(intentionSequence.length > 1) {
-					newIntentionSequence();
-					currentIntention.push(FOOT1);
-				}
-			}
-			else if(_.contains(lastIntention, STAND)) {
-				result = ACTION_STAND;
-				newIntentionSequence();
-			}
-		}
-		return result;
-	}
 
 	function onKeyDown(keyCode) {
 		var mapped = keyMap[keyCode];
 		if (mapped) {
-			currentIntention.push(mapped);
+			inputOn(mapped);
             soundOn(mapped,3);
+			return false;
+		}
+	}
+
+	function onKeyUp(keyCode) {
+		var mapped = keyMap[keyCode];
+		if (mapped) {
+			inputOff(mapped);
 			return false;
 		}
 	}
@@ -108,25 +97,28 @@
 	}
 
 	function handleKeyUp(e) {
-		return;
+		//cross browser issues exist, says EaselJS
+		if(!e){ var e = window.event; }
+		return onKeyUp(e.keyCode);
 	}
 
 	var player = {pX:500,pY:100,tX:500,tY:100}
 	function initPlayer() {
 		var playerSpriteParameters = {
 			images: ["assets/chin.png"],
-			frames: {count:5, width:150, height:100, regX:75, regY:50},
+			frames: {count:6, width:150, height:150, regX:75, regY:75},
 			animations: {
-				stand: {frames:[1,0], next:false, frequency:3},
-				step1: {frames:[2], next:false, frequency:1 },
-				step2: {frames:[3], next:false, frequency:1 },
-				step3: {frames:[3,4], next:"land", frequency:1 },
-				land: {frames:[4,3,2], next:false, frequency:2},
+				stand: {frames:[0], next:false, frequency:3},
+				still: {frames:[1], next:false, frequency:1 },
+				step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
+				land: {frames:[1], next:false, frequency:1},
 			}
 		};
 		var spriteSheet  = new createjs.SpriteSheet(playerSpriteParameters);
 		if (!spriteSheet.complete) {
-			    spriteSheet.onComplete = function() { console.log("complete..."); generatePlayerSpriteAnimation(spriteSheet); }
+			    spriteSheet.onComplete = function() {
+					generatePlayerSpriteAnimation(spriteSheet);
+				}
 		}
 		else {
 			generatePlayerSpriteAnimation( spriteSheet );
@@ -135,7 +127,7 @@
 	var playerSprite = undefined;
 	function generatePlayerSpriteAnimation( spriteSheet ) {
 		playerSprite = new createjs.BitmapAnimation(spriteSheet);
-		playerSprite.gotoAndPlay("step1");		
+		playerSprite.gotoAndPlay("still");		
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
 		stage.addChild(playerSprite);
@@ -159,7 +151,7 @@
 		initPlayer();
 
 		stage.update();
-		Ticker.setFPS(20);
+		Ticker.setFPS(30);
 		Ticker.useRAF = true;
 		Ticker.addListener(window);
 	}
@@ -245,28 +237,34 @@
 		});
 	}
 
-    function processIntentionSequences() {
-		addIntentionToSequence();
-		var nextAction = evaluateIntentionSequence();
-		if( nextAction != ACTION_NOTHING )
-		{
-			if( nextAction === ACTION_STEP_FORWARD ) {
-				player.tX = player.tX - 50;
-			}
-			else if( nextAction === ACTION_STEP_BACKWARD ) {
-				player.tX = player.tX + 50;
-			}
-			else if( nextAction === ACTION_STAND ) {
+	function fireAction(action) {
+		switch(action) {
+			case "FORWARD": 
+				playerSprite.gotoAndPlay("step1");		
+				player.tX = player.tX - 100;
+				clearInputHistory();
+				break;
+			case "BACKWARD":
+				player.tX = player.tX + 100;
+				clearInputHistory();
+                break;
+			case "STAND":
 				playerSprite.gotoAndPlay("stand");		
-			}
+				clearInputHistory();
+				break;
+        	default:
+				console.log("action unhandled:",action);
+				clearInputHistory();
+				break;
 		}
 	}
 
 	function tick(elapsedTime) {
-		processIntentionSequences();
+		pushInputFrame();
+		scanForAction();
 		advanceSounds();
 		if (player.pX != player.tX) {
-			player.pX += (player.tX - player.pX)/3 ;
+			player.pX += (player.tX - player.pX)/2 ;
 		}
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
