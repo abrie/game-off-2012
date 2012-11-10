@@ -139,8 +139,9 @@ var input = (function () {
 	function arrays_equal(a,b) { return !(a<b || b<a); }
 
 	function matchSequence(sequence) {
+		var inputHistoryIndex = inputHistory.length - 1;
 		return sequence.every( function(element,index) {
-			var frame = inputHistory[ inputHistory.length - 1 - index];
+			var frame = inputHistory[ inputHistoryIndex - index];
 			return frame ? arrays_equal(element,frame) : false;
 		});
 	}
