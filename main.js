@@ -193,7 +193,7 @@ var input = (function () {
 var main = (function () {
 	"use strict";
 
-	var player = {pX:500,pY:100,tX:500,tY:100}
+	var player = {pX:75,pY:75,tX:75,tY:75}
 	function initPlayer() {
 		var playerSpriteParameters = {
 			images: ["assets/chin.png"],
@@ -222,6 +222,41 @@ var main = (function () {
 		playerSprite.x = player.pX;
 		playerSprite.y = player.pY;
 		stage.addChild(playerSprite);
+	}
+
+	var cell,vanish;
+	function initCoordinateParameters() {
+		cell = {w:150,h:150};
+		vanish = {x:stage.canvas.width/2,y:800};
+	}
+
+	function projectX(i,level) {
+		return i*cell.w/level+vanish.x;
+	}
+
+	function projectY(level) {
+		return vanish.y/level;
+	}
+
+	function initGrid() {
+		var g = new Graphics();
+		g.setStrokeStyle(1);
+		g.beginStroke(Graphics.getRGB(255,255,255));
+		g.beginFill(Graphics.getRGB(100,100,100));
+		g.rect(0,0,stage.canvas.width,stage.canvas.height);
+		for(var level=1;level<=8;level+=1) {
+			g.moveTo(0,vanish.y/level);
+			g.lineTo(stage.canvas.width,vanish.y/level);
+			for(var i = -30, end = 30; i <= end; i+=1) {
+				g.moveTo(projectX(i,level), projectY(level));
+				g.lineTo(projectX(i,level+1), projectY(level+1));
+			}
+		}
+		var s = new Shape(g);
+		s.x = 0;
+		s.y = 0;
+		stage.addChild(s);
+		stage.update();
 	}
 
 	function fireAction(action) {
@@ -258,6 +293,8 @@ var main = (function () {
 			var canvas = document.getElementById("testCanvas");
 
 			stage = new Stage(canvas);
+			initCoordinateParameters();
+			initGrid();
 			initPlayer();
 
 			stage.update();
