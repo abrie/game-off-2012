@@ -84,10 +84,9 @@ var input = (function () {
 	"use strict";
 
 	var ACTIONS = [
-		{action:"COMBO",	sequence:[[3],[1,2],[1]]},
 		{action:"FORWARD",	sequence:[[3],[2],[1]]},
-		{action:"WOBBLE",	sequence:[[3],[1],[2]]},
 		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
+		{action:"STAND",	sequence:[[4]]}
 	];
 
 	var currentInputFrame = [],
@@ -193,7 +192,7 @@ var input = (function () {
 var main = (function () {
 	"use strict";
 
-	var player = {pX:75,pY:75,tX:75,tY:75}
+	var player = {pX:75,pY:175,tX:75,tY:175}
 	function initPlayer() {
 		var playerSpriteParameters = {
 			images: ["assets/chin.png"],
