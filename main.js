@@ -192,7 +192,7 @@ var input = (function () {
 var main = (function () {
 	"use strict";
 
-	var playerVirtual = {pX:10,pY:2,tX:10,tY:1};
+	var playerVirtual = {pX:10,pY:3.5,tX:10,tY:1};
 	var player = {pX:75,pY:175,tX:75,tY:175}
 	function initPlayer() {
 		var playerSpriteParameters = {
