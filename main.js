@@ -239,18 +239,44 @@ var main = (function () {
 		return vanish.y/level;
 	}
 
-	function initGrid() {
+	function initBackground() {
 		var g = new Graphics();
 		g.setStrokeStyle(1);
 		g.beginStroke(Graphics.getRGB(255,255,255));
 		g.beginFill(Graphics.getRGB(100,100,100));
 		g.rect(0,0,stage.canvas.width,stage.canvas.height);
+		var s = new Shape(g);
+		s.x = 0;
+		s.y = 0;
+		stage.addChild(s);
+		stage.update();
+	}
+
+	function initGrid() {
+		var g = new Graphics();
+		g.setStrokeStyle(1);
+		g.beginStroke(Graphics.getRGB(255,255,255));
 		for(var level=2;level<=4;level+=1) {
 			g.moveTo(0,projectY(level));
 			g.lineTo(stage.canvas.width,projectY(level));
 			for(var i = -30, end = 30; i <= end; i+=1) {
-				g.moveTo(projectX(i,level), projectY(level));
-				g.lineTo(projectX(i,level+1), projectY(level+1));
+				var baseX = projectX(i,level), baseY = projectY(level);
+				var headX = projectX(i,level+1), headY = projectY(level+1);
+				g.moveTo(baseX, baseY);
+				g.lineTo(headX, headY);
+				g.moveTo(baseX, baseY);
+				g.lineTo(baseX, baseY-25);
+			}
+		}
+		for(var level=2;level<=5;level+=1) {
+			g.moveTo(0,projectY(level));
+			g.lineTo(stage.canvas.width,projectY(level));
+			for(var i = -30, end = 30; i <= end; i+=1) {
+				var baseX = projectX(i,level), baseY = projectY(level);
+				var baseWidth = projectX(i+1,level) - projectX(i,level);
+				var headX = projectX(i,level+1), headY = projectY(level+1);
+				g.beginFill(Graphics.getRGB(100,0,100));
+				g.rect(baseX, baseY-100/level, baseWidth, 100/level);
 			}
 		}
 		g.moveTo(0,projectY(5));
@@ -305,8 +331,9 @@ var main = (function () {
 
 			stage = new Stage(canvas);
 			initCoordinateParameters();
-			initGrid();
+			initBackground();
 			initPlayer();
+			initGrid();
 
 			stage.update();
 			Ticker.setFPS(30);
