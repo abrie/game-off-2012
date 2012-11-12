@@ -197,14 +197,7 @@ var player = (function() {
 		tX:75,
 		tY:175,
 		sprite: undefined,
-	}
-}());
-
-var main = (function () {
-	"use strict";
-
-	function initPlayer() {
-		var playerSpriteParameters = {
+		spriteParameters: {
 			images: ["assets/chin.png"],
 			frames: {count:6, width:150, height:150, regX:0, regY:0},
 			animations: {
@@ -213,8 +206,15 @@ var main = (function () {
 				step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
 				land: {frames:[1], next:false, frequency:1},
 			}
-		};
-		var spriteSheet  = new createjs.SpriteSheet(playerSpriteParameters);
+		},
+	}
+}());
+
+var main = (function () {
+	"use strict";
+
+	function initPlayer() {
+		var spriteSheet  = new createjs.SpriteSheet(player.spriteParameters);
 		if (!spriteSheet.complete) {
 				spriteSheet.onComplete = function() {
 					generatePlayerSpriteAnimation(spriteSheet);
