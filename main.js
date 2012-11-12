@@ -189,11 +189,19 @@ var input = (function () {
 	};
 }());
 
+var player = (function() {
+	return {
+		virtual: {pX:10,pY:3.5,tX:10,tY:1},
+		pX:75,
+		pY:175,
+		tX:75,
+		tY:175
+	}
+}());
+
 var main = (function () {
 	"use strict";
 
-	var playerVirtual = {pX:10,pY:3.5,tX:10,tY:1};
-	var player = {pX:75,pY:175,tX:75,tY:175}
 	function initPlayer() {
 		var playerSpriteParameters = {
 			images: ["assets/chin.png"],
@@ -214,7 +222,7 @@ var main = (function () {
 		else {
 			generatePlayerSpriteAnimation( spriteSheet );
 		}
-		player.pY = projectY(playerVirtual.pY)-150;
+		player.pY = projectY(player.virtual.pY)-150;
 	}
 	var playerSprite = undefined;
 	function generatePlayerSpriteAnimation( spriteSheet ) {
@@ -291,19 +299,17 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
-				playerVirtual.tX = playerVirtual.tX - 1;
-				if (playerVirtual.tX < -5) {
-					playerVirtual.tX = 5;
+				player.virtual.tX = player.virtual.tX - 1;
+				if (player.virtual.tX < -5) {
+					player.virtual.tX = 5;
 				}
-				//player.tX = player.tX - 100;
 				playerSprite.gotoAndPlay("step1");		
 				break;
 			case "BACKWARD":
-				playerVirtual.tX = playerVirtual.tX + 1;
-				if (playerVirtual.tX > 5) {
-					playerVirtual.tX = -5;
+				player.virtual.tX = player.virtual.tX + 1;
+				if (player.virtual.tX > 5) {
+					player.virtual.tX = -5;
 				}
-				//player.tX = player.tX + 100;
 				break;
 			case "STAND":
 				playerSprite.gotoAndPlay("stand");		
@@ -343,18 +349,16 @@ var main = (function () {
 		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
-			if (playerVirtual.pX != playerVirtual.tX) {
-				playerVirtual.pX += (playerVirtual.tX - playerVirtual.pX);
-				player.tX = projectX(playerVirtual.pX,playerVirtual.pY);
-				player.pY = projectY(playerVirtual.pY)-150;
+			if (player.virtual.pX != player.virtual.tX) {
+				player.virtual.pX += (player.virtual.tX - player.virtual.pX);
+				player.tX = projectX(player.virtual.pX,player.virtual.pY);
+				player.pY = projectY(player.virtual.pY)-150;
 			}
 			if (player.pX != player.tX) {
 				player.pX += (player.tX - player.pX)/2 ;
 			}
 			playerSprite.x = player.pX;
 			playerSprite.y = player.pY;
-			//if (player.tX > stage.canvas.width) { player.tX = 0; }
-			//if (player.tX < 0) { player.tX = stage.canvas.width; }
 			stage.update();
 		}
 	}
