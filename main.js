@@ -192,9 +192,13 @@ var input = (function () {
 var projector = (function () {
 	var cell,vanish;
 	return {
+		width:undefined,
+		height:undefined,
 		initialize: function(width,height) {
+			this.width = width;
+			this.height = height;
 			cell = {w:150,h:150};
-			vanish = {x:width/2,y:height};
+			vanish = {x:this.width/2,y:this.height};
 		},
 		projectX: function(i,level) {
 			return i*cell.w/level+vanish.x;
@@ -283,7 +287,7 @@ var grid = (function () {
 			g.beginStroke(Graphics.getRGB(255,255,255));
 			for(var level=2;level<=4;level+=1) {
 				g.moveTo(0,projector.projectY(level));
-				g.lineTo(1000,projector.projectY(level));
+				g.lineTo(projector.width ,projector.projectY(level));
 				for(var i = -30, end = 30; i <= end; i+=1) {
 					var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
 					var headX = projector.projectX(i,level+1), headY = projector.projectY(level+1);
@@ -295,7 +299,7 @@ var grid = (function () {
 			}
 			for(var level=2;level<=5;level+=1) {
 				g.moveTo(0,projector.projectY(level));
-				g.lineTo(1000,projector.projectY(level));
+				g.lineTo(projector.width, projector.projectY(level));
 				for(var i = -30, end = 30; i <= end; i+=1) {
 					var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
 					var baseWidth = projector.projectX(i+1,level) - projector.projectX(i,level);
@@ -305,7 +309,7 @@ var grid = (function () {
 				}
 			}
 			g.moveTo(0,projector.projectY(5));
-			g.lineTo(1000,projector.projectY(5));
+			g.lineTo(projector.width, projector.projectY(5));
 			this.shape = new Shape(g);
 			this.shape.x = 0;
 			this.shape.y = 0;
