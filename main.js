@@ -189,6 +189,22 @@ var input = (function () {
 	};
 }());
 
+var projector = (function () {
+	var cell,vanish;
+	return {
+		initialize: function(width,height) {
+			cell = {w:150,h:150};
+			vanish = {x:width/2,y:height};
+		},
+		projectX: function(i,level) {
+			return i*cell.w/level+vanish.x;
+		},
+		projectY: function(level) {
+			return vanish.y/level;
+		}
+	}
+}());
+
 var player = (function() {
 	return {
 		virtual: {pX:10,pY:3.5,tX:10,tY:1},
@@ -207,24 +223,37 @@ var player = (function() {
 				land: {frames:[1], next:false, frequency:1},
 			}
 		},
-	}
-}());
-
-var projector = (function () {
-	var cell,vanish;
-	return {
-		initialize: function(width,height) {
-			cell = {w:150,h:150};
-			vanish = {x:width/2,y:height};
+		advance: function() {
+			if (this.virtual.pX != this.virtual.tX) {
+				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
+				this.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
+				this.pY = projector.projectY(this.virtual.pY)-150;
+			}
+			if (this.pX != this.tX) {
+				this.pX += (this.tX - this.pX)/2 ;
+			}
+			this.sprite.x = this.pX;
+			this.sprite.y = this.pY;
 		},
-		projectX: function(i,level) {
-			return i*cell.w/level+vanish.x;
+		actionForward: function() {
+			this.virtual.tX = this.virtual.tX - 1;
+			if (this.virtual.tX < -5) {
+				this.virtual.tX = 5;
+			}
+			this.sprite.gotoAndPlay("step1");		
 		},
-		projectY: function(level) {
-			return vanish.y/level;
+		actionBackward: function() {
+			this.virtual.tX = this.virtual.tX + 1;
+			if (this.virtual.tX > 5) {
+				this.virtual.tX = -5;
+			}
+		},
+		actionStand: function() {
+			this.sprite.gotoAndPlay("stand");		
 		}
 	}
 }());
+
 
 var main = (function () {
 	"use strict";
@@ -302,20 +331,13 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
-				player.virtual.tX = player.virtual.tX - 1;
-				if (player.virtual.tX < -5) {
-					player.virtual.tX = 5;
-				}
-				player.sprite.gotoAndPlay("step1");		
+				player.actionForward();
 				break;
 			case "BACKWARD":
-				player.virtual.tX = player.virtual.tX + 1;
-				if (player.virtual.tX > 5) {
-					player.virtual.tX = -5;
-				}
+				player.actionBackward();
 				break;
 			case "STAND":
-				player.sprite.gotoAndPlay("stand");		
+				player.actionStand();
 				break;
 			default:
 				console.log("action unhandled:",action);
@@ -335,11 +357,10 @@ var main = (function () {
 			audio.addSound(FOOT2, 329.63, 3); 
 			audio.addSound(FOOT3, 392.00, 3); 
 			audio.addSound(STAND, 400.00, 3); 
-			input.initialize(fireAction,notifyOnInput);
 			var canvas = document.getElementById("testCanvas");
-
 			stage = new Stage(canvas);
 			projector.initialize(stage.canvas.width,800);
+			input.initialize(fireAction,notifyOnInput);
 			initBackground();
 			initPlayer();
 			initGrid();
@@ -352,16 +373,7 @@ var main = (function () {
 		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
-			if (player.virtual.pX != player.virtual.tX) {
-				player.virtual.pX += (player.virtual.tX - player.virtual.pX);
-				player.tX = projector.projectX(player.virtual.pX,player.virtual.pY);
-				player.pY = projector.projectY(player.virtual.pY)-150;
-			}
-			if (player.pX != player.tX) {
-				player.pX += (player.tX - player.pX)/2 ;
-			}
-			player.sprite.x = player.pX;
-			player.sprite.y = player.pY;
+			player.advance();
 			stage.update();
 		}
 	}
