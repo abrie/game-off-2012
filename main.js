@@ -217,6 +217,8 @@ var player = (function() {
 		tX:75,
 		tY:175,
 		sprite: undefined,
+		shiftForward: function() {console.log("override player.shiftForward");},
+		shiftBackward: function() {console.log("override player.shiftBackward");},
 		spriteParameters: {
 			images: ["assets/chin.png"],
 			frames: {count:6, width:150, height:150, regX:0, regY:0},
@@ -260,17 +262,25 @@ var player = (function() {
 			this.sprite.y = this.pY;
 		},
 		actionForward: function() {
-			this.virtual.tX = this.virtual.tX - 1;
-			if (this.virtual.tX < -5) {
-				this.virtual.tX = 5;
+			if (this.virtual.tX == -5)
+			{
+				this.shiftForward();
+			}
+			else
+			{
+				this.virtual.tX = this.virtual.tX - 1;
 			}
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
-			this.virtual.tX = this.virtual.tX + 1;
-			if (this.virtual.tX > 5) {
-				this.virtual.tX = -5;
+			if (this.virtual.tX == 5) {
+				this.shiftBackward();
 			}
+			else
+			{
+				this.virtual.tX = this.virtual.tX + 1;
+			}
+			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
 			this.sprite.gotoAndPlay("stand");		
