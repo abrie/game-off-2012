@@ -223,6 +223,26 @@ var player = (function() {
 				land: {frames:[1], next:false, frequency:1},
 			}
 		},
+		initialize: function() {
+			var spriteSheet  = new createjs.SpriteSheet(this.spriteParameters);
+			if (!spriteSheet.complete) {
+					spriteSheet.onComplete = function(e) {
+						console.log("preloading needed. this is a big issue.",e);
+						this.generatePlayerSpriteAnimation(spriteSheet);
+					}
+			}
+			else {
+				this.generatePlayerSpriteAnimation( spriteSheet );
+			}
+			this.pY = projector.projectY(this.virtual.pY)-150;
+		} ,
+
+		generatePlayerSpriteAnimation: function(spriteSheet) {
+			this.sprite = new createjs.BitmapAnimation(spriteSheet);
+			this.sprite.gotoAndPlay("still");		
+			this.sprite.x = player.pX;
+			this.sprite.y = player.pY;
+		},
 		advance: function() {
 			if (this.virtual.pX != this.virtual.tX) {
 				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
@@ -258,26 +278,6 @@ var player = (function() {
 var main = (function () {
 	"use strict";
 
-	function initPlayer() {
-		var spriteSheet  = new createjs.SpriteSheet(player.spriteParameters);
-		if (!spriteSheet.complete) {
-				spriteSheet.onComplete = function() {
-					generatePlayerSpriteAnimation(spriteSheet);
-				}
-		}
-		else {
-			generatePlayerSpriteAnimation( spriteSheet );
-		}
-		player.pY = projector.projectY(player.virtual.pY)-150;
-	}
-
-	function generatePlayerSpriteAnimation( spriteSheet ) {
-		player.sprite = new createjs.BitmapAnimation(spriteSheet);
-		player.sprite.gotoAndPlay("still");		
-		player.sprite.x = player.pX;
-		player.sprite.y = player.pY;
-		stage.addChild(player.sprite);
-	}
 
 	function initBackground() {
 		var g = new Graphics();
@@ -362,9 +362,9 @@ var main = (function () {
 			projector.initialize(stage.canvas.width,800);
 			input.initialize(fireAction,notifyOnInput);
 			initBackground();
-			initPlayer();
 			initGrid();
-
+			player.initialize();
+			stage.addChild(player.sprite);
 			stage.update();
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
