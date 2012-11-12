@@ -211,11 +211,8 @@ var projector = (function () {
 
 var player = (function() {
 	return {
-		virtual: {pX:10,pY:3.5,tX:10,tY:1},
-		pX:75,
-		pY:175,
-		tX:75,
-		tY:175,
+		virtual: {pX:0,pY:2.5,tX:0,tY:2.5},
+		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
 		shiftForward: function() {console.log("override player.shiftForward");},
 		shiftBackward: function() {console.log("override player.shiftBackward");},
@@ -240,26 +237,27 @@ var player = (function() {
 			else {
 				this.generatePlayerSpriteAnimation( spriteSheet );
 			}
-			this.pY = projector.projectY(this.virtual.pY)-150;
 		} ,
 
 		generatePlayerSpriteAnimation: function(spriteSheet) {
+			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX, this.virtual.pY);
+			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY)-150;
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
 			this.sprite.gotoAndPlay("still");		
-			this.sprite.x = player.pX;
-			this.sprite.y = player.pY;
+			this.sprite.x = player.screen.pX;
+			this.sprite.y = player.screen.pY;
 		},
 		advance: function() {
 			if (this.virtual.pX != this.virtual.tX) {
 				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
-				this.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
-				this.pY = projector.projectY(this.virtual.pY)-150;
+				this.screen.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
+				this.screen.pY = projector.projectY(this.virtual.pY)-150;
 			}
-			if (this.pX != this.tX) {
-				this.pX += (this.tX - this.pX)/2 ;
+			if (this.screen.pX != this.screen.tX) {
+				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
 			}
-			this.sprite.x = this.pX;
-			this.sprite.y = this.pY;
+			this.sprite.x = this.screen.pX;
+			this.sprite.y = this.screen.pY;
 		},
 		actionForward: function() {
 			if (this.virtual.tX == -5)
