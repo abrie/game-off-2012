@@ -210,6 +210,22 @@ var player = (function() {
 	}
 }());
 
+var projector = (function () {
+	var cell,vanish;
+	return {
+		initialize: function(width,height) {
+			cell = {w:150,h:150};
+			vanish = {x:width/2,y:height};
+		},
+		projectX: function(i,level) {
+			return i*cell.w/level+vanish.x;
+		},
+		projectY: function(level) {
+			return vanish.y/level;
+		}
+	}
+}());
+
 var main = (function () {
 	"use strict";
 
@@ -223,28 +239,15 @@ var main = (function () {
 		else {
 			generatePlayerSpriteAnimation( spriteSheet );
 		}
-		player.pY = projectY(player.virtual.pY)-150;
+		player.pY = projector.projectY(player.virtual.pY)-150;
 	}
+
 	function generatePlayerSpriteAnimation( spriteSheet ) {
 		player.sprite = new createjs.BitmapAnimation(spriteSheet);
 		player.sprite.gotoAndPlay("still");		
 		player.sprite.x = player.pX;
 		player.sprite.y = player.pY;
 		stage.addChild(player.sprite);
-	}
-
-	var cell,vanish;
-	function initCoordinateParameters() {
-		cell = {w:150,h:150};
-		vanish = {x:stage.canvas.width/2,y:800};
-	}
-
-	function projectX(i,level) {
-		return i*cell.w/level+vanish.x;
-	}
-
-	function projectY(level) {
-		return vanish.y/level;
 	}
 
 	function initBackground() {
@@ -265,11 +268,11 @@ var main = (function () {
 		g.setStrokeStyle(1);
 		g.beginStroke(Graphics.getRGB(255,255,255));
 		for(var level=2;level<=4;level+=1) {
-			g.moveTo(0,projectY(level));
-			g.lineTo(stage.canvas.width,projectY(level));
+			g.moveTo(0,projector.projectY(level));
+			g.lineTo(stage.canvas.width,projector.projectY(level));
 			for(var i = -30, end = 30; i <= end; i+=1) {
-				var baseX = projectX(i,level), baseY = projectY(level);
-				var headX = projectX(i,level+1), headY = projectY(level+1);
+				var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
+				var headX = projector.projectX(i,level+1), headY = projector.projectY(level+1);
 				g.moveTo(baseX, baseY);
 				g.lineTo(headX, headY);
 				g.moveTo(baseX, baseY);
@@ -277,18 +280,18 @@ var main = (function () {
 			}
 		}
 		for(var level=2;level<=5;level+=1) {
-			g.moveTo(0,projectY(level));
-			g.lineTo(stage.canvas.width,projectY(level));
+			g.moveTo(0,projector.projectY(level));
+			g.lineTo(stage.canvas.width,projector.projectY(level));
 			for(var i = -30, end = 30; i <= end; i+=1) {
-				var baseX = projectX(i,level), baseY = projectY(level);
-				var baseWidth = projectX(i+1,level) - projectX(i,level);
-				var headX = projectX(i,level+1), headY = projectY(level+1);
+				var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
+				var baseWidth = projector.projectX(i+1,level) - projector.projectX(i,level);
+				var headX = projector.projectX(i,level+1), headY = projector.projectY(level+1);
 				g.beginFill(Graphics.getRGB(100,0,100));
 				g.rect(baseX, baseY-100/level, baseWidth, 100/level);
 			}
 		}
-		g.moveTo(0,projectY(5));
-		g.lineTo(stage.canvas.width,projectY(5));
+		g.moveTo(0,projector.projectY(5));
+		g.lineTo(stage.canvas.width,projector.projectY(5));
 		var s = new Shape(g);
 		s.x = 0;
 		s.y = 0;
@@ -336,7 +339,7 @@ var main = (function () {
 			var canvas = document.getElementById("testCanvas");
 
 			stage = new Stage(canvas);
-			initCoordinateParameters();
+			projector.initialize(stage.canvas.width,800);
 			initBackground();
 			initPlayer();
 			initGrid();
@@ -351,8 +354,8 @@ var main = (function () {
 			audio.advance();
 			if (player.virtual.pX != player.virtual.tX) {
 				player.virtual.pX += (player.virtual.tX - player.virtual.pX);
-				player.tX = projectX(player.virtual.pX,player.virtual.pY);
-				player.pY = projectY(player.virtual.pY)-150;
+				player.tX = projector.projectX(player.virtual.pX,player.virtual.pY);
+				player.pY = projector.projectY(player.virtual.pY)-150;
 			}
 			if (player.pX != player.tX) {
 				player.pX += (player.tX - player.pX)/2 ;
