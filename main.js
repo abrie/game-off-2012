@@ -195,7 +195,8 @@ var player = (function() {
 		pX:75,
 		pY:175,
 		tX:75,
-		tY:175
+		tY:175,
+		sprite: undefined,
 	}
 }());
 
@@ -224,13 +225,12 @@ var main = (function () {
 		}
 		player.pY = projectY(player.virtual.pY)-150;
 	}
-	var playerSprite = undefined;
 	function generatePlayerSpriteAnimation( spriteSheet ) {
-		playerSprite = new createjs.BitmapAnimation(spriteSheet);
-		playerSprite.gotoAndPlay("still");		
-		playerSprite.x = player.pX;
-		playerSprite.y = player.pY;
-		stage.addChild(playerSprite);
+		player.sprite = new createjs.BitmapAnimation(spriteSheet);
+		player.sprite.gotoAndPlay("still");		
+		player.sprite.x = player.pX;
+		player.sprite.y = player.pY;
+		stage.addChild(player.sprite);
 	}
 
 	var cell,vanish;
@@ -303,7 +303,7 @@ var main = (function () {
 				if (player.virtual.tX < -5) {
 					player.virtual.tX = 5;
 				}
-				playerSprite.gotoAndPlay("step1");		
+				player.sprite.gotoAndPlay("step1");		
 				break;
 			case "BACKWARD":
 				player.virtual.tX = player.virtual.tX + 1;
@@ -312,7 +312,7 @@ var main = (function () {
 				}
 				break;
 			case "STAND":
-				playerSprite.gotoAndPlay("stand");		
+				player.sprite.gotoAndPlay("stand");		
 				break;
 			default:
 				console.log("action unhandled:",action);
@@ -357,8 +357,8 @@ var main = (function () {
 			if (player.pX != player.tX) {
 				player.pX += (player.tX - player.pX)/2 ;
 			}
-			playerSprite.x = player.pX;
-			playerSprite.y = player.pY;
+			player.sprite.x = player.pX;
+			player.sprite.y = player.pY;
 			stage.update();
 		}
 	}
