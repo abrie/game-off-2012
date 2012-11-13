@@ -321,7 +321,13 @@ var grid = (function () {
 			this.shape = new Shape(g);
 			this.shape.x = 0;
 			this.shape.y = 0;
-		}
+		},
+		shiftForward: function() {
+			this.shape.x+=100;
+		},
+		shiftBackward: function() {
+			this.shape.x-=100;
+		},
 	}
 }());
 
@@ -379,6 +385,8 @@ var main = (function () {
 			grid.initialize();
 			stage.addChild(grid.shape);
 			player.initialize();
+			player.shiftForward = grid.shiftForward.bind(grid);
+			player.shiftBackward = grid.shiftBackward.bind(grid);
 			stage.addChild(player.sprite);
 			stage.update();
 			Ticker.setFPS(30);
