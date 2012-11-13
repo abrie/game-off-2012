@@ -289,44 +289,26 @@ var player = (function() {
 var grid = (function () {
 	return {
 		shape: undefined,
+		list: [0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1], 
 		initialize: function() {
 			var g = new Graphics();
 			g.setStrokeStyle(1);
 			g.beginStroke(Graphics.getRGB(255,255,255));
-			for(var level=2;level<=4;level+=1) {
-				g.moveTo(0,projector.projectY(level));
-				g.lineTo(projector.width ,projector.projectY(level));
-				for(var i = -30, end = 30; i <= end; i+=1) {
-					var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
-					var headX = projector.projectX(i,level+1), headY = projector.projectY(level+1);
-					g.moveTo(baseX, baseY);
-					g.lineTo(headX, headY);
-					g.moveTo(baseX, baseY);
-					g.lineTo(baseX, baseY-25);
+			g.beginFill(Graphics.getRGB(100,0,100));
+			_.each(this.list, function(element,index) {
+				if( element > 0 ) {
+					g.rect(index*150,0,150,150);
 				}
-			}
-			for(var level=2;level<=5;level+=1) {
-				g.moveTo(0,projector.projectY(level));
-				g.lineTo(projector.width, projector.projectY(level));
-				for(var i = -30, end = 30; i <= end; i+=1) {
-					var baseX = projector.projectX(i,level), baseY = projector.projectY(level);
-					var baseWidth = projector.projectX(i+1,level) - projector.projectX(i,level);
-					var headX = projector.projectX(i,level+1), headY = projector.projectY(level+1);
-					g.beginFill(Graphics.getRGB(100,0,100));
-					g.rect(baseX, baseY-100/level, baseWidth, 100/level);
-				}
-			}
-			g.moveTo(0,projector.projectY(5));
-			g.lineTo(projector.width, projector.projectY(5));
+			}, this);
 			this.shape = new Shape(g);
 			this.shape.x = 0;
 			this.shape.y = 0;
 		},
 		shiftForward: function() {
-			this.shape.x+=100;
+			this.shape.x+=150;
 		},
 		shiftBackward: function() {
-			this.shape.x-=100;
+			this.shape.x-=150;
 		},
 	}
 }());
