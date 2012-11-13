@@ -192,16 +192,15 @@ var input = (function () {
 var projector = (function () {
 	var cell,vanish;
 	return {
-		width:undefined,
-		height:undefined,
+		screen: {width:undefined,height:undefined},
+		cell: {width:150,height:150},
 		initialize: function(width,height) {
-			this.width = width;
-			this.height = height;
-			cell = {w:150,h:150};
-			vanish = {x:this.width/2,y:this.height};
+			this.screen.width = width;
+			this.screen.height = height;
+			vanish = {x:this.screen.width/2,y:this.screen.height};
 		},
 		projectX: function(i,level) {
-			return i*cell.w/level+vanish.x;
+			return i*this.cell.width/level+vanish.x;
 		},
 		projectY: function(level) {
 			return vanish.y/level;
