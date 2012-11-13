@@ -211,7 +211,7 @@ var projector = (function () {
 
 var player = (function() {
 	return {
-		virtual: {pX:0,pY:2.5,tX:0,tY:2.5},
+		virtual: {pX:0,pY:1.5,tX:0,tY:1.5},
 		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
 		shiftForward: function() {console.log("override player.shiftForward");},
@@ -241,7 +241,7 @@ var player = (function() {
 
 		generatePlayerSpriteAnimation: function(spriteSheet) {
 			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX, this.virtual.pY);
-			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY)-150;
+			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY)-250;
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
 			this.sprite.gotoAndPlay("still");		
 			this.sprite.x = player.screen.pX;
@@ -251,7 +251,7 @@ var player = (function() {
 			if (this.virtual.pX != this.virtual.tX) {
 				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
 				this.screen.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
-				this.screen.pY = projector.projectY(this.virtual.pY)-150;
+				this.screen.pY = projector.projectY(this.virtual.pY)-250;
 			}
 		    if (this.screen.pX != this.screen.tX) {
 				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
@@ -294,6 +294,10 @@ var grid = (function () {
 			[1,0,0,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
 			[0,0,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1],
 			[0,1,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,0,1],
+			[0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
+			[1,0,0,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
+			[0,0,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1],
+			[0,1,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,0,1],
 			],
 		initialize: function() {
 			_.each(this.layerMaps, function(layerMap,layerIndex) {
@@ -312,13 +316,13 @@ var grid = (function () {
 		},
 		shiftForward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT+=75/(5-index);
-			});
+				layer.xT+=250/(this.layers.length+1-index);
+			},this);
 		},
 		shiftBackward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT-=75/(5-index);
-			});
+				layer.xT-=250/(this.layers.length+1-index);
+			},this);
 		},
 		advance: function() {
 			_.each(this.layers, function(layer,index) {
@@ -384,13 +388,16 @@ var main = (function () {
 			input.initialize(fireAction,notifyOnInput);
 			initBackground();
 			grid.initialize();
-			_.each(grid.layers, function(layer) {
-				stage.addChild(layer.shape);
-			});
 			player.initialize();
 			player.shiftForward = grid.shiftForward.bind(grid);
 			player.shiftBackward = grid.shiftBackward.bind(grid);
-			stage.addChild(player.sprite);
+
+			_.each(grid.layers, function(layer,layerIndex) {
+				stage.addChild(layer.shape);
+				if(layerIndex==5) {
+					stage.addChild(player.sprite);
+				}
+			});
 			stage.update();
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
