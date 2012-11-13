@@ -204,6 +204,9 @@ var projector = (function () {
 		},
 		projectY: function(layer) {
 			return layer*(this.cell.height-this.cell.overlap);
+		},
+		scaleX: function(cellCount, layerCount, layer) {
+			return this.cell.width/(layerCount-layer);
 		}
 	}
 }());
@@ -296,6 +299,7 @@ var grid = (function () {
 		layers: [],
 		layerMaps:[],
 		maxLayers:4,
+		virtual: {x:-30},
 		initialize: function() {
 			for(var layer=0;layer<this.maxLayers;layer+=1) {
 				var map = [];
@@ -319,9 +323,9 @@ var grid = (function () {
 					}
 				}, this);
 				var layer = {
-					x:projector.projectX(-30),
+					x:projector.projectX(this.virtual.x),
 					y:projector.projectY(layerIndex),
-					xT:projector.projectX(-30),
+					xT:projector.projectX(this.virtual.x),
 					yT:projector.projectY(layerIndex),
 					shape:new Shape(g)
 				};
@@ -332,12 +336,12 @@ var grid = (function () {
 		},
 		shiftForward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT+=projector.cell.width/(this.layers.length+1-index);
+				layer.xT+=projector.scaleX(1,this.layers.length+1,index);
 			},this);
 		},
 		shiftBackward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT-=projector.cell.width/(this.layers.length+1-index);
+				layer.xT-=projector.scaleX(1,this.layers.length+1,index);
 			},this);
 		},
 		advance: function() {
