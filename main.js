@@ -190,20 +190,20 @@ var input = (function () {
 }());
 
 var projector = (function () {
-	var cell,vanish;
 	return {
-		screen: {width:undefined,height:undefined},
+		screen: {width:undefined,height:undefined,centerX:undefined,centerY:undefined},
 		cell: {width:150,height:150},
 		initialize: function(width,height) {
 			this.screen.width = width;
 			this.screen.height = height;
-			vanish = {x:this.screen.width/2,y:this.screen.height};
+			this.screen.centerX = width/2;
+			this.screen.centerY = height/2;
 		},
-		projectX: function(i,level) {
-			return i*this.cell.width/level+vanish.x;
+		projectX: function(i) {
+			return i*this.cell.width+this.screen.centerX;
 		},
-		projectY: function(level) {
-			return vanish.y/level;
+		projectY: function(layer) {
+			return layer*this.cell.height;
 		}
 	}
 }());
@@ -239,8 +239,8 @@ var player = (function() {
 		} ,
 
 		generatePlayerSpriteAnimation: function(spriteSheet) {
-			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX, this.virtual.pY);
-			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY)-250;
+			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX);
+			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY);
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
 			this.sprite.gotoAndPlay("still");		
 			this.sprite.x = player.screen.pX;
@@ -249,8 +249,8 @@ var player = (function() {
 		advance: function() {
 			if (this.virtual.pX != this.virtual.tX) {
 				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
-				this.screen.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
-				this.screen.pY = projector.projectY(this.virtual.pY)-250;
+				this.screen.tX = projector.projectX(this.virtual.pX);
+				this.screen.pY = projector.projectY(this.virtual.pY);
 			}
 		    if (this.screen.pX != this.screen.tX) {
 				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
