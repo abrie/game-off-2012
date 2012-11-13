@@ -192,7 +192,7 @@ var input = (function () {
 var projector = (function () {
 	return {
 		screen: {width:undefined,height:undefined,centerX:undefined,centerY:undefined},
-		cell: {width:150,height:150},
+		cell: {width:150,height:150,overlap:150/3},
 		initialize: function(width,height) {
 			this.screen.width = width;
 			this.screen.height = height;
@@ -203,21 +203,22 @@ var projector = (function () {
 			return i*this.cell.width+this.screen.centerX;
 		},
 		projectY: function(layer) {
-			return layer*this.cell.height;
+			return layer*(this.cell.height-this.cell.overlap);
 		}
 	}
 }());
 
 var player = (function() {
 	return {
-		virtual: {pX:0,pY:1.5,tX:0,tY:1.5},
+		virtual: {pX:0,pY:2,tX:0,tY:1},
 		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
+		debugSprite: undefined,
 		shiftForward: function() {console.log("override player.shiftForward");},
 		shiftBackward: function() {console.log("override player.shiftBackward");},
 		spriteParameters: {
 			images: ["assets/chin.png"],
-			frames: {count:6, width:150, height:150, regX:0, regY:0},
+			frames: {count:6, width:150, height:150},
 			animations: {
 				stand: {frames:[0], next:false, frequency:3},
 				still: {frames:[1], next:false, frequency:1 },
@@ -236,6 +237,11 @@ var player = (function() {
 			else {
 				this.generatePlayerSpriteAnimation( spriteSheet );
 			}
+			var g = new Graphics();
+			g.setStrokeStyle(1);
+			g.beginStroke(Graphics.getRGB(255,255,255));
+			g.rect(0,0,projector.cell.width,projector.cell.height);
+			this.debugSprite = new Shape(g);
 		} ,
 
 		generatePlayerSpriteAnimation: function(spriteSheet) {
@@ -255,8 +261,8 @@ var player = (function() {
 		    if (this.screen.pX != this.screen.tX) {
 				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
 			}
-			this.sprite.x = this.screen.pX;
-			this.sprite.y = this.screen.pY;
+			this.debugSprite.x = this.sprite.x = this.screen.pX;
+			this.debugSprite.y = this.sprite.y = this.screen.pY;
 		},
 		actionForward: function() {
 			if (this.virtual.tX == -2)
@@ -288,17 +294,16 @@ var player = (function() {
 var grid = (function () {
 	return {
 		layers: [],
-		layerMaps:[ 
-			[0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
-			[1,0,0,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
-			[0,0,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1],
-			[0,1,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,0,1],
-			[0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
-			[1,0,0,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
-			[0,0,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1],
-			[0,1,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,0,1],
-			],
+		layerMaps:[],
+		maxLayers:4,
 		initialize: function() {
+			for(var layer=0;layer<this.maxLayers;layer+=1) {
+				var map = [];
+				for(var index=0;index<60;index+=1) {
+					map.push(Math.floor(Math.random() * 2));
+				}
+				this.layerMaps.push(map);
+			}
 			_.each(this.layerMaps, function(layerMap,layerIndex) {
 				var g = new Graphics();
 				g.setStrokeStyle(1);
@@ -306,21 +311,33 @@ var grid = (function () {
 				g.beginFill(Graphics.getRGB(100,0,100));
 				_.each(layerMap, function(mapElement,mapIndex) {
 					if( mapElement > 0 ) {
-						g.rect(mapIndex*75,0,75,75);
+						g.rect(
+							mapIndex*projector.cell.width,
+							0,
+							projector.cell.width,
+							projector.cell.height);
 					}
 				}, this);
-				var layer = { x:-75*10, y:layerIndex*65, xT:-75*10, yT:layerIndex*65, shape:new Shape(g) };
+				var layer = {
+					x:projector.projectX(-30),
+					y:projector.projectY(layerIndex),
+					xT:projector.projectX(-30),
+					yT:projector.projectY(layerIndex),
+					shape:new Shape(g)
+				};
+				layer.shape.x = layer.x;
+				layer.shape.y = layer.y;
 				this.layers.push( layer );
 			},this);
 		},
 		shiftForward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT+=250/(this.layers.length+1-index);
+				layer.xT+=projector.cell.width/(this.layers.length+1-index);
 			},this);
 		},
 		shiftBackward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT-=250/(this.layers.length+1-index);
+				layer.xT-=projector.cell.width/(this.layers.length+1-index);
 			},this);
 		},
 		advance: function() {
@@ -383,7 +400,7 @@ var main = (function () {
 			audio.addSound(STAND, 400.00, 3); 
 			var canvas = document.getElementById("testCanvas");
 			stage = new Stage(canvas);
-			projector.initialize(stage.canvas.width,800);
+			projector.initialize(stage.canvas.width,500);
 			input.initialize(fireAction,notifyOnInput);
 			initBackground();
 			grid.initialize();
@@ -393,10 +410,11 @@ var main = (function () {
 
 			_.each(grid.layers, function(layer,layerIndex) {
 				stage.addChild(layer.shape);
-				if(layerIndex==5) {
+				if(layerIndex==player.virtual.pY) {
 					stage.addChild(player.sprite);
 				}
 			});
+			stage.addChild(player.debugSprite);
 			stage.update();
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
