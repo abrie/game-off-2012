@@ -253,14 +253,14 @@ var player = (function() {
 				this.screen.tX = projector.projectX(this.virtual.pX,this.virtual.pY);
 				this.screen.pY = projector.projectY(this.virtual.pY)-150;
 			}
-			if (this.screen.pX != this.screen.tX) {
+		    if (this.screen.pX != this.screen.tX) {
 				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
 			}
 			this.sprite.x = this.screen.pX;
 			this.sprite.y = this.screen.pY;
 		},
 		actionForward: function() {
-			if (this.virtual.tX == -5)
+			if (this.virtual.tX == -2)
 			{
 				this.shiftForward();
 			}
@@ -271,7 +271,7 @@ var player = (function() {
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
-			if (this.virtual.tX == 5) {
+			if (this.virtual.tX == 2) {
 				this.shiftBackward();
 			}
 			else
@@ -288,27 +288,46 @@ var player = (function() {
 
 var grid = (function () {
 	return {
-		shape: undefined,
-		list: [0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1], 
+		layers: [],
+		layerMaps:[ 
+			[0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
+			[1,0,0,1,1,0,1,0,1,1,1,0,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,1],
+			[0,0,1,0,0,0,0,1,1,1,0,1,1,1,0,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1],
+			[0,1,0,1,1,0,1,0,0,0,0,1,1,1,0,1,0,0,1,0,1,1,1,0,1,0,0,1,1,0,1,0,1,1,1,0,0,1,1,1,0,0,1,1,0,1,0,0,0,1],
+			],
 		initialize: function() {
-			var g = new Graphics();
-			g.setStrokeStyle(1);
-			g.beginStroke(Graphics.getRGB(255,255,255));
-			g.beginFill(Graphics.getRGB(100,0,100));
-			_.each(this.list, function(element,index) {
-				if( element > 0 ) {
-					g.rect(index*150,0,150,150);
-				}
-			}, this);
-			this.shape = new Shape(g);
-			this.shape.x = 0;
-			this.shape.y = 0;
+			_.each(this.layerMaps, function(layerMap,layerIndex) {
+				var g = new Graphics();
+				g.setStrokeStyle(1);
+				g.beginStroke(Graphics.getRGB(0,0,0));
+				g.beginFill(Graphics.getRGB(100,0,100));
+				_.each(layerMap, function(mapElement,mapIndex) {
+					if( mapElement > 0 ) {
+						g.rect(mapIndex*75,0,75,75);
+					}
+				}, this);
+				var layer = { x:-75*10, y:layerIndex*65, xT:-75*10, yT:layerIndex*65, shape:new Shape(g) };
+				this.layers.push( layer );
+			},this);
 		},
 		shiftForward: function() {
-			this.shape.x+=150;
+			_.each(this.layers, function(layer,index) {
+				layer.xT+=75/(5-index);
+			});
 		},
 		shiftBackward: function() {
-			this.shape.x-=150;
+			_.each(this.layers, function(layer,index) {
+				layer.xT-=75/(5-index);
+			});
+		},
+		advance: function() {
+			_.each(this.layers, function(layer,index) {
+				if (layer.x != layer.xT) {
+					layer.x += (layer.xT - layer.x)/2;
+				}
+				layer.shape.x = layer.x;
+				layer.shape.y = layer.y;
+			});
 		},
 	}
 }());
@@ -365,7 +384,9 @@ var main = (function () {
 			input.initialize(fireAction,notifyOnInput);
 			initBackground();
 			grid.initialize();
-			stage.addChild(grid.shape);
+			_.each(grid.layers, function(layer) {
+				stage.addChild(layer.shape);
+			});
 			player.initialize();
 			player.shiftForward = grid.shiftForward.bind(grid);
 			player.shiftBackward = grid.shiftBackward.bind(grid);
@@ -378,6 +399,7 @@ var main = (function () {
 		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
+			grid.advance();
 			player.advance();
 			stage.update();
 		}
