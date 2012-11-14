@@ -203,17 +203,17 @@ var projector = (function () {
 			return i*this.cell.width+this.screen.centerX;
 		},
 		projectY: function(layer) {
-			return layer*(this.cell.height-this.cell.overlap);
+			return this.screen.height - this.cell.height - layer*(this.cell.height-this.cell.overlap);
 		},
-		scaleX: function(cellCount, layerCount, layer) {
-			return this.cell.width/(layerCount-layer);
+		scaleX: function(cellCount, layer) {
+			return this.cell.width/(layer+1);
 		}
 	}
 }());
 
 var player = (function() {
 	return {
-		virtual: {pX:0,pY:2,tX:0,tY:1},
+		virtual: {pX:0,pY:1,tX:0,tY:1},
 		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
 		debugSprite: undefined,
@@ -336,12 +336,12 @@ var grid = (function () {
 		},
 		shiftForward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT+=projector.scaleX(1,this.layers.length+1,index);
+				layer.xT+=projector.scaleX(1,index);
 			},this);
 		},
 		shiftBackward: function() {
 			_.each(this.layers, function(layer,index) {
-				layer.xT-=projector.scaleX(1,this.layers.length+1,index);
+				layer.xT-=projector.scaleX(1,index);
 			},this);
 		},
 		advance: function() {
@@ -412,12 +412,15 @@ var main = (function () {
 			player.shiftForward = grid.shiftForward.bind(grid);
 			player.shiftBackward = grid.shiftBackward.bind(grid);
 
-			_.each(grid.layers, function(layer,layerIndex) {
+			for(var rIndex=grid.layers.length-1; rIndex>=0; rIndex-=1)
+			{
+				var layer = grid.layers[rIndex];
 				stage.addChild(layer.shape);
-				if(layerIndex==player.virtual.pY) {
+				if(rIndex==player.virtual.pY) {
 					stage.addChild(player.sprite);
 				}
-			});
+			}
+
 			stage.addChild(player.debugSprite);
 			stage.update();
 			Ticker.setFPS(30);
