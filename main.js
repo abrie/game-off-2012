@@ -86,6 +86,8 @@ var input = (function () {
 	var ACTIONS = [
 		{action:"FORWARD",	sequence:[[3],[2],[1]]},
 		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
+		{action:"JUMPUP",	sequence:[[2,3]]},
+		{action:"JUMPDOWN",	sequence:[[1,2]]},
 		{action:"STAND",	sequence:[[4]]}
 	];
 
@@ -259,8 +261,13 @@ var player = (function() {
 			if (this.virtual.pX != this.virtual.tX) {
 				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
 				this.screen.tX = projector.projectX(this.virtual.pX);
+			}
+
+			if (this.virtual.pY != this.virtual.tY) {
+				this.virtual.pY = this.virtual.tY;
 				this.screen.pY = projector.projectY(this.virtual.pY);
 			}
+
 		    if (this.screen.pX != this.screen.tX) {
 				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
 			}
@@ -290,6 +297,12 @@ var player = (function() {
 		},
 		actionStand: function() {
 			this.sprite.gotoAndPlay("stand");		
+		},
+		actionJumpUp: function() {
+			this.virtual.tY = this.virtual.tY + 1;
+		},
+		actionJumpDown: function() {
+			this.virtual.tY = this.virtual.tY - 1;
 		}
 	}
 }());
@@ -383,6 +396,12 @@ var main = (function () {
 				break;
 			case "STAND":
 				player.actionStand();
+				break;
+			case "JUMPUP":
+				player.actionJumpUp();
+				break;
+			case "JUMPDOWN":
+				player.actionJumpDown();
 				break;
 			default:
 				console.log("action unhandled:",action);
