@@ -19,11 +19,7 @@ var physics = (function() {
 	"use strict";
 	var world = undefined;
 	var FPS = 30;
-	var playerBody = undefined;
 	return {
-		player: function() {
-			return playerBody;
-		},
 		advance: function() {
 			world.ClearForces();
 			world.Step(1 / FPS, 10, 10);
@@ -52,7 +48,6 @@ var physics = (function() {
 			bodyDef.position.Set(1000 / 30, 13);
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
 
-			playerBody = this.createDynamicBody(5,5);
 			 
 		},
 		createDynamicBody: function(x,y) {
@@ -299,12 +294,27 @@ var projector = (function () {
 	}
 }());
 
+var dressedBody = function(physicsBody, sprite) {
+	this.body = physicsBody;
+	this.skin = sprite;
+	this.animate = function(label) {
+		this.skin.gotoAndPlay(label);
+	};
+	this.getBody = function() {
+		return this.body;
+	};
+	this.update = function() {
+		this.skin.x = this.body.GetWorldCenter().x * 30;
+		this.skin.y = this.body.GetWorldCenter().y * 30;
+	};
+}
+
 var player = (function() {
 	return {
 		virtual: {pX:0,pY:1,tX:0,tY:1},
 		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
-		debugSprite: undefined,
+		dressedBody: undefined,
 		shiftForward: function() {console.log("override player.shiftForward");},
 		shiftBackward: function() {console.log("override player.shiftBackward");},
 		spriteParameters: {
@@ -317,55 +327,47 @@ var player = (function() {
 				land: {frames:[1], next:false, frequency:1},
 			}
 		},
-		initialize: function() {
+		initialize: function(physicsBody) {
 			var spriteSheet  = new createjs.SpriteSheet(this.spriteParameters);
 			if (!spriteSheet.complete) {
 					spriteSheet.onComplete = function(e) {
 						console.log("preloading needed. this is a big issue.",e);
-						this.generatePlayerSpriteAnimation(spriteSheet);
+						this.generatePlayerSpriteAnimation(physicsBody, spriteSheet);
 					}
 			}
 			else {
-				this.generatePlayerSpriteAnimation( spriteSheet );
+				this.generatePlayerSpriteAnimation(physicsBody, spriteSheet);
 			}
-			var g = new Graphics();
-			g.setStrokeStyle(1);
-			g.beginStroke(Graphics.getRGB(255,255,255));
-			g.rect(0,0,projector.cell.width,projector.cell.height);
-			this.debugSprite = new Shape(g);
-		} ,
-
-		generatePlayerSpriteAnimation: function(spriteSheet) {
+		},
+		generatePlayerSpriteAnimation: function(physicsBody, spriteSheet) {
 			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX);
 			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY);
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
-			this.sprite.gotoAndPlay("still");		
-			this.sprite.x = player.screen.pX;
-			this.sprite.y = player.screen.pY;
+			this.dressedBody = new dressedBody(physicsBody, this.sprite);
+			this.dressedBody.animate("still");		
 		},
 		advance: function() {
-			this.sprite.x = physics.player().GetWorldCenter().x * 30;
-			this.sprite.y = physics.player().GetWorldCenter().y * 30;
+			this.dressedBody.update();
 
 		},
 		actionForward: function() {
-			var body = physics.player();
+			var body = this.dressedBody.getBody();
 			var velocity = body.GetLinearVelocity().x;
 			var targetVelocity = b2Math.Max( velocity - 5.0, -10.0 );
 			var velChange = targetVelocity - velocity;
 			var impel = body.GetMass() * velChange;
 			body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
-			this.sprite.gotoAndPlay("step1");		
+			this.dressedBody.animate("step1");
 		},
 		actionBackward: function() {
-			var body = physics.player();
+			var body = this.dressedBody.getBody();
 			if( body.GetLinearVelocity().x < 7 ) {
 				body.ApplyImpulse( new b2Vec2(0.25,0), body.GetWorldCenter() );
 			}
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
-			this.sprite.gotoAndPlay("stand");		
+			this.dressedBody.animate("stand");		
 		},
 		actionJumpUp: function() {
 			this.virtual.tY = this.virtual.tY + 1;
@@ -469,8 +471,6 @@ var main = (function () {
 		audio.soundOn(id,3);
 	}
 
-
-
 	var stage = undefined;
 	return {
 		init: function () {
@@ -480,27 +480,18 @@ var main = (function () {
 			audio.addSound(FOOT3, 392.00, 3); 
 			audio.addSound(STAND, 400.00, 3); 
 			var canvas = document.getElementById("testCanvas");
-			stage = new Stage(canvas);
 			physics.initialize();
 			physics.setDebugDraw(canvas);
-			projector.initialize(stage.canvas.width,500);
-			input.initialize(fireAction,notifyOnInput);
-			grid.initialize();
-			player.initialize();
+
+			player.initialize( physics.createDynamicBody(5,5) );
 			player.shiftForward = grid.shiftForward.bind(grid);
 			player.shiftBackward = grid.shiftBackward.bind(grid);
 
-			for(var rIndex=grid.layers.length-1; rIndex>=0; rIndex-=1)
-			{
-				var layer = grid.layers[rIndex];
-				stage.addChild(layer.shape);
-				if(rIndex==player.virtual.pY) {
-					stage.addChild(player.sprite);
-				}
-			}
-
-			stage.addChild(player.debugSprite);
+			stage = new Stage(canvas);
+			stage.addChild(player.sprite);
 			stage.update();
+
+			input.initialize(fireAction,notifyOnInput);
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
 			Ticker.addListener(this);
