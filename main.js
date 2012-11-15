@@ -15,40 +15,67 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 ,	b2Math = Box2D.Common.Math.b2Math
 ;
 
-var world = new b2World(
-   new b2Vec2(0, 10)    //gravity
-,  true                 //allow sleep
-);
+var physics = (function() {
+	var world = undefined;
+	var playerFixture = undefined;
+	var FPS = 30;
+	return {
+		player: function() {
+			return playerFixture.GetBody(); 
+		},
+		advance: function() {
+			world.ClearForces();
+			world.Step(1 / FPS, 10, 10);
+			world.DrawDebugData();
+		},
+		initialize: function() {
+		   world = new b2World( new b2Vec2(0, 10),  true );
 
-var fixDef = new b2FixtureDef;
-fixDef.density = 1.0;
-fixDef.friction = 0.5;
-fixDef.restitution = 0.2;
+			var fixDef = new b2FixtureDef;
+			fixDef.density = 1.0;
+			fixDef.friction = 0.5;
+			fixDef.restitution = 0.2;
 
-var bodyDef = new b2BodyDef;
+			var bodyDef = new b2BodyDef;
 
-//create ground
-bodyDef.type = b2Body.b2_staticBody;
-fixDef.shape = new b2PolygonShape;
-fixDef.shape.SetAsBox(1000/30, 2);
-bodyDef.position.Set(0, 400 / 30 + 1.8); //bottom
-world.CreateBody(bodyDef).CreateFixture(fixDef);
-bodyDef.position.Set(10, -1.8);
-world.CreateBody(bodyDef).CreateFixture(fixDef);
-fixDef.shape.SetAsBox(2, 14);
-bodyDef.position.Set(-1.8, 13);
-world.CreateBody(bodyDef).CreateFixture(fixDef);
-bodyDef.position.Set(1000 / 30, 13);
-world.CreateBody(bodyDef).CreateFixture(fixDef);
- 
-//create object
-bodyDef.type = b2Body.b2_dynamicBody;
-fixDef.shape = new b2PolygonShape;
-fixDef.friction = 1.5;
-fixDef.shape.SetAsBox( 0.1, 0.1 );
-bodyDef.position.x = Math.random() * 10;
-bodyDef.position.y = Math.random() * 10;
-var playerFixture = world.CreateBody(bodyDef).CreateFixture(fixDef);
+			bodyDef.type = b2Body.b2_staticBody;
+			fixDef.shape = new b2PolygonShape;
+			fixDef.shape.SetAsBox(1000/30, 2);
+			bodyDef.position.Set(0, 400 / 30 + 1.8);
+			world.CreateBody(bodyDef).CreateFixture(fixDef);
+			bodyDef.position.Set(10, -1.8);
+			world.CreateBody(bodyDef).CreateFixture(fixDef);
+			fixDef.shape.SetAsBox(2, 14);
+			bodyDef.position.Set(-1.8, 13);
+			world.CreateBody(bodyDef).CreateFixture(fixDef);
+			bodyDef.position.Set(1000 / 30, 13);
+			world.CreateBody(bodyDef).CreateFixture(fixDef);
+			 
+			//create object
+			var playerFixtureDef = new b2FixtureDef;
+			playerFixtureDef.density = 1.0;
+			playerFixtureDef.friction = 1.5;
+			playerFixtureDef.restitution = 0.2;
+
+			bodyDef.type = b2Body.b2_dynamicBody;
+			playerFixtureDef.shape = new b2PolygonShape;
+			playerFixtureDef.shape.SetAsBox( 0.1, 0.1 );
+			bodyDef.position.x = Math.random() * 10;
+			bodyDef.position.y = Math.random() * 10;
+			playerFixture = world.CreateBody(bodyDef).CreateFixture(playerFixtureDef);
+		},
+		setDebugDraw: function(canvas) {
+			var debugDraw = new b2DebugDraw();
+			debugDraw.SetSprite(canvas.getContext("2d"));
+			debugDraw.SetDrawScale(30.0);
+			debugDraw.SetFillAlpha(0.5);
+			debugDraw.SetLineThickness(1.0);
+			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+			world.SetDebugDraw(debugDraw);
+		}
+	}
+	
+}());
 
 var audio = (function () {
 	"use strict";
@@ -309,24 +336,23 @@ var player = (function() {
 			this.sprite.y = player.screen.pY;
 		},
 		advance: function() {
-			this.sprite.x = playerFixture.GetBody().GetWorldCenter().x * 30;
-			this.sprite.y = playerFixture.GetBody().GetWorldCenter().y * 30;
+			this.sprite.x = physics.player().GetWorldCenter().x * 30;
+			this.sprite.y = physics.player().GetWorldCenter().y * 30;
 
 		},
 		actionForward: function() {
-			var body = playerFixture.GetBody();
+			var body = physics.player();
 			var velocity = body.GetLinearVelocity().x;
 			var targetVelocity = b2Math.Max( velocity - 5.0, -10.0 );
 			var velChange = targetVelocity - velocity;
 			var impel = body.GetMass() * velChange;
-			console.log(body.GetMass()*velChange);
 			body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
-			var body = playerFixture.GetBody();
+			var body = physics.player();
 			if( body.GetLinearVelocity().x < 7 ) {
-				body.ApplyImpulse( new b2Vec2(0.25,0), playerFixture.GetBody().GetWorldCenter() );
+				body.ApplyImpulse( new b2Vec2(0.25,0), body.GetWorldCenter() );
 			}
 			// no sprite currently exists for backsteps...
 		},
@@ -408,21 +434,6 @@ var grid = (function () {
 var main = (function () {
 	"use strict";
 
-	function initBackground() {
-		return;
-		var g = new Graphics();
-		g.setStrokeStyle(1);
-		g.beginStroke(Graphics.getRGB(255,255,255));
-		g.beginFill(Graphics.getRGB(100,100,100));
-		g.rect(0,0,stage.canvas.width,stage.canvas.height);
-		var s = new Shape(g);
-		s.x = 0;
-		s.y = 0;
-		stage.addChild(s);
-		stage.update();
-	}
-
-
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
@@ -450,23 +461,7 @@ var main = (function () {
 		audio.soundOn(id,3);
 	}
 
-    function initBox2D(canvas) {
-		//setup debug draw
-		var debugDraw = new b2DebugDraw();
-		debugDraw.SetSprite(canvas.getContext("2d"));
-		debugDraw.SetDrawScale(30.0);
-		debugDraw.SetFillAlpha(0.5);
-		debugDraw.SetLineThickness(1.0);
-		debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-		world.SetDebugDraw(debugDraw);
-	}
 
-	function advancePhysics() {
-		var FPS = 30;
-		world.ClearForces();
-		world.Step(1 / FPS, 10, 10);
-		world.DrawDebugData();
-	}
 
 	var stage = undefined;
 	return {
@@ -478,9 +473,10 @@ var main = (function () {
 			audio.addSound(STAND, 400.00, 3); 
 			var canvas = document.getElementById("testCanvas");
 			stage = new Stage(canvas);
+			physics.initialize();
+			physics.setDebugDraw(canvas);
 			projector.initialize(stage.canvas.width,500);
 			input.initialize(fireAction,notifyOnInput);
-			initBackground();
 			grid.initialize();
 			player.initialize();
 			player.shiftForward = grid.shiftForward.bind(grid);
@@ -496,7 +492,6 @@ var main = (function () {
 			}
 
 			stage.addChild(player.debugSprite);
-			initBox2D(canvas);
 			stage.update();
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
@@ -507,7 +502,7 @@ var main = (function () {
 			input.advance();
 			audio.advance();
 			grid.advance();
-			advancePhysics();
+			physics.advance();
 			player.advance();
 			stage.update();
 		}
