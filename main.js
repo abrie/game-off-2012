@@ -12,6 +12,7 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 ,	b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
 ,	b2DebugDraw = Box2D.Dynamics.b2DebugDraw
 ,  b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
+,	b2Math = Box2D.Common.Math.b2Math
 ;
 
 var world = new b2World(
@@ -315,11 +316,11 @@ var player = (function() {
 		actionForward: function() {
 			var body = playerFixture.GetBody();
 			var velocity = body.GetLinearVelocity().x;
-			if( velocity > -7 ) {
-				var velChange = -7 - velocity;
-				var impel = body.GetMass() * velChange;
-				body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
-			}
+			var targetVelocity = b2Math.Max( velocity - 5.0, -10.0 );
+			var velChange = targetVelocity - velocity;
+			var impel = body.GetMass() * velChange;
+			console.log(body.GetMass()*velChange);
+			body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
