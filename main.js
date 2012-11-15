@@ -1,4 +1,54 @@
 var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
+
+var   b2Vec2 = Box2D.Common.Math.b2Vec2
+,  b2AABB = Box2D.Collision.b2AABB
+,	b2BodyDef = Box2D.Dynamics.b2BodyDef
+,	b2Body = Box2D.Dynamics.b2Body
+,	b2FixtureDef = Box2D.Dynamics.b2FixtureDef
+,	b2Fixture = Box2D.Dynamics.b2Fixture
+,	b2World = Box2D.Dynamics.b2World
+,	b2MassData = Box2D.Collision.Shapes.b2MassData
+,	b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+,	b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
+,	b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+,  b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
+;
+
+var world = new b2World(
+   new b2Vec2(0, 10)    //gravity
+,  true                 //allow sleep
+);
+
+var fixDef = new b2FixtureDef;
+fixDef.density = 1.0;
+fixDef.friction = 0.5;
+fixDef.restitution = 0.2;
+
+var bodyDef = new b2BodyDef;
+
+//create ground
+bodyDef.type = b2Body.b2_staticBody;
+fixDef.shape = new b2PolygonShape;
+fixDef.shape.SetAsBox(20, 2);
+bodyDef.position.Set(10, 400 / 30 + 1.8);
+world.CreateBody(bodyDef).CreateFixture(fixDef);
+bodyDef.position.Set(10, -1.8);
+world.CreateBody(bodyDef).CreateFixture(fixDef);
+fixDef.shape.SetAsBox(2, 14);
+bodyDef.position.Set(-1.8, 13);
+world.CreateBody(bodyDef).CreateFixture(fixDef);
+bodyDef.position.Set(21.8, 13);
+world.CreateBody(bodyDef).CreateFixture(fixDef);
+ 
+//create object
+bodyDef.type = b2Body.b2_dynamicBody;
+fixDef.shape = new b2PolygonShape;
+fixDef.friction = 1.5;
+fixDef.shape.SetAsBox( 0.1, 0.1 );
+bodyDef.position.x = Math.random() * 10;
+bodyDef.position.y = Math.random() * 10;
+var playerFixture = world.CreateBody(bodyDef).CreateFixture(fixDef);
+
 var audio = (function () {
 	"use strict";
 
@@ -168,7 +218,7 @@ var input = (function () {
 	function handleKeyDown(e) {
 		if(!e){ var e = window.event; }
 		return onKeyDown(e.keyCode);
-	}
+}
 
 	function handleKeyUp(e) {
 		if(!e){ var e = window.event; }
@@ -223,7 +273,7 @@ var player = (function() {
 		shiftBackward: function() {console.log("override player.shiftBackward");},
 		spriteParameters: {
 			images: ["assets/chin.png"],
-			frames: {count:6, width:150, height:150},
+			frames: {count:6, width:150, height:150,regX:75,regY:75},
 			animations: {
 				stand: {frames:[0], next:false, frequency:3},
 				still: {frames:[1], next:false, frequency:1 },
@@ -258,41 +308,16 @@ var player = (function() {
 			this.sprite.y = player.screen.pY;
 		},
 		advance: function() {
-			if (this.virtual.pX != this.virtual.tX) {
-				this.virtual.pX += (this.virtual.tX - this.virtual.pX);
-				this.screen.tX = projector.projectX(this.virtual.pX);
-			}
+			this.sprite.x = playerFixture.GetBody().GetWorldCenter().x * 30;
+			this.sprite.y = playerFixture.GetBody().GetWorldCenter().y * 30;
 
-			if (this.virtual.pY != this.virtual.tY) {
-				this.virtual.pY = this.virtual.tY;
-				this.screen.pY = projector.projectY(this.virtual.pY);
-			}
-
-		    if (this.screen.pX != this.screen.tX) {
-				this.screen.pX += (this.screen.tX - this.screen.pX)/2 ;
-			}
-			this.debugSprite.x = this.sprite.x = this.screen.pX;
-			this.debugSprite.y = this.sprite.y = this.screen.pY;
 		},
 		actionForward: function() {
-			if (this.virtual.tX == -2)
-			{
-				this.shiftForward();
-			}
-			else
-			{
-				this.virtual.tX = this.virtual.tX - 1;
-			}
+			playerFixture.GetBody().ApplyImpulse( new b2Vec2(-0.25,0), playerFixture.GetBody().GetWorldCenter() );
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
-			if (this.virtual.tX == 2) {
-				this.shiftBackward();
-			}
-			else
-			{
-				this.virtual.tX = this.virtual.tX + 1;
-			}
+			playerFixture.GetBody().ApplyImpulse( new b2Vec2(0.25,0), playerFixture.GetBody().GetWorldCenter() );
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
@@ -328,11 +353,12 @@ var grid = (function () {
 				g.beginFill(Graphics.getRGB(100,0,100));
 				_.each(layerMap, function(mapElement,mapIndex) {
 					if( mapElement > 0 ) {
+						var height = projector.cell.height/(Math.floor(Math.random()*5)+1);
 						g.rect(
 							mapIndex*projector.cell.width,
-							0,
+							height,
 							projector.cell.width,
-							projector.cell.height);
+							projector.cell.height-height);
 					}
 				}, this);
 				var layer = {
@@ -373,6 +399,7 @@ var main = (function () {
 	"use strict";
 
 	function initBackground() {
+		return;
 		var g = new Graphics();
 		g.setStrokeStyle(1);
 		g.beginStroke(Graphics.getRGB(255,255,255));
@@ -413,6 +440,24 @@ var main = (function () {
 		audio.soundOn(id,3);
 	}
 
+    function initBox2D(canvas) {
+		//setup debug draw
+		var debugDraw = new b2DebugDraw();
+		debugDraw.SetSprite(canvas.getContext("2d"));
+		debugDraw.SetDrawScale(30.0);
+		debugDraw.SetFillAlpha(0.5);
+		debugDraw.SetLineThickness(1.0);
+		debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+		world.SetDebugDraw(debugDraw);
+	}
+
+	function advancePhysics() {
+		var FPS = 30;
+		world.ClearForces();
+		world.Step(1 / FPS, 10, 10);
+		world.DrawDebugData();
+	}
+
 	var stage = undefined;
 	return {
 		init: function () {
@@ -441,15 +486,18 @@ var main = (function () {
 			}
 
 			stage.addChild(player.debugSprite);
+			initBox2D(canvas);
 			stage.update();
 			Ticker.setFPS(30);
 			Ticker.useRAF = true;
 			Ticker.addListener(this);
 		},
+
 		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
 			grid.advance();
+			advancePhysics();
 			player.advance();
 			stage.update();
 		}
