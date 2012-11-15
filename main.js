@@ -313,11 +313,20 @@ var player = (function() {
 
 		},
 		actionForward: function() {
-			playerFixture.GetBody().ApplyImpulse( new b2Vec2(-0.25,0), playerFixture.GetBody().GetWorldCenter() );
+			var body = playerFixture.GetBody();
+			var velocity = body.GetLinearVelocity().x;
+			if( velocity > -7 ) {
+				var velChange = -7 - velocity;
+				var impel = body.GetMass() * velChange;
+				body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
+			}
 			this.sprite.gotoAndPlay("step1");		
 		},
 		actionBackward: function() {
-			playerFixture.GetBody().ApplyImpulse( new b2Vec2(0.25,0), playerFixture.GetBody().GetWorldCenter() );
+			var body = playerFixture.GetBody();
+			if( body.GetLinearVelocity().x < 7 ) {
+				body.ApplyImpulse( new b2Vec2(0.25,0), playerFixture.GetBody().GetWorldCenter() );
+			}
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
