@@ -16,12 +16,13 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 ;
 
 var physics = (function() {
+	"use strict";
 	var world = undefined;
-	var playerFixture = undefined;
 	var FPS = 30;
+	var playerBody = undefined;
 	return {
 		player: function() {
-			return playerFixture.GetBody(); 
+			return playerBody;
 		},
 		advance: function() {
 			world.ClearForces();
@@ -50,19 +51,26 @@ var physics = (function() {
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
 			bodyDef.position.Set(1000 / 30, 13);
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
-			 
-			//create object
-			var playerFixtureDef = new b2FixtureDef;
-			playerFixtureDef.density = 1.0;
-			playerFixtureDef.friction = 1.5;
-			playerFixtureDef.restitution = 0.2;
 
+			playerBody = this.createDynamicBody(5,5);
+			 
+		},
+		createDynamicBody: function(x,y) {
+			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
-			playerFixtureDef.shape = new b2PolygonShape;
-			playerFixtureDef.shape.SetAsBox( 0.1, 0.1 );
-			bodyDef.position.x = Math.random() * 10;
-			bodyDef.position.y = Math.random() * 10;
-			playerFixture = world.CreateBody(bodyDef).CreateFixture(playerFixtureDef);
+			bodyDef.position.x = x;
+			bodyDef.position.y = y;
+
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 1.0;
+			fixtureDef.friction = 1.5;
+			fixtureDef.restitution = 0.2;
+			fixtureDef.shape = new b2PolygonShape;
+			fixtureDef.shape.SetAsBox( 0.1, 0.1 );
+
+			var body = world.CreateBody(bodyDef);
+			body.CreateFixture(fixtureDef);
+			return body;
 		},
 		setDebugDraw: function(canvas) {
 			var debugDraw = new b2DebugDraw();
