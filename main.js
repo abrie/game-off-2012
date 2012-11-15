@@ -30,15 +30,15 @@ var bodyDef = new b2BodyDef;
 //create ground
 bodyDef.type = b2Body.b2_staticBody;
 fixDef.shape = new b2PolygonShape;
-fixDef.shape.SetAsBox(20, 2);
-bodyDef.position.Set(10, 400 / 30 + 1.8);
+fixDef.shape.SetAsBox(1000/30, 2);
+bodyDef.position.Set(0, 400 / 30 + 1.8); //bottom
 world.CreateBody(bodyDef).CreateFixture(fixDef);
 bodyDef.position.Set(10, -1.8);
 world.CreateBody(bodyDef).CreateFixture(fixDef);
 fixDef.shape.SetAsBox(2, 14);
 bodyDef.position.Set(-1.8, 13);
 world.CreateBody(bodyDef).CreateFixture(fixDef);
-bodyDef.position.Set(21.8, 13);
+bodyDef.position.Set(1000 / 30, 13);
 world.CreateBody(bodyDef).CreateFixture(fixDef);
  
 //create object
