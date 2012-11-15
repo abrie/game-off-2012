@@ -61,7 +61,7 @@ var physics = (function() {
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
 			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( 0.1, 0.1 );
+			fixtureDef.shape.SetAsBox( 1.5, 1.0 );
 
 			var body = world.CreateBody(bodyDef);
 			body.CreateFixture(fixtureDef);
@@ -303,6 +303,15 @@ var dressedBody = function(physicsBody, sprite) {
 	this.getBody = function() {
 		return this.body;
 	};
+	this.impulse = function(direction) {
+		var velocity = this.body.GetLinearVelocity().x;
+		var targetVelocity = direction < 0 ?
+			b2Math.Max( velocity - 5.0, -10.0 ) : b2Math.Min( velocity + 5.0, 10.0 ); 
+		var velChange = targetVelocity - velocity;
+		var impel = this.body.GetMass() * velChange;
+		this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+	};
+
 	this.update = function() {
 		this.skin.x = this.body.GetWorldCenter().x * 30;
 		this.skin.y = this.body.GetWorldCenter().y * 30;
@@ -351,19 +360,11 @@ var player = (function() {
 
 		},
 		actionForward: function() {
-			var body = this.dressedBody.getBody();
-			var velocity = body.GetLinearVelocity().x;
-			var targetVelocity = b2Math.Max( velocity - 5.0, -10.0 );
-			var velChange = targetVelocity - velocity;
-			var impel = body.GetMass() * velChange;
-			body.ApplyImpulse( new b2Vec2(impel,0), body.GetWorldCenter() );
+			this.dressedBody.impulse(-1);
 			this.dressedBody.animate("step1");
 		},
 		actionBackward: function() {
-			var body = this.dressedBody.getBody();
-			if( body.GetLinearVelocity().x < 7 ) {
-				body.ApplyImpulse( new b2Vec2(0.25,0), body.GetWorldCenter() );
-			}
+			this.dressedBody.impulse(1);
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
