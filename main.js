@@ -279,6 +279,7 @@ var playspace = (function() {
         },
         advance: function() {
             _.each( this.pieces, function(piece) {
+                piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
                 piece.skin.x = piece.body.GetWorldCenter().x * PPM;
                 piece.skin.y = piece.body.GetWorldCenter().y * PPM;
             });
@@ -374,6 +375,7 @@ var player = (function() {
             var y = (this.origin.y - center.y) * PPM;
             this.onCamera(x,y);
             this.onParallax(this.origin.x - center.x);
+            this.sprite.rotation = this.body.GetAngle() * (180 / Math.PI);
             this.sprite.x = 1000/2;
             this.sprite.y = 500/2;
 		},
