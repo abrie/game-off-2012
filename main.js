@@ -285,20 +285,23 @@ var input = (function () {
 	};
 }());
 
-
-var dressedStaticBody = function(physicsBody, sprite) {
-	this.body = physicsBody;
-	this.skin = sprite;
-
-	this.getBody = function() {
-		return this.body;
-	};
-
-	this.update = function() {
-		this.skin.x = this.body.GetWorldCenter().x * PPM;
-		this.skin.y = this.body.GetWorldCenter().y * PPM;
-	};
-}
+var playspace = (function() {
+    return {
+        pieces: [],
+        container: new Container,
+        initialize: function() {},
+        addStaticBody: function(body,skin) {
+            this.pieces.push( {body:body,skin:skin} );
+            this.container.addChild(skin);
+        },
+        advance: function() {
+            _.each( this.pieces, function(piece) {
+                piece.skin.x = piece.body.GetWorldCenter().x * PPM;
+                piece.skin.y = piece.body.GetWorldCenter().y * PPM;
+            });
+        },
+    }
+}());
 
 var assets = (function() {
     var loadCount = 0, spriteSheetDescriptions = [{
@@ -372,10 +375,8 @@ var player = (function() {
 			this.sprite.gotoAndPlay("still");		
 		},
 		advance: function() {
-            var relativeX = this.originX - this.body.GetWorldCenter().x * PPM; 
-            var relativeY = this.originY - this.body.GetWorldCenter().y * PPM;
-            group.x = relativeX;
-            group.y = relativeY;
+            playspace.container.x = this.originX - this.body.GetWorldCenter().x * PPM; 
+            playspace.container.y = this.originY - this.body.GetWorldCenter().y * PPM;
             this.sprite.x = 1000/2;
             this.sprite.y = 500/2;
 		},
@@ -393,7 +394,6 @@ var player = (function() {
 	}
 }());
 
-var group = undefined;
 var main = (function () {
 	"use strict";
 
@@ -449,14 +449,12 @@ var main = (function () {
             g.beginStroke(Graphics.getRGB(0,0,0));
             g.beginFill(Graphics.getRGB(100,0,100));
             g.rect(0,0,50,50);
-            var r1 = new Shape(g);
-            otherBodies.push( new dressedStaticBody( physics.createStaticBody(1000/2/PPM,300/2/PPM), r1 ) );
-            group = new Container();
-            group.addChild(r1);
-            stage.addChild(group);
+            var body = physics.createStaticBody(1000/2/PPM,300/2/PPM);
+            var skin = new Shape(g);
+            playspace.initialize();
+            playspace.addStaticBody( body, skin ); 
+            stage.addChild(playspace.container);
             
-            stage.update();
-
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
@@ -467,7 +465,7 @@ var main = (function () {
 			input.advance();
 			audio.advance();
 			player.advance();
-            _.each(otherBodies,function(body) { body.update(); });
+            playspace.advance();
 			physics.advance();
 			stage.update();
 		}
