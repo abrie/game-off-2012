@@ -28,26 +28,6 @@ var physics = (function() {
 		},
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
-
-			var fixDef = new b2FixtureDef;
-			fixDef.density = 1.0;
-			fixDef.friction = 0.5;
-			fixDef.restitution = 0.2;
-
-			var bodyDef = new b2BodyDef;
-
-			bodyDef.type = b2Body.b2_staticBody;
-			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsBox(1000/2/PPM, 10/2/PPM);
-			bodyDef.position.Set(1000/2/PPM, 500/PPM);
-			world.CreateBody(bodyDef).CreateFixture(fixDef);
-			bodyDef.position.Set(1000/2/PPM, 0);
-			world.CreateBody(bodyDef).CreateFixture(fixDef);
-
-			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsBox(100/2/PPM, 100/2/PPM);
-			bodyDef.position.Set(0,0);
-			world.CreateBody(bodyDef).CreateFixture(fixDef);
 		},
 		createDynamicBody: function(x,y,width,height) {
 			var bodyDef = new b2BodyDef;
@@ -73,7 +53,7 @@ var physics = (function() {
 
 			var fixtureDef = new b2FixtureDef;
 			fixtureDef.density = 1.0;
-			fixtureDef.friction = 1.5;
+			fixtureDef.friction = 0.5;
 			fixtureDef.restitution = 0.2;
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( width/2, height/2 );
@@ -478,12 +458,17 @@ var main = (function () {
             player.initialize( playerBody, playerSkin );
             stage.addChild(player.sprite);
 
-            var body = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
-            var skin = generateTestSprite(150,150);
             playspace.initialize();
             playspace.bindCamera(player);
             playspace.bindParallax(player);
+
+            var body = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
+            var skin = generateTestSprite(150,150);
             playspace.addStaticBody( body, skin ); 
+
+            var floorBody = physics.createStaticBody(1000/2/PPM,500/PPM,1000/PPM,10/PPM);
+            var floorSkin = generateTestSprite(1000,10);
+            playspace.addStaticBody( floorBody, floorSkin );
             stage.addChild(playspace.container);
             
             input.initialize(fireAction,notifyOnInput);
