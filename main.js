@@ -375,6 +375,7 @@ var player = (function() {
         body: undefined,
         origin: {},
         recent: {},
+        viewport: {},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
@@ -385,18 +386,20 @@ var player = (function() {
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
-		initialize: function(body,skin) {
+		initialize: function(body,skin,viewportX, viewportY) {
             this.body = body;
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
             var current = this.body.GetWorldCenter();
             this.origin.x = this.recent.x = current.x;
             this.origin.y = this.recent.y = current.y;
+            this.viewport.x = viewportX;
+            this.viewport.y = viewportY;
 		},
 		advance: function() {
             var current = this.body.GetWorldCenter();
-            var x = (this.origin.x - current.x) * PPM; 
-            var y = (this.origin.y - current.y) * PPM;
+            var x = (this.origin.x - current.x) * PPM + this.viewport.x; 
+            var y = (this.origin.y - current.y) * PPM + this.viewport.y;
             this.onCamera(x,y);
 
             this.onParallax(this.recent.x - current.x);
@@ -483,24 +486,22 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM,150/PPM,150/PPM);
+            var playerBody = physics.createDynamicBody(0,500/2/PPM,150/PPM,150/PPM);
             var playerSkin = assets.getAnimation("player");
-            player.initialize( playerBody, playerSkin );
+            player.initialize( playerBody, playerSkin, stage.canvas.width/2, 0 );
             stage.addChild(player.sprite);
 
             playspace.initialize();
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
-            var body_a = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
-            var skin_a = generateTestSprite(150,150);
-            playspace.addStaticBody( body_a, skin_a, 2 ); 
+            for( var i = 1; i<=5; i+=1 ) {
+                var body = physics.createStaticBody(0,500/2/PPM,150/PPM,50/PPM);
+                var skin = generateTestSprite(150,50);
+                playspace.addStaticBody( body, skin, i ); 
+            }
 
-            var body_b = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
-            var skin_b = generateTestSprite(150,150);
-            playspace.addStaticBody( body_b, skin_b, 3 ); 
-
-            var floorBody = physics.createStaticBody(1000/2/PPM,500/PPM,1000/PPM,10/PPM);
+            var floorBody = physics.createStaticBody(0,500/PPM,1000/PPM,10/PPM);
             var floorSkin = generateTestSprite(1000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
             stage.addChild(playspace.container);
