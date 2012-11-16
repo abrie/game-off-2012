@@ -350,8 +350,6 @@ var assets = (function() {
 var player = (function() {
 	return {
 		sprite: undefined,
-		shiftForward: function(amount) {console.log("override player.shiftForward");},
-		shiftBackward: function(amount) {console.log("override player.shiftBackward");},
         body: undefined,
         originX: undefined,
         originY: undefined,
