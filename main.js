@@ -302,6 +302,50 @@ var dressedStaticBody = function(physicsBody, sprite) {
 	};
 }
 
+var sprites = (function() {
+    var loadCount = 0, spriteSheetDescriptions = [{
+        name: "player",
+        images: ["assets/chin.png"],
+        frames: {count:6, width:150, height:150,regX:75,regY:75},
+        animations: {
+            stand: {frames:[0], next:false, frequency:3},
+            still: {frames:[1], next:false, frequency:1 },
+            step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
+            land: {frames:[1], next:false, frequency:1},
+        }
+    }];
+
+    return {
+        onPreloadComplete: undefined,
+        spriteSheets: {},
+        initialize: function() {
+            _.each( spriteSheetDescriptions, function(spriteSheetParameters) {
+                var spriteSheet  = new createjs.SpriteSheet(spriteSheetParameters);
+                var callback = this.onSpriteSheetLoaded.bind(this, spriteSheetParameters, spriteSheet);
+                if (!spriteSheet.complete) {
+                    spriteSheet.onComplete = callback;
+                }
+                else {
+                    callback();
+                }
+            }, this);
+
+        },
+        onSpriteSheetLoaded: function(spriteSheetParameters, spriteSheet) {
+            this.spriteSheets[spriteSheetParameters.name] = spriteSheet;
+            loadCount += 1;
+            if( loadCount == spriteSheetDescriptions.length ) {
+                this.onPreloadComplete();
+            }
+        },
+        getSpriteSheet: function(name) {
+            console.log(name, this.spriteSheets);
+            return this.spriteSheets[name];
+        }
+    }
+}());
+
+
 var player = (function() {
 	return {
 		sprite: undefined,
@@ -318,32 +362,15 @@ var player = (function() {
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
-		spriteParameters: {
-			images: ["assets/chin.png"],
-			frames: {count:6, width:150, height:150,regX:75,regY:75},
-			animations: {
-				stand: {frames:[0], next:false, frequency:3},
-				still: {frames:[1], next:false, frequency:1 },
-				step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
-				land: {frames:[1], next:false, frequency:1},
-			}
-		},
-		initialize: function(physicsBody) {
+		initialize: function(physicsBody,spriteSheet) {
             this.body = physicsBody;
-			var spriteSheet  = new createjs.SpriteSheet(this.spriteParameters);
-			if (!spriteSheet.complete) {
-					spriteSheet.onComplete = function(e) {
-						console.log("preloading needed. this is a big issue.",e);
-						this.generatePlayerSpriteAnimation(spriteSheet);
-					}
-			}
-			else {
-				this.generatePlayerSpriteAnimation(spriteSheet);
-			}
+            this.generatePlayerSpriteAnimation(spriteSheet);
             this.originX = this.body.GetWorldCenter().x * PPM;
             this.originY = this.body.GetWorldCenter().y * PPM;
+            console.log("initialize complete.");
 		},
 		generatePlayerSpriteAnimation: function(spriteSheet) {
+            console.log("generate called.");
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
 			this.sprite.gotoAndPlay("still");		
 		},
@@ -408,22 +435,27 @@ var main = (function () {
     var context = undefined;
     var otherBodies = [];
 	return {
+        preload: function() {
+            sprites.onPreloadComplete = this.init.bind(this);
+            sprites.initialize();
+        },
 		init: function () {
 			audio.initialize();
 			audio.addSound(FOOT1, 261.63, 3); 
 			audio.addSound(FOOT2, 329.63, 3); 
 			audio.addSound(FOOT3, 392.00, 3); 
 			audio.addSound(STAND, 400.00, 3); 
-			var canvas = document.getElementById("testCanvas");
+            var canvas = document.getElementById("testCanvas");
             context = canvas.getContext("2d");
-            var context_x = 0;
-			physics.initialize();
-			physics.setDebugDraw(canvas);
+            physics.initialize();
+            physics.setDebugDraw(canvas);
 
-			player.initialize( physics.createDynamicBody(1000/2/PPM,500/2/PPM) );
+            var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM);
+            var playerSkin = sprites.getSpriteSheet("player");
+            player.initialize( playerBody, playerSkin );
 
-			stage = new Stage(canvas);
-			stage.addChild(player.sprite);
+            stage = new Stage(canvas);
+            stage.addChild(player.sprite);
 
             var g = new Graphics();
             g.setStrokeStyle(1);
@@ -436,12 +468,12 @@ var main = (function () {
             group.addChild(r1);
             stage.addChild(group);
             
-			stage.update();
+            stage.update();
 
-			input.initialize(fireAction,notifyOnInput);
-			Ticker.setFPS(FPS);
-			Ticker.useRAF = true;
-			Ticker.addListener(this);
+            input.initialize(fireAction,notifyOnInput);
+            Ticker.setFPS(FPS);
+            Ticker.useRAF = true;
+            Ticker.addListener(this);
 		},
 
 		tick: function (elapsedTime) {
