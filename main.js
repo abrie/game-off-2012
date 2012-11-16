@@ -182,8 +182,6 @@ var input = (function () {
 	var ACTIONS = [
 		{action:"FORWARD",	sequence:[[3],[2],[1]]},
 		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
-		{action:"JUMPUP",	sequence:[[2,3]]},
-		{action:"JUMPDOWN",	sequence:[[1,2]]},
 		{action:"STAND",	sequence:[[4]]}
 	];
 
@@ -392,10 +390,6 @@ var player = (function() {
 		actionStand: function() {
 			this.sprite.gotoAndPlay("stand");		
 		},
-		actionJumpUp: function() {
-		},
-		actionJumpDown: function() {
-		}
 	}
 }());
 
@@ -413,12 +407,6 @@ var main = (function () {
 				break;
 			case "STAND":
 				player.actionStand();
-				break;
-			case "JUMPUP":
-				player.actionJumpUp();
-				break;
-			case "JUMPDOWN":
-				player.actionJumpDown();
 				break;
 			default:
 				console.log("action unhandled:",action);
