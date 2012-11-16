@@ -388,9 +388,6 @@ var player = (function() {
             this.origin.x = this.body.GetWorldCenter().x;
             this.origin.y = this.body.GetWorldCenter().y;
 		},
-		generatePlayerSpriteAnimation: function(spriteSheet) {
-			this.sprite.gotoAndPlay("still");		
-		},
 		advance: function() {
             var center = this.body.GetWorldCenter();
             var x = (this.origin.x - center.x) * PPM; 
