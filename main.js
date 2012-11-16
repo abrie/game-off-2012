@@ -81,9 +81,9 @@ var physics = (function() {
 			body.CreateFixture(fixtureDef);
 			return body;
 		},
-		setDebugDraw: function(canvas) {
+		setDebugDraw: function(context) {
 			var debugDraw = new b2DebugDraw();
-			debugDraw.SetSprite(canvas.getContext("2d"));
+			debugDraw.SetSprite(context);
 			debugDraw.SetDrawScale(PPM);
 			debugDraw.SetFillAlpha(0.5);
 			debugDraw.SetLineThickness(1.0);
@@ -306,9 +306,15 @@ var playspace = (function() {
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
         },
+        bindParallax: function(reference) {
+            reference.onParallax = this.updateParallax.bind(this);
+        },
         updateCamera: function(x,y) {
             this.container.x = x;
             this.container.y = y;
+        },
+        updateParallax: function(amount) {
+            console.log("parallax update:",amount);
         }
     }
 }());
@@ -366,6 +372,7 @@ var player = (function() {
         body: undefined,
         origin: {},
         onCamera: function(x,y) { console.log("override onCamera"); },
+        onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
             var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
@@ -378,17 +385,18 @@ var player = (function() {
             this.body = body;
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
-            this.origin.x = this.body.GetWorldCenter().x * PPM;
-            this.origin.y = this.body.GetWorldCenter().y * PPM;
+            this.origin.x = this.body.GetWorldCenter().x;
+            this.origin.y = this.body.GetWorldCenter().y;
 		},
 		generatePlayerSpriteAnimation: function(spriteSheet) {
 			this.sprite.gotoAndPlay("still");		
 		},
 		advance: function() {
             var center = this.body.GetWorldCenter();
-            var x = this.origin.x - center.x * PPM; 
-            var y = this.origin.y - center.y * PPM;
+            var x = (this.origin.x - center.x) * PPM; 
+            var y = (this.origin.y - center.y) * PPM;
             this.onCamera(x,y);
+            this.onParallax(this.origin.x - center.x);
             this.sprite.x = 1000/2;
             this.sprite.y = 500/2;
 		},
@@ -430,41 +438,51 @@ var main = (function () {
 		audio.soundOn(id,3);
 	}
 
-	var stage = undefined;
-    var context = undefined;
-    var otherBodies = [];
+    function initializeAudio() {
+        audio.initialize();
+        audio.addSound(FOOT1, 261.63, 3); 
+        audio.addSound(FOOT2, 329.63, 3); 
+        audio.addSound(FOOT3, 392.00, 3); 
+        audio.addSound(STAND, 400.00, 3); 
+    }
+
+    var context, stage = undefined;
+    function initializeCanvas() {
+        var canvas = document.getElementById("testCanvas");
+        context = canvas.getContext("2d");
+        stage = new Stage(canvas);
+    }
+
+    function generateTestSprite(width,height) {
+        var g = new Graphics();
+        g.setStrokeStyle(1);
+        g.beginStroke(Graphics.getRGB(0,0,0));
+        g.beginFill(Graphics.getRGB(100,0,100));
+        g.rect(0,0,width,height);
+        return new Shape(g);
+    }
+
 	return {
         preload: function() {
             assets.onReady = this.start.bind(this);
             assets.initialize();
         },
 		start: function () {
-			audio.initialize();
-			audio.addSound(FOOT1, 261.63, 3); 
-			audio.addSound(FOOT2, 329.63, 3); 
-			audio.addSound(FOOT3, 392.00, 3); 
-			audio.addSound(STAND, 400.00, 3); 
-            var canvas = document.getElementById("testCanvas");
-            context = canvas.getContext("2d");
+            initializeAudio();
+            initializeCanvas();
             physics.initialize();
-            physics.setDebugDraw(canvas);
+            physics.setDebugDraw(context);
 
             var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerBody, playerSkin );
-
-            stage = new Stage(canvas);
             stage.addChild(player.sprite);
 
-            var g = new Graphics();
-            g.setStrokeStyle(1);
-            g.beginStroke(Graphics.getRGB(0,0,0));
-            g.beginFill(Graphics.getRGB(100,0,100));
-            g.rect(0,0,50,50);
             var body = physics.createStaticBody(1000/2/PPM,300/2/PPM);
-            var skin = new Shape(g);
+            var skin = generateTestSprite(50,50);
             playspace.initialize();
             playspace.bindCamera(player);
+            playspace.bindParallax(player);
             playspace.addStaticBody( body, skin ); 
             stage.addChild(playspace.container);
             
