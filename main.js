@@ -51,17 +51,16 @@ var physics = (function() {
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
 		},
 		createDynamicBody: function(x,y) {
-			var bodyDef = new b2BodyDef;
-			bodyDef.type = b2Body.b2_dynamicBody;
-			bodyDef.position.x = x;
-			bodyDef.position.y = y;
-
 			var fixtureDef = new b2FixtureDef;
 			fixtureDef.density = 1.0;
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( 150/PPM/2, 150/PPM/2 );
+
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_dynamicBody;
+            bodyDef.position.Set(x,y);
 
 			var body = world.CreateBody(bodyDef);
 			body.CreateFixture(fixtureDef);
@@ -265,7 +264,7 @@ var input = (function () {
 	function handleKeyDown(e) {
 		if(!e){ var e = window.event; }
 		return onKeyDown(e.keyCode);
-}
+    }
 
 	function handleKeyUp(e) {
 		if(!e){ var e = window.event; }
@@ -288,64 +287,6 @@ var input = (function () {
 	};
 }());
 
-var projector = (function () {
-	return {
-		screen: {width:undefined,height:undefined,centerX:undefined,centerY:undefined},
-		cell: {width:150,height:150,overlap:150/3},
-		initialize: function(width,height) {
-			this.screen.width = width;
-			this.screen.height = height;
-			this.screen.centerX = width/2;
-			this.screen.centerY = height/2;
-		},
-		projectX: function(i) {
-			return i*this.cell.width+this.screen.centerX;
-		},
-		projectY: function(layer) {
-			return this.screen.height - this.cell.height - layer*(this.cell.height-this.cell.overlap);
-		},
-		scaleX: function(cellCount, layer) {
-			return this.cell.width/(layer+1);
-		}
-	}
-}());
-
-var relativeX = 0;
-var relativeY = 0;
-var dressedBody = function(physicsBody, sprite) {
-	this.body = physicsBody;
-	this.skin = sprite;
-    this.originX = this.body.GetWorldCenter().x * PPM;
-    this.originY = this.body.GetWorldCenter().y * PPM;
-	this.animate = function(label) {
-		this.skin.gotoAndPlay(label);
-	};
-
-	this.getBody = function() {
-		return this.body;
-	};
-
-	this.impulse = function(direction) {
-		var velocity = this.body.GetLinearVelocity().x;
-		var targetVelocity = direction < 0 ?
-			b2Math.Max( velocity - 5.0, -10.0 ) : b2Math.Min( velocity + 5.0, 10.0 ); 
-		var velChange = targetVelocity - velocity;
-		var impel = this.body.GetMass() * velChange;
-		this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
-	};
-
-    this.getSkinX = function() {
-        return this.skin.x;
-    },
-
-	this.update = function() {
-        relativeX = this.originX - this.body.GetWorldCenter().x * PPM; 
-        relativeY = this.originY - this.body.GetWorldCenter().y * PPM;
-		this.skin.x = 1000/2;
-		this.skin.y = 500/2;
-        console.log(relativeX,relativeY);
-	};
-}
 
 var dressedStaticBody = function(physicsBody, sprite) {
 	this.body = physicsBody;
@@ -356,19 +297,27 @@ var dressedStaticBody = function(physicsBody, sprite) {
 	};
 
 	this.update = function() {
-		this.skin.x = this.body.GetWorldCenter().x * PPM + relativeX;
-		this.skin.y = this.body.GetWorldCenter().y * PPM + relativeY;
+		this.skin.x = this.body.GetWorldCenter().x * PPM;
+		this.skin.y = this.body.GetWorldCenter().y * PPM;
 	};
 }
 
 var player = (function() {
 	return {
-		virtual: {pX:0,pY:1,tX:0,tY:1},
-		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
-		dressedBody: undefined,
 		shiftForward: function(amount) {console.log("override player.shiftForward");},
 		shiftBackward: function(amount) {console.log("override player.shiftBackward");},
+        body: undefined,
+        originX: undefined,
+        originY: undefined,
+        impulse: function(direction) {
+            var velocity = this.body.GetLinearVelocity().x;
+            var targetVelocity = direction < 0 ?
+                b2Math.Max( velocity - 5.0, -10.0 ) : b2Math.Min( velocity + 5.0, 10.0 ); 
+            var velChange = targetVelocity - velocity;
+            var impel = this.body.GetMass() * velChange;
+            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+        },
 		spriteParameters: {
 			images: ["assets/chin.png"],
 			frames: {count:6, width:150, height:150,regX:75,regY:75},
@@ -380,110 +329,51 @@ var player = (function() {
 			}
 		},
 		initialize: function(physicsBody) {
+            this.body = physicsBody;
 			var spriteSheet  = new createjs.SpriteSheet(this.spriteParameters);
 			if (!spriteSheet.complete) {
 					spriteSheet.onComplete = function(e) {
 						console.log("preloading needed. this is a big issue.",e);
-						this.generatePlayerSpriteAnimation(physicsBody, spriteSheet);
+						this.generatePlayerSpriteAnimation(spriteSheet);
 					}
 			}
 			else {
-				this.generatePlayerSpriteAnimation(physicsBody, spriteSheet);
+				this.generatePlayerSpriteAnimation(spriteSheet);
 			}
+            this.originX = this.body.GetWorldCenter().x * PPM;
+            this.originY = this.body.GetWorldCenter().y * PPM;
 		},
-		generatePlayerSpriteAnimation: function(physicsBody, spriteSheet) {
-			this.screen.pX = this.screen.tX = projector.projectX(this.virtual.pX);
-			this.screen.pY = this.screen.tY = projector.projectY(this.virtual.pY);
+		generatePlayerSpriteAnimation: function(spriteSheet) {
 			this.sprite = new createjs.BitmapAnimation(spriteSheet);
-			this.dressedBody = new dressedBody(physicsBody, this.sprite);
-			this.dressedBody.animate("still");		
+			this.sprite.gotoAndPlay("still");		
 		},
 		advance: function() {
-			this.dressedBody.update();
+            var relativeX = this.originX - this.body.GetWorldCenter().x * PPM; 
+            var relativeY = this.originY - this.body.GetWorldCenter().y * PPM;
+            group.x = relativeX;
+            group.y = relativeY;
+            this.sprite.x = 1000/2;
+            this.sprite.y = 500/2;
 		},
 		actionForward: function() {
-			this.dressedBody.impulse(-1);
-			this.dressedBody.animate("step1");
+			this.impulse(-1);
+            this.sprite.gotoAndPlay("step1");
 		},
 		actionBackward: function() {
-			this.dressedBody.impulse(1);
+			this.impulse(1);
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
-			this.dressedBody.animate("stand");		
+			this.sprite.gotoAndPlay("stand");		
 		},
 		actionJumpUp: function() {
-			this.virtual.tY = this.virtual.tY + 1;
 		},
 		actionJumpDown: function() {
-			this.virtual.tY = this.virtual.tY - 1;
 		}
 	}
 }());
 
-var grid = (function () {
-	return {
-		layers: [],
-		layerMaps:[],
-		maxLayers:4,
-		virtual: {x:-30},
-		initialize: function() {
-			for(var layer=0;layer<this.maxLayers;layer+=1) {
-				var map = [];
-				for(var index=0;index<60;index+=1) {
-					map.push(Math.floor(Math.random() * 2));
-				}
-				this.layerMaps.push(map);
-			}
-			_.each(this.layerMaps, function(layerMap,layerIndex) {
-				var g = new Graphics();
-				g.setStrokeStyle(1);
-				g.beginStroke(Graphics.getRGB(0,0,0));
-				g.beginFill(Graphics.getRGB(100,0,100));
-				_.each(layerMap, function(mapElement,mapIndex) {
-					if( mapElement > 0 ) {
-						var height = projector.cell.height/(Math.floor(Math.random()*5)+1);
-						g.rect(
-							mapIndex*projector.cell.width,
-							height,
-							projector.cell.width,
-							projector.cell.height-height);
-					}
-				}, this);
-				var layer = {
-					x:projector.projectX(this.virtual.x),
-					y:projector.projectY(layerIndex),
-					xT:projector.projectX(this.virtual.x),
-					yT:projector.projectY(layerIndex),
-					shape:new Shape(g)
-				};
-				layer.shape.x = layer.x;
-				layer.shape.y = layer.y;
-				this.layers.push( layer );
-			},this);
-		},
-		shiftForward: function() {
-			_.each(this.layers, function(layer,index) {
-				layer.xT+=projector.scaleX(1,index);
-			},this);
-		},
-		shiftBackward: function() {
-			_.each(this.layers, function(layer,index) {
-				layer.xT-=projector.scaleX(1,index);
-			},this);
-		},
-		advance: function() {
-			_.each(this.layers, function(layer,index) {
-				if (layer.x != layer.xT) {
-					layer.x += (layer.xT - layer.x)/2;
-				}
-				layer.shape.x = layer.x;
-				layer.shape.y = layer.y;
-			});
-		},
-	}
-}());
-
+var group = undefined;
 var main = (function () {
 	"use strict";
 
@@ -541,8 +431,10 @@ var main = (function () {
             g.beginFill(Graphics.getRGB(100,0,100));
             g.rect(0,0,50,50);
             var r1 = new Shape(g);
-            otherBodies.push( new dressedStaticBody( physics.createStaticBody(1000/2/PPM,250/2/PPM), r1 ) );
-            stage.addChild(r1);
+            otherBodies.push( new dressedStaticBody( physics.createStaticBody(1000/2/PPM,300/2/PPM), r1 ) );
+            group = new Container();
+            group.addChild(r1);
+            stage.addChild(group);
             
 			stage.update();
 
@@ -555,7 +447,6 @@ var main = (function () {
 		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
-			grid.advance();
 			player.advance();
             _.each(otherBodies,function(body) { body.update(); });
 			physics.advance();
