@@ -456,7 +456,10 @@ var main = (function () {
         g.beginStroke(Graphics.getRGB(0,0,0));
         g.beginFill(Graphics.getRGB(100,0,100));
         g.rect(0,0,width,height);
-        return new Shape(g);
+        var displayObject = new Shape(g);
+        displayObject.regX = width/2;
+        displayObject.regY = height/2;
+        return displayObject;
     }
 
 	return {
@@ -476,7 +479,7 @@ var main = (function () {
             stage.addChild(player.sprite);
 
             var body = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
-            var skin = generateTestSprite(50,50);
+            var skin = generateTestSprite(150,150);
             playspace.initialize();
             playspace.bindCamera(player);
             playspace.bindParallax(player);
@@ -496,6 +499,7 @@ var main = (function () {
             playspace.advance();
 			physics.advance();
 			stage.update();
+            //physics.drawDebug();
 		}
 	}
 }());
