@@ -270,19 +270,32 @@ var input = (function () {
 
 var playspace = (function() {
     return {
-        pieces: [],
+        layers: {},
         container: new Container,
         initialize: function() {},
-        addStaticBody: function(body,skin) {
-            this.pieces.push( {body:body,skin:skin} );
+        addStaticBody: function(body,skin,layerNumber) {
+            var layer = this.getLayer(layerNumber);
+            layer.push( {body:body,skin:skin} );
             this.container.addChild(skin);
         },
+        getLayer: function(layer) {
+            var result = this.layers[layer];
+            if(result) {
+                return result;
+            }
+            else {
+                this.layers[layer] = [];
+                return this.layers[layer];
+            }
+        },
         advance: function() {
-            _.each( this.pieces, function(piece) {
-                piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
-                piece.skin.x = piece.body.GetWorldCenter().x * PPM;
-                piece.skin.y = piece.body.GetWorldCenter().y * PPM;
-            });
+            _.each( this.layers, function(layer, key) {
+                _.each( layer, function(piece) {
+                    piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
+                    piece.skin.x = piece.body.GetWorldCenter().x * PPM;
+                    piece.skin.y = piece.body.GetWorldCenter().y * PPM;
+                });
+            }, this);
         },
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
@@ -466,11 +479,11 @@ var main = (function () {
 
             var body = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
             var skin = generateTestSprite(150,150);
-            playspace.addStaticBody( body, skin ); 
+            playspace.addStaticBody( body, skin, 2 ); 
 
             var floorBody = physics.createStaticBody(1000/2/PPM,500/PPM,1000/PPM,10/PPM);
             var floorSkin = generateTestSprite(1000,10);
-            playspace.addStaticBody( floorBody, floorSkin );
+            playspace.addStaticBody( floorBody, floorSkin, 1 );
             stage.addChild(playspace.container);
             
             input.initialize(fireAction,notifyOnInput);
