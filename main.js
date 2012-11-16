@@ -49,35 +49,35 @@ var physics = (function() {
 			bodyDef.position.Set(0,0);
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
 		},
-		createDynamicBody: function(x,y) {
-			var fixtureDef = new b2FixtureDef;
-			fixtureDef.density = 1.0;
-			fixtureDef.friction = 1.5;
-			fixtureDef.restitution = 0.2;
-			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( 150/PPM/2, 150/PPM/2 );
-
+		createDynamicBody: function(x,y,width,height) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
             bodyDef.position.Set(x,y);
-
 			var body = world.CreateBody(bodyDef);
-			body.CreateFixture(fixtureDef);
-			return body;
-		},
-		createStaticBody: function(x,y) {
-			var bodyDef = new b2BodyDef;
-			bodyDef.type = b2Body.b2_staticBody;
-            bodyDef.position.Set(x,y);
 
 			var fixtureDef = new b2FixtureDef;
 			fixtureDef.density = 1.0;
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
 			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( 150/PPM/2, 150/PPM/2 );
+			fixtureDef.shape.SetAsBox( width/2, height/2 );
 
+			body.CreateFixture(fixtureDef);
+			return body;
+		},
+		createStaticBody: function(x,y,width,height) {
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_staticBody;
+            bodyDef.position.Set(x,y);
 			var body = world.CreateBody(bodyDef);
+
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 1.0;
+			fixtureDef.friction = 1.5;
+			fixtureDef.restitution = 0.2;
+			fixtureDef.shape = new b2PolygonShape;
+			fixtureDef.shape.SetAsBox( width/2, height/2 );
+
 			body.CreateFixture(fixtureDef);
 			return body;
 		},
@@ -470,12 +470,12 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM);
+            var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM,150/PPM,150/PPM);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerBody, playerSkin );
             stage.addChild(player.sprite);
 
-            var body = physics.createStaticBody(1000/2/PPM,300/2/PPM);
+            var body = physics.createStaticBody(1000/2/PPM,300/2/PPM,150/PPM,150/PPM);
             var skin = generateTestSprite(50,50);
             playspace.initialize();
             playspace.bindCamera(player);
