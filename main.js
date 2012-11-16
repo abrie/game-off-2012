@@ -25,7 +25,6 @@ var physics = (function() {
 		advance: function() {
 			world.ClearForces();
 			world.Step(1 / FPS, 10, 10);
-			world.DrawDebugData();
 		},
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
@@ -90,7 +89,11 @@ var physics = (function() {
 			debugDraw.SetLineThickness(1.0);
 			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
 			world.SetDebugDraw(debugDraw);
-		}
+		},
+        drawDebug: function() {
+            // note that drawing in debug mode does not account for the player camera position.
+            world.DrawDebugData();
+        }
 	}
 	
 }());
