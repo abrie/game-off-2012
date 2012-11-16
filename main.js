@@ -1,7 +1,7 @@
 var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 
-var   b2Vec2 = Box2D.Common.Math.b2Vec2
-,  b2AABB = Box2D.Collision.b2AABB
+var b2Vec2 = Box2D.Common.Math.b2Vec2
+,   b2AABB = Box2D.Collision.b2AABB
 ,	b2BodyDef = Box2D.Dynamics.b2BodyDef
 ,	b2Body = Box2D.Dynamics.b2Body
 ,	b2FixtureDef = Box2D.Dynamics.b2FixtureDef
@@ -11,14 +11,16 @@ var   b2Vec2 = Box2D.Common.Math.b2Vec2
 ,	b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
 ,	b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
 ,	b2DebugDraw = Box2D.Dynamics.b2DebugDraw
-,  b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
+,   b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
 ,	b2Math = Box2D.Common.Math.b2Math
 ;
+
+var FPS = 30;
+var PPM = 30;
 
 var physics = (function() {
 	"use strict";
 	var world = undefined;
-	var FPS = 30;
 	return {
 		advance: function() {
 			world.ClearForces();
@@ -26,7 +28,7 @@ var physics = (function() {
 			world.DrawDebugData();
 		},
 		initialize: function() {
-		   world = new b2World( new b2Vec2(0, 10),  true );
+			world = new b2World( new b2Vec2(0, 10),  true );
 
 			var fixDef = new b2FixtureDef;
 			fixDef.density = 1.0;
@@ -37,18 +39,16 @@ var physics = (function() {
 
 			bodyDef.type = b2Body.b2_staticBody;
 			fixDef.shape = new b2PolygonShape;
-			fixDef.shape.SetAsBox(1000/30, 2);
-			bodyDef.position.Set(0, 400 / 30 + 1.8);
+			fixDef.shape.SetAsBox(1000/2/PPM, 10/2/PPM);
+			bodyDef.position.Set(1000/2/PPM, 500/PPM);
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
-			bodyDef.position.Set(10, -1.8);
-			world.CreateBody(bodyDef).CreateFixture(fixDef);
-			fixDef.shape.SetAsBox(2, 14);
-			bodyDef.position.Set(-1.8, 13);
-			world.CreateBody(bodyDef).CreateFixture(fixDef);
-			bodyDef.position.Set(1000 / 30, 13);
+			bodyDef.position.Set(1000/2/PPM, 0);
 			world.CreateBody(bodyDef).CreateFixture(fixDef);
 
-			 
+			fixDef.shape = new b2PolygonShape;
+			fixDef.shape.SetAsBox(100/2/PPM, 100/2/PPM);
+			bodyDef.position.Set(0,0);
+			world.CreateBody(bodyDef).CreateFixture(fixDef);
 		},
 		createDynamicBody: function(x,y) {
 			var bodyDef = new b2BodyDef;
@@ -61,7 +61,23 @@ var physics = (function() {
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
 			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( 1.5, 1.0 );
+			fixtureDef.shape.SetAsBox( 150/PPM/2, 150/PPM/2 );
+
+			var body = world.CreateBody(bodyDef);
+			body.CreateFixture(fixtureDef);
+			return body;
+		},
+		createStaticBody: function(x,y) {
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_staticBody;
+            bodyDef.position.Set(x,y);
+
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 1.0;
+			fixtureDef.friction = 1.5;
+			fixtureDef.restitution = 0.2;
+			fixtureDef.shape = new b2PolygonShape;
+			fixtureDef.shape.SetAsBox( 150/PPM/2, 150/PPM/2 );
 
 			var body = world.CreateBody(bodyDef);
 			body.CreateFixture(fixtureDef);
@@ -70,7 +86,7 @@ var physics = (function() {
 		setDebugDraw: function(canvas) {
 			var debugDraw = new b2DebugDraw();
 			debugDraw.SetSprite(canvas.getContext("2d"));
-			debugDraw.SetDrawScale(30.0);
+			debugDraw.SetDrawScale(PPM);
 			debugDraw.SetFillAlpha(0.5);
 			debugDraw.SetLineThickness(1.0);
 			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
@@ -294,15 +310,21 @@ var projector = (function () {
 	}
 }());
 
+var relativeX = 0;
+var relativeY = 0;
 var dressedBody = function(physicsBody, sprite) {
 	this.body = physicsBody;
 	this.skin = sprite;
+    this.originX = this.body.GetWorldCenter().x * PPM;
+    this.originY = this.body.GetWorldCenter().y * PPM;
 	this.animate = function(label) {
 		this.skin.gotoAndPlay(label);
 	};
+
 	this.getBody = function() {
 		return this.body;
 	};
+
 	this.impulse = function(direction) {
 		var velocity = this.body.GetLinearVelocity().x;
 		var targetVelocity = direction < 0 ?
@@ -312,9 +334,30 @@ var dressedBody = function(physicsBody, sprite) {
 		this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
 	};
 
+    this.getSkinX = function() {
+        return this.skin.x;
+    },
+
 	this.update = function() {
-		this.skin.x = this.body.GetWorldCenter().x * 30;
-		this.skin.y = this.body.GetWorldCenter().y * 30;
+        relativeX = this.originX - this.body.GetWorldCenter().x * PPM; 
+        relativeY = this.originY - this.body.GetWorldCenter().y * PPM;
+		this.skin.x = 1000/2;
+		this.skin.y = 500/2;
+        console.log(relativeX,relativeY);
+	};
+}
+
+var dressedStaticBody = function(physicsBody, sprite) {
+	this.body = physicsBody;
+	this.skin = sprite;
+
+	this.getBody = function() {
+		return this.body;
+	};
+
+	this.update = function() {
+		this.skin.x = this.body.GetWorldCenter().x * PPM + relativeX;
+		this.skin.y = this.body.GetWorldCenter().y * PPM + relativeY;
 	};
 }
 
@@ -324,8 +367,8 @@ var player = (function() {
 		screen: {pX:75, pY:175, tX:75, tY:175},
 		sprite: undefined,
 		dressedBody: undefined,
-		shiftForward: function() {console.log("override player.shiftForward");},
-		shiftBackward: function() {console.log("override player.shiftBackward");},
+		shiftForward: function(amount) {console.log("override player.shiftForward");},
+		shiftBackward: function(amount) {console.log("override player.shiftBackward");},
 		spriteParameters: {
 			images: ["assets/chin.png"],
 			frames: {count:6, width:150, height:150,regX:75,regY:75},
@@ -357,7 +400,6 @@ var player = (function() {
 		},
 		advance: function() {
 			this.dressedBody.update();
-
 		},
 		actionForward: function() {
 			this.dressedBody.impulse(-1);
@@ -473,6 +515,8 @@ var main = (function () {
 	}
 
 	var stage = undefined;
+    var context = undefined;
+    var otherBodies = [];
 	return {
 		init: function () {
 			audio.initialize();
@@ -481,19 +525,29 @@ var main = (function () {
 			audio.addSound(FOOT3, 392.00, 3); 
 			audio.addSound(STAND, 400.00, 3); 
 			var canvas = document.getElementById("testCanvas");
+            context = canvas.getContext("2d");
+            var context_x = 0;
 			physics.initialize();
 			physics.setDebugDraw(canvas);
 
-			player.initialize( physics.createDynamicBody(5,5) );
-			player.shiftForward = grid.shiftForward.bind(grid);
-			player.shiftBackward = grid.shiftBackward.bind(grid);
+			player.initialize( physics.createDynamicBody(1000/2/PPM,500/2/PPM) );
 
 			stage = new Stage(canvas);
 			stage.addChild(player.sprite);
+
+            var g = new Graphics();
+            g.setStrokeStyle(1);
+            g.beginStroke(Graphics.getRGB(0,0,0));
+            g.beginFill(Graphics.getRGB(100,0,100));
+            g.rect(0,0,50,50);
+            var r1 = new Shape(g);
+            otherBodies.push( new dressedStaticBody( physics.createStaticBody(1000/2/PPM,250/2/PPM), r1 ) );
+            stage.addChild(r1);
+            
 			stage.update();
 
 			input.initialize(fireAction,notifyOnInput);
-			Ticker.setFPS(30);
+			Ticker.setFPS(FPS);
 			Ticker.useRAF = true;
 			Ticker.addListener(this);
 		},
@@ -502,8 +556,9 @@ var main = (function () {
 			input.advance();
 			audio.advance();
 			grid.advance();
-			physics.advance();
 			player.advance();
+            _.each(otherBodies,function(body) { body.update(); });
+			physics.advance();
 			stage.update();
 		}
 	}
