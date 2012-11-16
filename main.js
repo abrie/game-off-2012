@@ -302,7 +302,7 @@ var dressedStaticBody = function(physicsBody, sprite) {
 	};
 }
 
-var sprites = (function() {
+var assets = (function() {
     var loadCount = 0, spriteSheetDescriptions = [{
         name: "player",
         images: ["assets/chin.png"],
@@ -316,8 +316,8 @@ var sprites = (function() {
     }];
 
     return {
-        onPreloadComplete: undefined,
-        spriteSheets: {},
+        onReady: undefined,
+        animations: {},
         initialize: function() {
             _.each( spriteSheetDescriptions, function(spriteSheetParameters) {
                 var spriteSheet  = new createjs.SpriteSheet(spriteSheetParameters);
@@ -332,15 +332,15 @@ var sprites = (function() {
 
         },
         onSpriteSheetLoaded: function(spriteSheetParameters, spriteSheet) {
-            this.spriteSheets[spriteSheetParameters.name] = spriteSheet;
+			var animation = new createjs.BitmapAnimation(spriteSheet);
+            this.animations[spriteSheetParameters.name] = animation;
             loadCount += 1;
             if( loadCount == spriteSheetDescriptions.length ) {
-                this.onPreloadComplete();
+                this.onReady();
             }
         },
-        getSpriteSheet: function(name) {
-            console.log(name, this.spriteSheets);
-            return this.spriteSheets[name];
+        getAnimation: function(name) {
+            return this.animations[name];
         }
     }
 }());
@@ -362,16 +362,15 @@ var player = (function() {
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
-		initialize: function(physicsBody,spriteSheet) {
-            this.body = physicsBody;
-            this.generatePlayerSpriteAnimation(spriteSheet);
+		initialize: function(body,skin) {
+            this.body = body;
+            this.sprite = skin;
+            this.sprite.gotoAndPlay("still");
             this.originX = this.body.GetWorldCenter().x * PPM;
             this.originY = this.body.GetWorldCenter().y * PPM;
-            console.log("initialize complete.");
 		},
 		generatePlayerSpriteAnimation: function(spriteSheet) {
             console.log("generate called.");
-			this.sprite = new createjs.BitmapAnimation(spriteSheet);
 			this.sprite.gotoAndPlay("still");		
 		},
 		advance: function() {
@@ -436,10 +435,10 @@ var main = (function () {
     var otherBodies = [];
 	return {
         preload: function() {
-            sprites.onPreloadComplete = this.init.bind(this);
-            sprites.initialize();
+            assets.onReady = this.start.bind(this);
+            assets.initialize();
         },
-		init: function () {
+		start: function () {
 			audio.initialize();
 			audio.addSound(FOOT1, 261.63, 3); 
 			audio.addSound(FOOT2, 329.63, 3); 
@@ -451,7 +450,7 @@ var main = (function () {
             physics.setDebugDraw(canvas);
 
             var playerBody = physics.createDynamicBody(1000/2/PPM,500/2/PPM);
-            var playerSkin = sprites.getSpriteSheet("player");
+            var playerSkin = assets.getAnimation("player");
             player.initialize( playerBody, playerSkin );
 
             stage = new Stage(canvas);
