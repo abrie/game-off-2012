@@ -300,6 +300,10 @@ var playspace = (function() {
                 piece.skin.y = piece.body.GetWorldCenter().y * PPM;
             });
         },
+        setCamera: function(x,y) {
+            this.container.x = x;
+            this.container.y = y;
+        }
     }
 }());
 
@@ -353,6 +357,7 @@ var player = (function() {
         body: undefined,
         originX: undefined,
         originY: undefined,
+        onCamera: function(x,y) { console.log("override onCamera"); },
         impulse: function(direction) {
             var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
@@ -369,12 +374,16 @@ var player = (function() {
             this.originY = this.body.GetWorldCenter().y * PPM;
 		},
 		generatePlayerSpriteAnimation: function(spriteSheet) {
-            console.log("generate called.");
 			this.sprite.gotoAndPlay("still");		
 		},
+        bindCamera: function(delegate) {
+            this.onCamera = delegate.setCamera.bind(delegate);
+        },
 		advance: function() {
-            playspace.container.x = this.originX - this.body.GetWorldCenter().x * PPM; 
-            playspace.container.y = this.originY - this.body.GetWorldCenter().y * PPM;
+            var center = this.body.GetWorldCenter();
+            var x = this.originX - center.x * PPM; 
+            var y = this.originY - center.y * PPM;
+            this.onCamera(x,y);
             this.sprite.x = 1000/2;
             this.sprite.y = 500/2;
 		},
@@ -450,6 +459,7 @@ var main = (function () {
             var body = physics.createStaticBody(1000/2/PPM,300/2/PPM);
             var skin = new Shape(g);
             playspace.initialize();
+            player.bindCamera(playspace);
             playspace.addStaticBody( body, skin ); 
             stage.addChild(playspace.container);
             
