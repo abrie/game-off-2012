@@ -364,8 +364,7 @@ var player = (function() {
 	return {
 		sprite: undefined,
         body: undefined,
-        originX: undefined,
-        originY: undefined,
+        origin: {},
         onCamera: function(x,y) { console.log("override onCamera"); },
         impulse: function(direction) {
             var velocity = this.body.GetLinearVelocity().x;
@@ -379,16 +378,16 @@ var player = (function() {
             this.body = body;
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
-            this.originX = this.body.GetWorldCenter().x * PPM;
-            this.originY = this.body.GetWorldCenter().y * PPM;
+            this.origin.x = this.body.GetWorldCenter().x * PPM;
+            this.origin.y = this.body.GetWorldCenter().y * PPM;
 		},
 		generatePlayerSpriteAnimation: function(spriteSheet) {
 			this.sprite.gotoAndPlay("still");		
 		},
 		advance: function() {
             var center = this.body.GetWorldCenter();
-            var x = this.originX - center.x * PPM; 
-            var y = this.originY - center.y * PPM;
+            var x = this.origin.x - center.x * PPM; 
+            var y = this.origin.y - center.y * PPM;
             this.onCamera(x,y);
             this.sprite.x = 1000/2;
             this.sprite.y = 500/2;
