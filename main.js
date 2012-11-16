@@ -324,21 +324,24 @@ var assets = (function() {
         onReady: undefined,
         animations: {},
         initialize: function() {
-            _.each( spriteSheetDescriptions, function(spriteSheetParameters) {
-                var spriteSheet  = new createjs.SpriteSheet(spriteSheetParameters);
-                var callback = this.onSpriteSheetLoaded.bind(this, spriteSheetParameters, spriteSheet);
-                if (!spriteSheet.complete) {
-                    spriteSheet.onComplete = callback;
-                }
-                else {
-                    callback();
-                }
+            _.each( spriteSheetDescriptions, function(description) {
+                this.load(description);
             }, this);
 
         },
-        onSpriteSheetLoaded: function(spriteSheetParameters, spriteSheet) {
+        load: function(description) {
+            var spriteSheet  = new createjs.SpriteSheet(description);
+            var processor = this.process.bind(this, description, spriteSheet);
+            if (!spriteSheet.complete) {
+                spriteSheet.onComplete = processor;
+            }
+            else {
+                processor();
+            }
+        },
+        process: function(description, spriteSheet) {
 			var animation = new createjs.BitmapAnimation(spriteSheet);
-            this.animations[spriteSheetParameters.name] = animation;
+            this.animations[description.name] = animation;
             loadCount += 1;
             if( loadCount == spriteSheetDescriptions.length ) {
                 this.onReady();
