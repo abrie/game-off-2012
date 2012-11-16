@@ -303,7 +303,10 @@ var playspace = (function() {
                 piece.skin.y = piece.body.GetWorldCenter().y * PPM;
             });
         },
-        setCamera: function(x,y) {
+        bindCamera: function(camera) {
+            camera.onCamera = this.updateCamera.bind(this);
+        },
+        updateCamera: function(x,y) {
             this.container.x = x;
             this.container.y = y;
         }
@@ -382,9 +385,6 @@ var player = (function() {
 		generatePlayerSpriteAnimation: function(spriteSheet) {
 			this.sprite.gotoAndPlay("still");		
 		},
-        bindCamera: function(delegate) {
-            this.onCamera = delegate.setCamera.bind(delegate);
-        },
 		advance: function() {
             var center = this.body.GetWorldCenter();
             var x = this.originX - center.x * PPM; 
@@ -465,7 +465,7 @@ var main = (function () {
             var body = physics.createStaticBody(1000/2/PPM,300/2/PPM);
             var skin = new Shape(g);
             playspace.initialize();
-            player.bindCamera(playspace);
+            playspace.bindCamera(player);
             playspace.addStaticBody( body, skin ); 
             stage.addChild(playspace.container);
             
