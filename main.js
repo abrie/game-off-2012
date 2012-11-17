@@ -271,59 +271,6 @@ var input = (function () {
 	};
 }());
 
-var playspace = (function() {
-    return {
-        layers: {},
-        container: new Container,
-        initialize: function() {},
-        addStaticBody: function(body,skin,layerNumber) {
-            var layer = this.getLayer(layerNumber);
-            layer.push( {body:body,skin:skin} );
-            this.container.addChild(skin);
-        },
-        getLayer: function(layer) {
-            var result = this.layers[layer];
-            if(result) {
-                return result;
-            }
-            else {
-                this.layers[layer] = [];
-                return this.layers[layer];
-            }
-        },
-        advance: function() {
-            _.each( this.layers, function(layer, key) {
-                _.each( layer, function(piece) {
-                    piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
-                    piece.skin.x = piece.body.GetWorldCenter().x * PPM;
-                    piece.skin.y = piece.body.GetWorldCenter().y * PPM;
-                });
-            }, this);
-        },
-        bindCamera: function(camera) {
-            camera.onCamera = this.updateCamera.bind(this);
-        },
-        bindParallax: function(reference) {
-            reference.onParallax = this.updateParallax.bind(this);
-        },
-        updateCamera: function(x,y) {
-            this.container.x = x;
-            this.container.y = y;
-        },
-        updateParallax: function(amount) {
-            _.each( this.layers, function(layer, key) {
-                if(key==1) {
-                    return;
-                }
-                _.each( layer, function(piece) {
-                    var position = piece.body.GetWorldCenter();
-                    position.x += amount/key;
-                    piece.body.SetPosition(position);
-                });
-            }, this);
-        }
-    }
-}());
 
 var assets = (function() {
     var loadCount = 0, spriteSheetDescriptions = [{
@@ -371,6 +318,68 @@ var assets = (function() {
     }
 }());
 
+var playspace = (function() {
+    return {
+        player: {body:undefined, skin:undefined},
+        layers: {},
+        container: new Container,
+        initialize: function() {},
+        addPlayer: function(body,skin) {
+            this.player.body = body;
+            this.player.skin = skin;
+            this.container.addChild(this.player.skin);
+        },
+        addStaticBody: function(body,skin,layerNumber) {
+            var layer = this.getLayer(layerNumber);
+            layer.push( {body:body,skin:skin} );
+            this.container.addChild(skin);
+        },
+        getLayer: function(layer) {
+            var result = this.layers[layer];
+            if(result) {
+                return result;
+            }
+            else {
+                this.layers[layer] = [];
+                return this.layers[layer];
+            }
+        },
+        advance: function() {
+            this.player.skin.rotation = this.player.body.GetAngle() * (180 / Math.PI);
+            this.player.skin.x = this.player.body.GetWorldCenter().x * PPM;
+            this.player.skin.y = this.player.body.GetWorldCenter().y * PPM;
+            _.each( this.layers, function(layer, key) {
+                _.each( layer, function(piece) {
+                    piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
+                    piece.skin.x = piece.body.GetWorldCenter().x * PPM;
+                    piece.skin.y = piece.body.GetWorldCenter().y * PPM;
+                });
+            }, this);
+        },
+        bindCamera: function(camera) {
+            camera.onCamera = this.updateCamera.bind(this);
+        },
+        bindParallax: function(reference) {
+            reference.onParallax = this.updateParallax.bind(this);
+        },
+        updateCamera: function(x,y) {
+            this.container.x = x;
+            this.container.y = y;
+        },
+        updateParallax: function(amount) {
+            _.each( this.layers, function(layer, key) {
+                if(key==1) {
+                    return;
+                }
+                _.each( layer, function(piece) {
+                    var position = piece.body.GetWorldCenter();
+                    position.x += amount/key;
+                    piece.body.SetPosition(position);
+                });
+            }, this);
+        }
+    }
+}());
 
 var player = (function() {
 	return {
@@ -387,7 +396,8 @@ var player = (function() {
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
-		initialize: function( body, skin ) {
+		initialize: function( body, skin, cameraOffset ) {
+            this.cameraOffset = cameraOffset;
             this.body = body;
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
@@ -412,9 +422,7 @@ var player = (function() {
                 this.camera.x = currentX - (deltaX && deltaX / absDeltaX * 150);
             }
 
-            this.sprite.rotation = this.body.GetAngle() * (180 / Math.PI);
-            this.sprite.x = currentX;
-            this.sprite.y = currentY;
+            this.onCamera(-this.camera.x+this.cameraOffset.x,-this.camera.y+this.cameraOffset.y);
 		},
 		actionForward: function() {
 			this.impulse(-1);
@@ -467,7 +475,6 @@ var main = (function () {
         canvas = document.getElementById("testCanvas");
         context = canvas.getContext("2d");
         stage = new Stage(canvas);
-        stage.autoClear = false;
     }
 
     function generateTestSprite(width,height) {
@@ -495,9 +502,10 @@ var main = (function () {
 
             var playerBody = physics.createDynamicBody(0,0,150,150,1);
             var playerSkin = assets.getAnimation("player");
-            player.initialize( playerBody, playerSkin );
+            player.initialize( playerBody, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
 
             playspace.initialize();
+            playspace.addPlayer( playerBody, playerSkin );
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
@@ -513,29 +521,31 @@ var main = (function () {
             var floorSkin = generateTestSprite(1000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
             stage.addChild(playspace.container);
-            stage.addChild(player.sprite);
             
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
 		},
-
-		tick: function (elapsedTime) {
+        clearCanvas: function() {
             context.save();
             context.setTransform(1, 0, 0, 1, 0, 0);
             context.clearRect(0, 0, canvas.width, canvas.height);
             context.restore();
+        },
+        drawDebug: function() {
+            context.save();
+            context.translate(-player.camera.x+canvas.width/2,-player.camera.y+canvas.height/2);
+            physics.drawDebug();
+            context.restore();
+        },
+		tick: function (elapsedTime) {
 			input.advance();
 			audio.advance();
 			player.advance();
             playspace.advance();
 			physics.advance();
-            context.save();
-            context.translate(-player.camera.x+canvas.width/2,-player.camera.y+canvas.height/2);
-            physics.drawDebug();
-            context.restore();
-			//stage.update();
+			stage.update();
 		}
 	}
 }());
