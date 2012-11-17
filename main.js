@@ -275,7 +275,7 @@ var assets = (function() {
     var loadCount = 0, spriteSheetDescriptions = [{
         name: "player",
         images: ["assets/chin.png"],
-        frames: {count:6, width:150, height:150,regX:75,regY:75},
+        frames: {count:6, width:150, height:150,regX:75,regY:110},
         animations: {
             stand: {frames:[0], next:false, frequency:3},
             still: {frames:[1], next:false, frequency:1 },
@@ -501,7 +501,7 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(0,0,150,150,1);
+            var playerBody = physics.createDynamicBody(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerBody, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
 
