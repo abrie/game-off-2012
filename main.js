@@ -29,7 +29,7 @@ var physics = (function() {
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
 		},
-		createDynamicBody: function(x,y,width,height) {
+		createDynamicBody: function(x,y,width,height,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
             bodyDef.position.Set(x,y);
@@ -39,13 +39,15 @@ var physics = (function() {
 			fixtureDef.density = 1.0;
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
+            fixtureDef.filter.maskBits = mask;
+            console.log(fixtureDef.filter);
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( width/2, height/2 );
 
 			body.CreateFixture(fixtureDef);
 			return body;
 		},
-		createStaticBody: function(x,y,width,height) {
+		createStaticBody: function(x,y,width,height,category) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_staticBody;
             bodyDef.position.Set(x,y);
@@ -55,6 +57,7 @@ var physics = (function() {
 			fixtureDef.density = 1.0;
 			fixtureDef.friction = 0.5;
 			fixtureDef.restitution = 0.2;
+            fixtureDef.filter.categoryBits = category;
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( width/2, height/2 );
 
@@ -314,7 +317,7 @@ var playspace = (function() {
                 }
                 _.each( layer, function(piece) {
                     var position = piece.body.GetWorldCenter();
-                    position.x -= amount/key;
+                    position.x += amount/key;
                     piece.body.SetPosition(position);
                 });
             }, this);
@@ -393,7 +396,7 @@ var player = (function() {
             var current = this.body.GetWorldCenter();
             this.origin.x = this.recent.x = current.x;
             this.origin.y = this.recent.y = current.y;
-            this.viewport.x = viewportX;
+            this.viewport.x = viewportX - current.x*PPM;
             this.viewport.y = viewportY;
 		},
 		advance: function() {
@@ -461,6 +464,7 @@ var main = (function () {
         var canvas = document.getElementById("testCanvas");
         context = canvas.getContext("2d");
         stage = new Stage(canvas);
+        stage.autoClear = false;
     }
 
     function generateTestSprite(width,height) {
@@ -486,25 +490,27 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(0,500/2/PPM,150/PPM,150/PPM);
+            var playerBody = physics.createDynamicBody(300/2/PPM,500/2/PPM,150/PPM,150/PPM,1);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerBody, playerSkin, stage.canvas.width/2, 0 );
-            stage.addChild(player.sprite);
 
             playspace.initialize();
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
-            for( var i = 1; i<=5; i+=1 ) {
-                var body = physics.createStaticBody(0,500/2/PPM,150/PPM,50/PPM);
-                var skin = generateTestSprite(150,50);
-                playspace.addStaticBody( body, skin, i ); 
+            for( var i = 30; i>=2; i-=3 ) {
+                for( var x=-10;x<=10; x+=1) {
+                    var body = physics.createStaticBody(200/PPM*x+25,500/PPM/i+200/PPM,150/PPM,50/PPM,2);
+                    var skin = generateTestSprite(150,50);
+                    playspace.addStaticBody( body, skin, i ); 
+                }
             }
 
-            var floorBody = physics.createStaticBody(0,500/PPM,1000/PPM,10/PPM);
+            var floorBody = physics.createStaticBody(0,500/PPM,1000/PPM,10/PPM,1);
             var floorSkin = generateTestSprite(1000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
             stage.addChild(playspace.container);
+            stage.addChild(player.sprite);
             
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
@@ -518,8 +524,8 @@ var main = (function () {
 			player.advance();
             playspace.advance();
 			physics.advance();
+            physics.drawDebug();
 			stage.update();
-            //physics.drawDebug();
 		}
 	}
 }());
