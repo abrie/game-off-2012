@@ -412,6 +412,7 @@ var player = (function() {
             var deltaY = currentY - this.camera.y;
             var absDeltaY = Math.abs(deltaY);
             if (absDeltaY >= this.margin.height ) {
+                //thanks to http://stackoverflow.com/a/7624945 for the sign code
                 this.camera.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
             }
 
