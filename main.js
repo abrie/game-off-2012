@@ -16,7 +16,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 ;
 
 var FPS = 30;
-var PPM = 30;
+var PPM = 40;
 
 var physics = (function() {
 	"use strict";
@@ -40,7 +40,6 @@ var physics = (function() {
 			fixtureDef.friction = 1.5;
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.maskBits = mask;
-            console.log(fixtureDef.filter);
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( width/2/PPM, height/2/PPM );
 
@@ -386,6 +385,7 @@ var player = (function() {
 		sprite: undefined,
         body: undefined,
         camera: {},
+        margin: {width:250, height:100},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
@@ -411,15 +411,15 @@ var player = (function() {
             var currentY = current.y * PPM;
             var deltaY = currentY - this.camera.y;
             var absDeltaY = Math.abs(deltaY);
-            if (absDeltaY >= 150 ) {
-                this.camera.y = currentY - (deltaY && deltaY / absDeltaY * 150);
+            if (absDeltaY >= this.margin.height ) {
+                this.camera.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
             }
 
             var currentX = current.x * PPM;
             var deltaX = currentX - this.camera.x;
             var absDeltaX = Math.abs(deltaX);
-            if (absDeltaX >= 150 ) {
-                this.camera.x = currentX - (deltaX && deltaX / absDeltaX * 150);
+            if (absDeltaX >= this.margin.width ) {
+                this.camera.x = currentX - (deltaX && deltaX / absDeltaX * this.margin.width);
             }
 
             this.onCamera(-this.camera.x+this.cameraOffset.x,-this.camera.y+this.cameraOffset.y);
@@ -475,6 +475,7 @@ var main = (function () {
         canvas = document.getElementById("testCanvas");
         context = canvas.getContext("2d");
         stage = new Stage(canvas);
+        stage.autoClear = false;
     }
 
     function generateTestSprite(width,height) {
@@ -527,7 +528,7 @@ var main = (function () {
             Ticker.useRAF = true;
             Ticker.addListener(this);
 		},
-        clearCanvas: function() {
+        debugClear: function() {
             context.save();
             context.setTransform(1, 0, 0, 1, 0, 0);
             context.clearRect(0, 0, canvas.width, canvas.height);
@@ -540,11 +541,13 @@ var main = (function () {
             context.restore();
         },
 		tick: function (elapsedTime) {
+            this.debugClear();
 			input.advance();
 			audio.advance();
 			player.advance();
             playspace.advance();
 			physics.advance();
+            this.drawDebug();
 			stage.update();
 		}
 	}
