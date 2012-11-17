@@ -32,7 +32,7 @@ var physics = (function() {
 		createDynamicBody: function(x,y,width,height,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
-            bodyDef.position.Set(x,y);
+            bodyDef.position.Set(x/PPM,y/PPM);
 			var body = world.CreateBody(bodyDef);
 
 			var fixtureDef = new b2FixtureDef;
@@ -42,7 +42,7 @@ var physics = (function() {
             fixtureDef.filter.maskBits = mask;
             console.log(fixtureDef.filter);
 			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( width/2, height/2 );
+			fixtureDef.shape.SetAsBox( width/2/PPM, height/2/PPM );
 
 			body.CreateFixture(fixtureDef);
 			return body;
@@ -50,7 +50,7 @@ var physics = (function() {
 		createStaticBody: function(x,y,width,height,category) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_staticBody;
-            bodyDef.position.Set(x,y);
+            bodyDef.position.Set(x/PPM,y/PPM);
 			var body = world.CreateBody(bodyDef);
 
 			var fixtureDef = new b2FixtureDef;
@@ -59,7 +59,7 @@ var physics = (function() {
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.categoryBits = category;
 			fixtureDef.shape = new b2PolygonShape;
-			fixtureDef.shape.SetAsBox( width/2, height/2 );
+			fixtureDef.shape.SetAsBox( width/2/PPM, height/2/PPM );
 
 			body.CreateFixture(fixtureDef);
 			return body;
@@ -376,9 +376,7 @@ var player = (function() {
 	return {
 		sprite: undefined,
         body: undefined,
-        origin: {},
-        recent: {},
-        viewport: {},
+        camera: {},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
@@ -389,29 +387,34 @@ var player = (function() {
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
-		initialize: function(body,skin,viewportX, viewportY) {
+		initialize: function( body, skin ) {
             this.body = body;
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
             var current = this.body.GetWorldCenter();
-            this.origin.x = this.recent.x = current.x;
-            this.origin.y = this.recent.y = current.y;
-            this.viewport.x = viewportX - current.x*PPM;
-            this.viewport.y = viewportY;
+            this.camera.x = current.x * PPM;
+            this.camera.y = current.y * PPM;
 		},
 		advance: function() {
             var current = this.body.GetWorldCenter();
-            var x = (this.origin.x - current.x) * PPM + this.viewport.x; 
-            var y = (this.origin.y - current.y) * PPM + this.viewport.y;
-            this.onCamera(x,y);
 
-            this.onParallax(this.recent.x - current.x);
-            this.recent.x = current.x;
-            this.recent.y = current.y;
+            var currentY = current.y * PPM;
+            var deltaY = currentY - this.camera.y;
+            var absDeltaY = Math.abs(deltaY);
+            if (absDeltaY >= 150 ) {
+                this.camera.y = currentY - (deltaY && deltaY / absDeltaY * 150);
+            }
+
+            var currentX = current.x * PPM;
+            var deltaX = currentX - this.camera.x;
+            var absDeltaX = Math.abs(deltaX);
+            if (absDeltaX >= 150 ) {
+                this.camera.x = currentX - (deltaX && deltaX / absDeltaX * 150);
+            }
 
             this.sprite.rotation = this.body.GetAngle() * (180 / Math.PI);
-            this.sprite.x = 1000/2;
-            this.sprite.y = 500/2;
+            this.sprite.x = currentX;
+            this.sprite.y = currentY;
 		},
 		actionForward: function() {
 			this.impulse(-1);
@@ -459,9 +462,9 @@ var main = (function () {
         audio.addSound(STAND, 400.00, 3); 
     }
 
-    var context, stage = undefined;
+    var canvas, context, stage = undefined;
     function initializeCanvas() {
-        var canvas = document.getElementById("testCanvas");
+        canvas = document.getElementById("testCanvas");
         context = canvas.getContext("2d");
         stage = new Stage(canvas);
         stage.autoClear = false;
@@ -490,9 +493,9 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(300/2/PPM,500/2/PPM,150/PPM,150/PPM,1);
+            var playerBody = physics.createDynamicBody(0,0,150,150,1);
             var playerSkin = assets.getAnimation("player");
-            player.initialize( playerBody, playerSkin, stage.canvas.width/2, 0 );
+            player.initialize( playerBody, playerSkin );
 
             playspace.initialize();
             playspace.bindCamera(player);
@@ -500,13 +503,13 @@ var main = (function () {
 
             for( var i = 30; i>=2; i-=3 ) {
                 for( var x=-10;x<=10; x+=1) {
-                    var body = physics.createStaticBody(200/PPM*x+25,500/PPM/i+200/PPM,150/PPM,50/PPM,2);
+                    var body = physics.createStaticBody(200*x+25,500/i,150,50,2);
                     var skin = generateTestSprite(150,50);
                     playspace.addStaticBody( body, skin, i ); 
                 }
             }
 
-            var floorBody = physics.createStaticBody(0,500/PPM,1000/PPM,10/PPM,1);
+            var floorBody = physics.createStaticBody(0,500,1000,10,1);
             var floorSkin = generateTestSprite(1000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
             stage.addChild(playspace.container);
@@ -519,13 +522,20 @@ var main = (function () {
 		},
 
 		tick: function (elapsedTime) {
+            context.save();
+            context.setTransform(1, 0, 0, 1, 0, 0);
+            context.clearRect(0, 0, canvas.width, canvas.height);
+            context.restore();
 			input.advance();
 			audio.advance();
 			player.advance();
             playspace.advance();
 			physics.advance();
+            context.save();
+            context.translate(-player.camera.x+canvas.width/2,-player.camera.y+canvas.height/2);
             physics.drawDebug();
-			stage.update();
+            context.restore();
+			//stage.update();
 		}
 	}
 }());
