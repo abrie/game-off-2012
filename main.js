@@ -43,8 +43,7 @@ var physics = (function() {
 			fixtureDef.shape = new b2PolygonShape;
 			fixtureDef.shape.SetAsBox( width/2/PPM, height/2/PPM );
 
-			body.CreateFixture(fixtureDef);
-			return body;
+			return body.CreateFixture(fixtureDef);
 		},
 		createStaticBody: function(x,y,width,height,category) {
 			var bodyDef = new b2BodyDef;
@@ -323,8 +322,9 @@ var playspace = (function() {
         layers: {},
         container: new Container,
         initialize: function() {},
-        addPlayer: function(body,skin) {
-            this.player.body = body;
+        addPlayer: function(fixture,skin) {
+            this.player.fixture = fixture;
+            this.player.body = function() { return this.fixture.GetBody(); };
             this.player.skin = skin;
             this.container.addChild(this.player.skin);
         },
@@ -345,9 +345,9 @@ var playspace = (function() {
             }
         },
         advance: function() {
-            this.player.skin.rotation = this.player.body.GetAngle() * (180 / Math.PI);
-            this.player.skin.x = this.player.body.GetWorldCenter().x * PPM;
-            this.player.skin.y = this.player.body.GetWorldCenter().y * PPM;
+            this.player.skin.rotation = this.player.body().GetAngle() * (180 / Math.PI);
+            this.player.skin.x = this.player.body().GetWorldCenter().x * PPM;
+            this.player.skin.y = this.player.body().GetWorldCenter().y * PPM;
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
@@ -391,37 +391,38 @@ var player = (function() {
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
-            var velocity = this.body.GetLinearVelocity().x;
+            var velocity = this.body().GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
                 b2Math.Max( velocity - 1.0, -5.0 ) : b2Math.Min( velocity + 1.0, 5.0 ); 
             var velChange = targetVelocity - velocity;
-            var impel = this.body.GetMass() * velChange;
-            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+            var impel = this.body().GetMass() * velChange;
+            this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
         },
         brake: function(direction) {
-            var velocity = this.body.GetLinearVelocity().x;
+            var velocity = this.body().GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
                 b2Math.Max( velocity - 0.5, 0 ) : b2Math.Min( velocity + 0.5, 0 ); 
             var velChange = targetVelocity - velocity;
-            var impel = this.body.GetMass() * velChange;
-            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+            var impel = this.body().GetMass() * velChange;
+            this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
         },
         jump: function(direction) {
-            var velocity = this.body.GetLinearVelocity();
+            var velocity = this.body().GetLinearVelocity();
             velocity.y = -5;
-            this.body.SetLinearVelocity(velocity);
+            this.body().SetLinearVelocity(velocity);
         },
-		initialize: function( body, skin, cameraOffset ) {
+		initialize: function( fixture, skin, cameraOffset ) {
             this.cameraOffset = cameraOffset;
-            this.body = body;
+            this.fixture = fixture;
+            this.body = function() { return fixture.GetBody(); }
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
-            var current = this.body.GetWorldCenter();
+            var current = this.body().GetWorldCenter();
             this.origin = {x:current.x, y:current.y};
             this.camera = {x:current.x * PPM, y:current.y*PPM};
 		},
 		advance: function() {
-            var current = this.body.GetWorldCenter();
+            var current = this.body().GetWorldCenter();
 
             var currentY = current.y * PPM;
             var deltaY = currentY - this.camera.y;
@@ -529,9 +530,9 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerBody = physics.createDynamicBody(0,0,75,75,1);
+            var playerFixture = physics.createDynamicBody(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
-            player.initialize( playerBody, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
+            player.initialize( playerFixture, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
 
             playspace.initialize();
             playspace.bindCamera(player);
@@ -549,7 +550,7 @@ var main = (function () {
             var floorBody = physics.createStaticBody(0,500,10000,10,1);
             var floorSkin = generateTestSprite(10000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
-            playspace.addPlayer( playerBody, playerSkin );
+            playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
             
             input.initialize(fireAction,notifyOnInput);
