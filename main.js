@@ -409,6 +409,9 @@ var player = (function() {
         jump: function(direction) {
             var velocity = this.body().GetLinearVelocity();
             velocity.y = -5;
+            var filter = this.fixture.GetFilterData();
+            filter.maskBits = 2;
+            this.fixture.SetFilterData(filter);
             this.body().SetLinearVelocity(velocity);
         },
 		initialize: function( fixture, skin, cameraOffset ) {
@@ -504,7 +507,7 @@ var main = (function () {
         canvas = document.getElementById("testCanvas");
         context = canvas.getContext("2d");
         stage = new Stage(canvas);
-        stage.autoClear = false;
+        stage.autoClear = true;
     }
 
     function generateTestSprite(width,height, fill) {
@@ -538,16 +541,20 @@ var main = (function () {
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
-            _.each([1.5,1.7,3,2.2,5].reverse(), function(i) {
+            var filters = [1,2,4,8].reverse();
+            var colors = [Graphics.getRGB(128,0,0),Graphics.getRGB(0,128,0),Graphics.getRGB(0,0,128),Graphics.getRGB(0,128,128)]; 
+            _.each([1.5,1.7,3,2.2,5].reverse(), function(i,filterIndex) {
                 for( var x=-50;x<=50; x+=1) {
-                    var height = i*100;
-                    var body = physics.createStaticBody(200*x+25,500-height/2,150,height,2);
-                    var skin = generateTestSprite(150,height,Graphics.getRGB(Math.floor(Math.random()*255),0,0));
-                    playspace.addStaticBody( body, skin, i ); 
+                    if (Math.floor(Math.random()*100) > 50) {
+                        var height = i*100;
+                        var body = physics.createStaticBody(200*x+25,500-height/2,150,height,filters[filterIndex]);
+                        var skin = generateTestSprite(150,height,colors[filterIndex]);
+                        playspace.addStaticBody( body, skin, i ); 
+                    }
                 }
             });
 
-            var floorBody = physics.createStaticBody(0,500,10000,10,1);
+            var floorBody = physics.createStaticBody(0,500,10000,10,255);
             var floorSkin = generateTestSprite(10000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
             playspace.addPlayer( playerFixture, playerSkin );
@@ -571,13 +578,13 @@ var main = (function () {
             context.restore();
         },
 		tick: function (elapsedTime) {
-            this.debugClear();
+            //this.debugClear();
 			input.advance();
 			audio.advance();
 			player.advance();
             playspace.advance();
 			physics.advance();
-            this.drawDebug();
+            //this.drawDebug();
 			stage.update();
 		}
 	}
