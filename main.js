@@ -510,16 +510,36 @@ var main = (function () {
         stage.autoClear = true;
     }
 
-    function generateTestSprite(width,height, fill) {
-        var g = new Graphics();
+    function generateTestSprite(width,height, fill,depth) {
+        var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
+        var margins = blurFilter.getBounds();
+
+        var g = new createjs.Graphics();
         g.setStrokeStyle(1);
-        g.beginStroke(Graphics.getRGB(0,0,0));
+        g.beginStroke(createjs.Graphics.getRGB(0,0,0));
         g.beginFill(fill);
         g.rect(0,0,width,height);
-        var displayObject = new Shape(g);
+        var displayObject = new createjs.Shape(g);
         displayObject.regX = width/2;
         displayObject.regY = height/2;
+        displayObject.filters = [blurFilter];
+        displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
         return displayObject;
+    }
+
+    function populatePlayspace() {
+        var blurs = [0, 4, 16, 64].reverse();
+        var categories = [1, 2, 4, 8].reverse();
+        var parallax = [1.5, 1.7, 3, 2.2, 5].reverse();
+        var colors = [
+            Graphics.getRGB(255,255,255),
+            Graphics.getRGB(0,128,0),
+            Graphics.getRGB(0,0,128),
+            Graphics.getRGB(0,128,128)]; 
+            
+        var floorBody = physics.createStaticBody(0,500,10000,10,255);
+        var floorSkin = generateTestSprite(10000,10,colors[0],10);
+        playspace.addStaticBody( floorBody, floorSkin, 1 );
     }
 
 	return {
@@ -541,22 +561,8 @@ var main = (function () {
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
-            var filters = [1,2,4,8].reverse();
-            var colors = [Graphics.getRGB(128,0,0),Graphics.getRGB(0,128,0),Graphics.getRGB(0,0,128),Graphics.getRGB(0,128,128)]; 
-            _.each([1.5,1.7,3,2.2,5].reverse(), function(i,filterIndex) {
-                for( var x=-50;x<=50; x+=1) {
-                    if (Math.floor(Math.random()*100) > 50) {
-                        var height = i*100;
-                        var body = physics.createStaticBody(200*x+25,500-height/2,150,height,filters[filterIndex]);
-                        var skin = generateTestSprite(150,height,colors[filterIndex]);
-                        playspace.addStaticBody( body, skin, i ); 
-                    }
-                }
-            });
+            populatePlayspace();
 
-            var floorBody = physics.createStaticBody(0,500,10000,10,255);
-            var floorSkin = generateTestSprite(10000,10);
-            playspace.addStaticBody( floorBody, floorSkin, 1 );
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
             
