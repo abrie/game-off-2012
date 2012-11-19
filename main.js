@@ -270,7 +270,6 @@ var input = (function () {
 	};
 }());
 
-
 var assets = (function() {
     var loadCount = 0, spriteSheetDescriptions = [{
         name: "player",
@@ -319,7 +318,7 @@ var assets = (function() {
 
 var playspace = (function() {
     return {
-        player: {body:undefined, skin:undefined},
+        player: {body:undefined, skin:undefined, origin:undefined},
         layers: {},
         container: new Container,
         initialize: function() {},
@@ -330,7 +329,8 @@ var playspace = (function() {
         },
         addStaticBody: function(body,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
-            layer.push( {body:body,skin:skin} );
+            var origin = body.GetWorldCenter();
+            layer.push( {body:body,skin:skin, origin:{x:origin.x, y:origin.y}} );
             this.container.addChild(skin);
         },
         getLayer: function(layer) {
@@ -372,7 +372,7 @@ var playspace = (function() {
                 }
                 _.each( layer, function(piece) {
                     var position = piece.body.GetWorldCenter();
-                    position.x += amount/key;
+                    position.x = piece.origin.x-amount/key;
                     piece.body.SetPosition(position);
                 });
             }, this);
@@ -384,8 +384,9 @@ var player = (function() {
 	return {
 		sprite: undefined,
         body: undefined,
+        origin: {},
         camera: {},
-        margin: {width:250, height:100},
+        margin: {width:280, height:100},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         impulse: function(direction) {
@@ -402,8 +403,8 @@ var player = (function() {
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
             var current = this.body.GetWorldCenter();
-            this.camera.x = current.x * PPM;
-            this.camera.y = current.y * PPM;
+            this.origin = {x:current.x, y:current.y};
+            this.camera = {x:current.x * PPM, y:current.y*PPM};
 		},
 		advance: function() {
             var current = this.body.GetWorldCenter();
@@ -420,7 +421,11 @@ var player = (function() {
             var deltaX = currentX - this.camera.x;
             var absDeltaX = Math.abs(deltaX);
             if (absDeltaX >= this.margin.width ) {
-                this.camera.x = currentX - (deltaX && deltaX / absDeltaX * this.margin.width);
+                var sign = deltaX && deltaX / absDeltaX;  
+                this.camera.x = currentX - (sign * this.margin.width);
+
+                var amount = (current.x - this.origin.x)-(sign*this.margin.width/PPM);
+                this.onParallax( amount );
             }
 
             this.onCamera(-this.camera.x+this.cameraOffset.x,-this.camera.y+this.cameraOffset.y);
@@ -479,11 +484,11 @@ var main = (function () {
         stage.autoClear = false;
     }
 
-    function generateTestSprite(width,height) {
+    function generateTestSprite(width,height, fill) {
         var g = new Graphics();
         g.setStrokeStyle(1);
         g.beginStroke(Graphics.getRGB(0,0,0));
-        g.beginFill(Graphics.getRGB(100,0,100));
+        g.beginFill(fill);
         g.rect(0,0,width,height);
         var displayObject = new Shape(g);
         displayObject.regX = width/2;
@@ -507,21 +512,22 @@ var main = (function () {
             player.initialize( playerBody, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
 
             playspace.initialize();
-            playspace.addPlayer( playerBody, playerSkin );
             playspace.bindCamera(player);
             playspace.bindParallax(player);
 
-            for( var i = 30; i>=2; i-=3 ) {
-                for( var x=-10;x<=10; x+=1) {
-                    var body = physics.createStaticBody(200*x+25,500/i,150,50,2);
-                    var skin = generateTestSprite(150,50);
+            _.each([1.5,1.7,3,2.2,5].reverse(), function(i) {
+                for( var x=-50;x<=50; x+=1) {
+                    var height = i*100;
+                    var body = physics.createStaticBody(200*x+25,500-height/2,150,height,2);
+                    var skin = generateTestSprite(150,height,Graphics.getRGB(Math.floor(Math.random()*255),0,0));
                     playspace.addStaticBody( body, skin, i ); 
                 }
-            }
+            });
 
-            var floorBody = physics.createStaticBody(0,500,1000,10,1);
-            var floorSkin = generateTestSprite(1000,10);
+            var floorBody = physics.createStaticBody(0,500,10000,10,1);
+            var floorSkin = generateTestSprite(10000,10);
             playspace.addStaticBody( floorBody, floorSkin, 1 );
+            playspace.addPlayer( playerBody, playerSkin );
             stage.addChild(playspace.container);
             
             input.initialize(fireAction,notifyOnInput);
