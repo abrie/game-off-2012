@@ -16,7 +16,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 ;
 
 var FPS = 30;
-var PPM = 40;
+var PPM = 150;
 
 var physics = (function() {
 	"use strict";
@@ -37,7 +37,7 @@ var physics = (function() {
 
 			var fixtureDef = new b2FixtureDef;
 			fixtureDef.density = 1.0;
-			fixtureDef.friction = 1.5;
+			fixtureDef.friction = 0.05;
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.maskBits = mask;
 			fixtureDef.shape = new b2PolygonShape;
@@ -167,7 +167,8 @@ var input = (function () {
 	var ACTIONS = [
 		{action:"FORWARD",	sequence:[[3],[2],[1]]},
 		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
-		{action:"STAND",	sequence:[[4]]}
+		{action:"STAND",	sequence:[[4]]},
+        {action:"BRAKE",    sequence:[[3]]}
 	];
 
 	var currentInputFrame = [],
@@ -392,10 +393,23 @@ var player = (function() {
         impulse: function(direction) {
             var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
-                b2Math.Max( velocity - 5.0, -10.0 ) : b2Math.Min( velocity + 5.0, 10.0 ); 
+                b2Math.Max( velocity - 1.0, -5.0 ) : b2Math.Min( velocity + 1.0, 5.0 ); 
             var velChange = targetVelocity - velocity;
             var impel = this.body.GetMass() * velChange;
             this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+        },
+        brake: function(direction) {
+            var velocity = this.body.GetLinearVelocity().x;
+            var targetVelocity = direction < 0 ?
+                b2Math.Max( velocity - 0.5, 0 ) : b2Math.Min( velocity + 0.5, 0 ); 
+            var velChange = targetVelocity - velocity;
+            var impel = this.body.GetMass() * velChange;
+            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
+        },
+        jump: function(direction) {
+            var velocity = this.body.GetLinearVelocity();
+            velocity.y = -5;
+            this.body.SetLinearVelocity(velocity);
         },
 		initialize: function( body, skin, cameraOffset ) {
             this.cameraOffset = cameraOffset;
@@ -439,7 +453,12 @@ var player = (function() {
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
+            this.jump();
 			this.sprite.gotoAndPlay("stand");		
+		},
+		actionBrake: function() {
+            this.brake();
+            console.log("brake!");
 		},
 	}
 }());
@@ -457,6 +476,9 @@ var main = (function () {
 				break;
 			case "STAND":
 				player.actionStand();
+				break;
+			case "BRAKE":
+				player.actionBrake();
 				break;
 			default:
 				console.log("action unhandled:",action);
