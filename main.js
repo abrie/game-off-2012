@@ -390,10 +390,10 @@ var player = (function() {
         margin: {width:280, height:100},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
-        impulse: function(direction) {
+        impulse: function(direction, rate, max) {
             var velocity = this.body().GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
-                b2Math.Max( velocity - 1.0, -5.0 ) : b2Math.Min( velocity + 1.0, 5.0 ); 
+                b2Math.Max( velocity - rate, -max ) : b2Math.Min( velocity + rate, max ); 
             var velChange = targetVelocity - velocity;
             var impel = this.body().GetMass() * velChange;
             this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
@@ -449,11 +449,11 @@ var player = (function() {
             this.onCamera(-this.camera.x+this.cameraOffset.x,-this.camera.y+this.cameraOffset.y);
 		},
 		actionForward: function() {
-			this.impulse(-1);
+			this.impulse(-1, 1, 5);
             this.sprite.gotoAndPlay("step1");
 		},
 		actionBackward: function() {
-			this.impulse(1);
+			this.impulse(1, 1, 5);
 			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
