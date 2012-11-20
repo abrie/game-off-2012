@@ -271,7 +271,8 @@ var input = (function () {
 }());
 
 var assets = (function() {
-    var loadCount = 0, spriteSheetDescriptions = [{
+    var loadCount = 0, spriteSheetDescriptions = [
+    {
         name: "player",
         images: ["assets/chin.png"],
         frames: {count:6, width:150, height:150,regX:75,regY:110},
@@ -281,7 +282,19 @@ var assets = (function() {
             step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
             land: {frames:[1], next:false, frequency:1},
         }
-    }];
+    },
+    {
+        name: "building",
+        images: ["assets/building.png"],
+        frames: {count:4, width:110, height:380,regX:55,regY:190},
+        animations: {
+            a: {frames:[0], next:false, frequency:1},
+            b: {frames:[1], next:false, frequency:1},
+            c: {frames:[2], next:false, frequency:1},
+            d: {frames:[3], next:false, frequency:1},
+        }
+    },
+    ];
 
     return {
         onReady: undefined,
@@ -537,9 +550,22 @@ var main = (function () {
             Graphics.getRGB(0,0,128),
             Graphics.getRGB(0,128,128)]; 
             
-        var floorBody = physics.createStaticBody(0,500,10000,10,255);
+        var floorBody = physics.createStaticBody(0,500,100000,10,255);
         var floorSkin = generateTestSprite(10000,10,colors[0],10);
-        playspace.addStaticBody( floorBody, floorSkin, 1 );
+        playspace.addStaticBody( floorBody, floorSkin, 255 );
+        var buildingNames = ["a","b","c","d"]
+        for( var count=0; count<100; count+=1 ) {
+            var buildingBody = physics.createStaticBody(5000-count*125,300-380/2,110,380,2);
+            var buildingSkin = assets.getAnimation("building").clone();
+            buildingSkin.gotoAndPlay( buildingNames[Math.floor( Math.random() * 4 )] );
+            playspace.addStaticBody( buildingBody, buildingSkin, 1000 );
+        }
+        for( var count=0; count<100; count+=1 ) {
+            var buildingBody = physics.createStaticBody(5000-count*125,500-380/2,110,380,2);
+            var buildingSkin = assets.getAnimation("building").clone();
+            buildingSkin.gotoAndPlay( buildingNames[Math.floor( Math.random() * 4 )] );
+            playspace.addStaticBody( buildingBody, buildingSkin, 3 );
+        }
     }
 
 	return {
