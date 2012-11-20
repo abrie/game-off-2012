@@ -480,6 +480,7 @@ var player = (function() {
 	}
 }());
 
+var scale = {x:1.0,y:1.0};
 var main = (function () {
 	"use strict";
 
@@ -581,7 +582,7 @@ var main = (function () {
 
             var playerFixture = physics.createDynamicBody(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
-            player.initialize( playerFixture, playerSkin, {x:canvas.width/2, y:canvas.height/2} );
+            player.initialize( playerFixture, playerSkin, {x:canvas.width/2/scale.x, y:canvas.height/2/scale.y} );
 
             playspace.initialize();
             playspace.bindCamera(player);
@@ -591,7 +592,9 @@ var main = (function () {
 
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
-            
+            stage.scaleX = scale.x;
+            stage.scaleY = scale.y;
+
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
@@ -605,7 +608,7 @@ var main = (function () {
         },
         drawDebug: function() {
             context.save();
-            context.translate(-player.camera.x+canvas.width/2,-player.camera.y+canvas.height/2);
+            context.translate(-player.camera.x+canvas.width/2/scale.x,-player.camera.y+canvas.height/2/scale.y);
             physics.drawDebug();
             context.restore();
         },
