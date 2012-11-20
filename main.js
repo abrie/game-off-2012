@@ -401,16 +401,17 @@ var camera = (function() {
         requiredTranslation: {x:0, y:0},
 		initialize: function( target, stage ) {
             this.scale = {x:1,y:1};
-            this.offset = {x:stage.canvas.width/2/this.scale.x, y:stage.canvas.height/2/this.scale.y} 
+            this.offset = {x:stage.canvas.width/2/this.scale.x/PPM, y:stage.canvas.height/2/this.scale.y/PPM} 
             this.margin = {width:280, height:100};
-            this.origin = {x:target.x * PPM, y:target.y*PPM};
-            this.target = {x:target.x * PPM, y:target.y*PPM};
+            this.origin = {x:target.x, y:target.y};
+            this.target = {x:target.x, y:target.y};
             this.stage = stage;
             this.updateRequiredTranslation();
         },
         updateRequiredTranslation: function() {
-            this.requiredTranslation.x = this.offset.x - this.target.x;
-            this.requiredTranslation.y = this.offset.y - this.target.y;
+            this.requiredTranslation.x = (this.offset.x - this.target.x)*PPM;
+            this.requiredTranslation.y = (this.offset.y - this.target.y)*PPM;
+            console.log(this.requiredTranslation);
         },
         setZoom: function(factor) {
             this.scale.x = factor;
@@ -420,20 +421,20 @@ var camera = (function() {
             this.onCamera(-this.target.x+this.offset.x/factor,-this.target.y+this.offset.y/factor);
         },
         lookAt: function(current) {
-            var currentY = current.y * PPM;
+            var currentY = current.y;
             var deltaY = currentY - this.target.y;
             var absDeltaY = Math.abs(deltaY);
-            if (absDeltaY >= this.margin.height ) {
+            if (absDeltaY >= this.margin.height/PPM ) {
                 //thanks to http://stackoverflow.com/a/7624945 for the sign code
-                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
+                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height/PPM);
             }
 
-            var currentX = current.x * PPM;
+            var currentX = current.x;
             var deltaX = currentX - this.target.x;
             var absDeltaX = Math.abs(deltaX);
-            if (absDeltaX >= this.margin.width ) {
+            if (absDeltaX >= this.margin.width/PPM ) {
                 var sign = deltaX && deltaX / absDeltaX;  
-                this.target.x = currentX - (sign * this.margin.width);
+                this.target.x = currentX - (sign * this.margin.width/PPM);
 
                 var amount = (current.x - this.origin.x)-(sign*this.margin.width/PPM);
                 this.onParallax( amount );
