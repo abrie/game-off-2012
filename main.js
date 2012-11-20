@@ -402,7 +402,7 @@ var camera = (function() {
 		initialize: function( target, stage ) {
             this.scale = {x:1,y:1};
             this.offset = {x:stage.canvas.width/2/this.scale.x/PPM, y:stage.canvas.height/2/this.scale.y/PPM} 
-            this.margin = {width:280, height:100};
+            this.margin = {width:280/PPM, height:100/PPM};
             this.origin = {x:target.x, y:target.y};
             this.target = {x:target.x, y:target.y};
             this.stage = stage;
@@ -424,19 +424,19 @@ var camera = (function() {
             var currentY = current.y;
             var deltaY = currentY - this.target.y;
             var absDeltaY = Math.abs(deltaY);
-            if (absDeltaY >= this.margin.height/PPM ) {
+            if (absDeltaY >= this.margin.height ) {
                 //thanks to http://stackoverflow.com/a/7624945 for the sign code
-                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height/PPM);
+                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
             }
 
             var currentX = current.x;
             var deltaX = currentX - this.target.x;
             var absDeltaX = Math.abs(deltaX);
-            if (absDeltaX >= this.margin.width/PPM ) {
+            if (absDeltaX >= this.margin.width ) {
                 var sign = deltaX && deltaX / absDeltaX;  
-                this.target.x = currentX - (sign * this.margin.width/PPM);
+                this.target.x = currentX - (sign * this.margin.width);
 
-                var amount = (current.x - this.origin.x)-(sign*this.margin.width/PPM);
+                var amount = (current.x - this.origin.x)-(sign*this.margin.width);
                 this.onParallax( amount );
             }
 
