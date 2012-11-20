@@ -72,7 +72,6 @@ var physics = (function() {
 			world.SetDebugDraw(debugDraw);
 		},
         drawDebug: function() {
-            // note that drawing in debug mode does not account for the player camera position.
             world.DrawDebugData();
         }
 	}
@@ -476,15 +475,6 @@ var player = (function() {
             var current = this.body().GetWorldCenter();
             var velocity = this.body().GetLinearVelocity().x;
             camera.lookAt( current );
-            camera.setZoom( zoomLevel );
-            zoomLevel += zoomDirection * 0.025;
-            if( zoomLevel > 2.0) {
-                zoomDirection = -1;
-            }
-            else if( zoomLevel < 0.25) {
-                zoomDirection = 1;
-            }
-
 		},
 		actionForward: function() {
 			this.impulse(-1, 1, 5);
@@ -631,19 +621,19 @@ var main = (function () {
         },
         drawDebug: function() {
             context.save();
-            context.translate(-camera.x+canvas.width/2/camera.scale.x,-camera.y+canvas.height/2/camera.scale.y);
+            context.translate(-camera.target.x+camera.offset.x,-camera.target.y+camera.offset.y);
             physics.drawDebug();
             context.restore();
         },
 		tick: function (elapsedTime) {
-            //this.debugClear();
+            this.debugClear();
 			input.advance();
 			audio.advance();
 			player.advance();
             playspace.advance();
 			physics.advance();
-            //this.drawDebug();
-			stage.update();
+            this.drawDebug();
+			//stage.update();
 		}
 	}
 }());
