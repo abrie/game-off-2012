@@ -374,9 +374,9 @@ var playspace = (function() {
         bindParallax: function(reference) {
             reference.onParallax = this.updateParallax.bind(this);
         },
-        updateCamera: function(x,y) {
-            this.container.x = x;
-            this.container.y = y;
+        updateCamera: function(translation) {
+            this.container.x = translation.x;
+            this.container.y = translation.y;
         },
         updateParallax: function(amount) {
             _.each( this.layers, function(layer, key) {
@@ -397,6 +397,7 @@ var camera = (function() {
     return {
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
+        requiredTranslation: {x:0, y:0},
 		initialize: function( target, stage ) {
             this.scale = {x:1,y:1};
             this.offset = {x:stage.canvas.width/2/this.scale.x, y:stage.canvas.height/2/this.scale.y} 
@@ -404,6 +405,11 @@ var camera = (function() {
             this.origin = {x:target.x * PPM, y:target.y*PPM};
             this.target = {x:target.x * PPM, y:target.y*PPM};
             this.stage = stage;
+            this.updateRequiredTranslation();
+        },
+        updateRequiredTranslation: function() {
+            this.requiredTranslation.x = this.offset.x - this.target.x;
+            this.requiredTranslation.y = this.offset.y - this.target.y;
         },
         setZoom: function(factor) {
             this.scale.x = factor;
@@ -432,7 +438,8 @@ var camera = (function() {
                 this.onParallax( amount );
             }
 
-            this.onCamera(-this.target.x+this.offset.x,-this.target.y+this.offset.y);
+            this.updateRequiredTranslation();
+            this.onCamera(this.requiredTranslation);
         }
     }
 
@@ -621,7 +628,7 @@ var main = (function () {
         },
         drawDebug: function() {
             context.save();
-            context.translate(-camera.target.x+camera.offset.x,-camera.target.y+camera.offset.y);
+            context.translate(camera.requiredTranslation.x,camera.requiredTranslation.y);
             physics.drawDebug();
             context.restore();
         },
