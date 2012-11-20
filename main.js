@@ -270,7 +270,8 @@ var input = (function () {
 }());
 
 var assets = (function() {
-    var loadCount = 0, spriteSheetDescriptions = [
+    var loadCount = 0;
+    var spriteSheetDescriptions = [
     {
         name: "player",
         images: ["assets/chin.png"],
