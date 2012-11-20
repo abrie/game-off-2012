@@ -396,46 +396,55 @@ var playspace = (function() {
 
 var camera = (function() {
     return {
-        camera: {},
-        margin: {width:280, height:100},
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
-		initialize: function( position, cameraOffset ) {
-            this.cameraOffset = cameraOffset;
-            this.origin = {x:position.x * PPM, y:position.y*PPM};
-            this.camera = {x:position.x * PPM, y:position.y*PPM};
+		initialize: function( target, stage ) {
+            this.scale = {x:1,y:1};
+            this.offset = {x:stage.canvas.width/2/this.scale.x, y:stage.canvas.height/2/this.scale.y} 
+            this.margin = {width:280, height:100};
+            this.origin = {x:target.x * PPM, y:target.y*PPM};
+            this.target = {x:target.x * PPM, y:target.y*PPM};
+            this.stage = stage;
+        },
+        setZoom: function(factor) {
+            this.scale.x = factor;
+            this.scale.y = factor;
+            this.stage.scaleX = factor;
+            this.stage.scaleY = factor;
+            this.onCamera(-this.target.x+this.offset.x/factor,-this.target.y+this.offset.y/factor);
         },
         lookAt: function(current) {
             var currentY = current.y * PPM;
-            var deltaY = currentY - this.camera.y;
+            var deltaY = currentY - this.target.y;
             var absDeltaY = Math.abs(deltaY);
             if (absDeltaY >= this.margin.height ) {
                 //thanks to http://stackoverflow.com/a/7624945 for the sign code
-                this.camera.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
+                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
             }
 
             var currentX = current.x * PPM;
-            var deltaX = currentX - this.camera.x;
+            var deltaX = currentX - this.target.x;
             var absDeltaX = Math.abs(deltaX);
             if (absDeltaX >= this.margin.width ) {
                 var sign = deltaX && deltaX / absDeltaX;  
-                this.camera.x = currentX - (sign * this.margin.width);
+                this.target.x = currentX - (sign * this.margin.width);
 
                 var amount = (current.x - this.origin.x)-(sign*this.margin.width/PPM);
                 this.onParallax( amount );
             }
 
-            this.onCamera(-this.camera.x+this.cameraOffset.x,-this.camera.y+this.cameraOffset.y);
+            this.onCamera(-this.target.x+this.offset.x,-this.target.y+this.offset.y);
         }
     }
 
 }());
 
 var player = (function() {
+    var zoomLevel = 1;
+    var zoomDirection = 1;
 	return {
 		sprite: undefined,
         body: undefined,
-        origin: {},
         impulse: function(direction, rate, max) {
             var velocity = this.body().GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
@@ -465,7 +474,17 @@ var player = (function() {
 		},
 		advance: function() {
             var current = this.body().GetWorldCenter();
+            var velocity = this.body().GetLinearVelocity().x;
             camera.lookAt( current );
+            camera.setZoom( zoomLevel );
+            zoomLevel += zoomDirection * 0.025;
+            if( zoomLevel > 2.0) {
+                zoomDirection = -1;
+            }
+            else if( zoomLevel < 0.25) {
+                zoomDirection = 1;
+            }
+
 		},
 		actionForward: function() {
 			this.impulse(-1, 1, 5);
@@ -486,7 +505,6 @@ var player = (function() {
 	}
 }());
 
-var scale = {x:1.0,y:1.0};
 var main = (function () {
 	"use strict";
 
@@ -589,7 +607,7 @@ var main = (function () {
             var playerFixture = physics.createDynamicBody(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerFixture, playerSkin );
-            camera.initialize( player.body().GetWorldCenter(),{x:canvas.width/2/scale.x, y:canvas.height/2/scale.y} );
+            camera.initialize( player.body().GetWorldCenter(), stage );
 
             playspace.initialize();
             playspace.bindCamera(camera);
@@ -599,8 +617,6 @@ var main = (function () {
 
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
-            stage.scaleX = scale.x;
-            stage.scaleY = scale.y;
 
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
@@ -615,7 +631,7 @@ var main = (function () {
         },
         drawDebug: function() {
             context.save();
-            context.translate(-player.camera.x+canvas.width/2/scale.x,-player.camera.y+canvas.height/2/scale.y);
+            context.translate(-camera.x+canvas.width/2/camera.scale.x,-camera.y+canvas.height/2/camera.scale.y);
             physics.drawDebug();
             context.restore();
         },
