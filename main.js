@@ -38,7 +38,7 @@ var physics = (function() {
 
 			var fixtureDef = new b2FixtureDef;
 			fixtureDef.density = 1.0;
-			fixtureDef.friction = 0.05;
+			fixtureDef.friction = 0.5;
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.maskBits = mask;
 			fixtureDef.shape = new b2PolygonShape;
@@ -198,7 +198,10 @@ var input = (function () {
 			idleInputFrameCount = 0;
 		}
 		else {
-			idleInputFrameCount++;
+			if( ++idleInputFrameCount > 3) {
+                clearInputHistory();
+                idleInputFrameCount = 0;
+            }
 		}
 	}
 
@@ -280,7 +283,10 @@ var assets = (function() {
         animations: {
             stand: {frames:[0], next:false, frequency:3},
             still: {frames:[1], next:false, frequency:1 },
-            step1: {frames:[2,3,4,5,3,1], next:"land", frequency:2 },
+            step1: {frames:[1,2,1], next:"still", frequency:3 },
+            step2: {frames:[3,4,3,2,1], next:"still", frequency:3 },
+            step3: {frames:[3,5,5,3,2], next:"still", frequency:1 },
+            jump: {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
             land: {frames:[1], next:false, frequency:1},
         }
     },
@@ -454,7 +460,7 @@ var player = (function() {
         },
         jump: function(direction) {
             var velocity = this.body().GetLinearVelocity();
-            velocity.y = -5;
+            velocity.y = -0.75;
             this.body().SetLinearVelocity(velocity);
         },
 		initialize: function( fixture, skin ) {
@@ -468,9 +474,12 @@ var player = (function() {
             var velocity = this.body().GetLinearVelocity().x;
             camera.lookAt( current );
 		},
+        actionStep: function() {
+            this.impulse(-1, 1, 1);
+        },
 		actionForward: function() {
-			this.impulse(-1, 1, 5);
-            this.sprite.gotoAndPlay("step1");
+			this.impulse(-1, 2, 5);
+            this.jump();
 		},
 		actionBackward: function() {
 			this.impulse(1, 1, 5);
@@ -494,6 +503,7 @@ var main = (function () {
 		switch(action) {
 			case "FORWARD": 
 				player.actionForward();
+                player.sprite.gotoAndPlay("jump");
 				break;
 			case "BACKWARD":
 				player.actionBackward();
@@ -512,6 +522,14 @@ var main = (function () {
 
 	function notifyOnInput(id) {
 		audio.soundOn(id,3);
+        switch(id) {
+            case FOOT1: player.actionStep();
+                        player.sprite.gotoAndPlay("step1");
+                        break;
+            case FOOT2: player.actionStep();
+                        player.sprite.gotoAndPlay("step2");
+                        break;
+        }
 	}
 
     function initializeAudio() {
