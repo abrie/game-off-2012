@@ -22,9 +22,10 @@ var physics = (function() {
 	"use strict";
 	var world = undefined;
 	return {
+        debugDraw: undefined,
 		advance: function() {
 			world.ClearForces();
-			world.Step(1 / FPS, 10, 10);
+			world.Step(1 / 30, 10, 10);
 		},
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
@@ -63,13 +64,13 @@ var physics = (function() {
 			return body;
 		},
 		setDebugDraw: function(context) {
-			var debugDraw = new b2DebugDraw();
-			debugDraw.SetSprite(context);
-			debugDraw.SetDrawScale(PPM);
-			debugDraw.SetFillAlpha(0.5);
-			debugDraw.SetLineThickness(1.0);
-			debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
-			world.SetDebugDraw(debugDraw);
+			this.debugDraw = new b2DebugDraw();
+			this.debugDraw.SetSprite(context);
+			this.debugDraw.SetDrawScale(PPM);
+			this.debugDraw.SetFillAlpha(0.5);
+			this.debugDraw.SetLineThickness(1.0);
+			this.debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);
+			world.SetDebugDraw(this.debugDraw);
 		},
         drawDebug: function() {
             world.DrawDebugData();
@@ -400,48 +401,30 @@ var camera = (function() {
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
 		initialize: function( target, stage ) {
-            this.scale = {x:1,y:1};
-            this.offset = {x:stage.canvas.width/2/this.scale.x/PPM, y:stage.canvas.height/2/this.scale.y/PPM} 
-            this.margin = {width:280/PPM, height:100/PPM};
+            this.stage = stage;
             this.origin = {x:target.x, y:target.y};
             this.target = {x:target.x, y:target.y};
-            this.stage = stage;
+            this.setZoom(1.0);
             this.updateRequiredTranslation();
         },
         updateRequiredTranslation: function() {
-            this.requiredTranslation.x = (this.offset.x - this.target.x)*PPM;
-            this.requiredTranslation.y = (this.offset.y - this.target.y)*PPM;
-            console.log(this.requiredTranslation);
+            this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
+            this.requiredTranslation.y = this.offset.y - this.target.y*PPM;
+            this.onCamera(this.requiredTranslation);
         },
         setZoom: function(factor) {
-            this.scale.x = factor;
-            this.scale.y = factor;
+            this.zoomFactor = factor;
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
-            this.onCamera(-this.target.x+this.offset.x/factor,-this.target.y+this.offset.y/factor);
+            this.offset = {x:this.stage.canvas.width/2/factor, y:this.stage.canvas.height/2/factor};
+			physics.debugDraw.SetDrawScale(PPM*factor);
+            //this.lookAt(this.target);
+
         },
-        lookAt: function(current) {
-            var currentY = current.y;
-            var deltaY = currentY - this.target.y;
-            var absDeltaY = Math.abs(deltaY);
-            if (absDeltaY >= this.margin.height ) {
-                //thanks to http://stackoverflow.com/a/7624945 for the sign code
-                this.target.y = currentY - (deltaY && deltaY / absDeltaY * this.margin.height);
-            }
-
-            var currentX = current.x;
-            var deltaX = currentX - this.target.x;
-            var absDeltaX = Math.abs(deltaX);
-            if (absDeltaX >= this.margin.width ) {
-                var sign = deltaX && deltaX / absDeltaX;  
-                this.target.x = currentX - (sign * this.margin.width);
-
-                var amount = (current.x - this.origin.x)-(sign*this.margin.width);
-                this.onParallax( amount );
-            }
-
+        lookAt: function(point) {
+            this.target.x = point.x;
+            this.target.y = point.y;
             this.updateRequiredTranslation();
-            this.onCamera(this.requiredTranslation);
         }
     }
 
@@ -606,7 +589,6 @@ var main = (function () {
             var playerFixture = physics.createDynamicBody(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerFixture, playerSkin );
-            camera.initialize( player.body().GetWorldCenter(), stage );
 
             playspace.initialize();
             playspace.bindCamera(camera);
@@ -617,6 +599,7 @@ var main = (function () {
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
 
+            camera.initialize( player.body().GetWorldCenter(), stage );
             input.initialize(fireAction,notifyOnInput);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
@@ -630,7 +613,7 @@ var main = (function () {
         },
         drawDebug: function() {
             context.save();
-            context.translate(camera.requiredTranslation.x,camera.requiredTranslation.y);
+            context.translate(camera.requiredTranslation.x*camera.zoomFactor,camera.requiredTranslation.y*camera.zoomFactor);
             physics.drawDebug();
             context.restore();
         },
@@ -641,8 +624,8 @@ var main = (function () {
 			player.advance();
             playspace.advance();
 			physics.advance();
-            this.drawDebug();
-			//stage.update();
+			stage.update();
+            //this.drawDebug();
 		}
 	}
 }());
