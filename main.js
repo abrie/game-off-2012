@@ -164,9 +164,9 @@ var input = (function () {
 	"use strict";
 
 	var ACTIONS = [
-		{action:"FORWARD",	sequence:[[1],[2],[3]].reverse()},
-		{action:"BACKWARD",	sequence:[[3],[2],[1]].reverse()},
-        {action:"BRAKE",    sequence:[[2,3]].reverse()},
+		{action:"FORWARD",	sequence:[[1],[2],[3]]},
+		{action:"BACKWARD",	sequence:[[3],[2],[1]]},
+        {action:"BRAKE",    sequence:[[2,3]]},
 		{action:"STAND",	sequence:[[4]]}
 	];
 
@@ -181,7 +181,7 @@ var input = (function () {
 
 	function inputOn(id) {
 		if (!inputState[id]) {
-			currentInputFrame.push(id);
+			currentInputFrame.unshift(id);
 			inputDelegate(id, inputHistory.length);
 		}
 		inputState[id] = true;
@@ -202,7 +202,7 @@ var input = (function () {
 	var idleInputFrameCount = 0;
 	function pushInputFrame() {
 		if(currentInputFrame.length > 0) {
-			inputHistory.push(currentInputFrame.sort());
+			inputHistory.unshift(currentInputFrame.sort());
 			currentInputFrame = [];
 			idleInputFrameCount = 0;
 		}
@@ -219,7 +219,7 @@ var input = (function () {
 			if(matchSequence(element.sequence, inputHistory)) {
 				clearInputHistory();
 				actionDelegate(element.action);
-                actionHistory.push(element.action);
+                actionHistory.unshift(element.action);
 				return false;
 			}
 			else {
