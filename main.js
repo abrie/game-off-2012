@@ -181,7 +181,7 @@ var input = (function () {
 
 	function inputOn(id) {
 		if (!inputState[id]) {
-			currentInputFrame.unshift(id);
+			currentInputFrame.push(id);
 			inputDelegate(id, inputHistory);
 		}
 		inputState[id] = true;
@@ -202,7 +202,7 @@ var input = (function () {
 	var idleInputFrameCount = 0;
 	function pushInputFrame() {
 		if(currentInputFrame.length > 0) {
-			inputHistory.unshift(currentInputFrame.sort());
+			inputHistory.push(currentInputFrame.sort());
 			currentInputFrame = [];
 			idleInputFrameCount = 0;
 		}
@@ -219,7 +219,7 @@ var input = (function () {
 			if(matchSequence(element.sequence, inputHistory)) {
 				clearInputHistory();
 				actionDelegate(element.action);
-                actionHistory.unshift(element.action);
+                actionHistory.push(element.action);
 				return false;
 			}
 			else {
@@ -243,9 +243,8 @@ var input = (function () {
 	function arrays_equal(a,b) { return !(a<b || b<a); }
 
 	function matchSequence(sequence,stack) {
-		var stackIndex = stack.length - 1;
 		return sequence.every( function(element,index) {
-			var frame = stack[ stackIndex - index];
+			var frame = stack[ index];
 			return frame ? arrays_equal(element,frame) : false;
 		});
 	}
