@@ -164,10 +164,9 @@ var input = (function () {
 	"use strict";
 
 	var ACTIONS = [
-		{action:"FORWARD",	sequence:[[3],[2],[1]]},
-		{action:"BACKWARD",	sequence:[[1],[2],[3]]},
-		{action:"STAND",	sequence:[[4]]},
-        {action:"BRAKE",    sequence:[[3]]}
+		{action:"FORWARD",	sequence:[[1],[2],[3]].reverse()},
+		{action:"BACKWARD",	sequence:[[3],[2],[1]].reverse()},
+		{action:"STAND",	sequence:[[4]]}
 	];
 
     var METAACTIONS = [
@@ -466,7 +465,7 @@ var player = (function() {
         impulse: function(direction, rate, max) {
             var velocity = this.body().GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
-                b2Math.Max( velocity - rate, -max ) : b2Math.Min( velocity + rate, max ); 
+                b2Math.Max( velocity - rate, -max ) : b2Math.Min( -velocity + rate, max ); 
             var velChange = targetVelocity - velocity;
             var impel = this.body().GetMass() * velChange;
             this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
@@ -504,11 +503,8 @@ var player = (function() {
 		},
 		actionBackward: function() {
 			this.impulse(1, 1, 5);
-			// no sprite currently exists for backsteps...
 		},
 		actionStand: function() {
-            this.jump();
-			this.sprite.gotoAndPlay("stand");		
 		},
 		actionBrake: function() {
             this.brake();
@@ -523,14 +519,17 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FORWARD": 
+                console.log("forward.");
 				player.actionForward();
                 player.sprite.gotoAndPlay("jump");
 				break;
 			case "BACKWARD":
+                console.log("backward.");
 				player.actionBackward();
 				break;
 			case "STAND":
 				player.actionStand();
+                this.sprite.gotoAndPlay("stand");		
 				break;
 			case "BRAKE":
 				player.actionBrake();
