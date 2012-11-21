@@ -170,9 +170,14 @@ var input = (function () {
         {action:"BRAKE",    sequence:[[3]]}
 	];
 
+    var METAACTIONS = [
+        {action:"SUPERFORWARD", sequence:[["FORWARD"],["FORWARD"],["FORWARD"]]}
+    ];
+
 	var currentInputFrame = [],
 		inputState = {},
-		inputHistory = [];
+		inputHistory = [],
+        actionHistory = [];
 
 	function inputOn(id) {
 		if (!inputState[id]) {
@@ -188,6 +193,10 @@ var input = (function () {
 
 	function clearInputHistory() {
 		inputHistory.length = 0;
+	}
+
+	function clearActionHistory() {
+		actionHistory.length = 0;
 	}
 
 	var idleInputFrameCount = 0;
@@ -209,6 +218,18 @@ var input = (function () {
 		ACTIONS.every( function(element) {
 			if(matchSequence(element.sequence, inputHistory)) {
 				clearInputHistory();
+				actionDelegate(element.action);
+                actionHistory.push(element.action);
+				return false;
+			}
+			else {
+				return true;
+			}
+		});
+
+		METAACTIONS.every( function(element) {
+			if(matchSequence(element.sequence, actionHistory)) {
+				clearActionHistory();
 				actionDelegate(element.action);
 				return false;
 			}
@@ -514,6 +535,9 @@ var main = (function () {
 			case "BRAKE":
 				player.actionBrake();
 				break;
+            case "SUPERFORWARD":
+                console.log("Superforward!");
+                break;
 			default:
 				console.log("action unhandled:",action);
 				break;
