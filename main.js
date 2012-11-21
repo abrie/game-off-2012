@@ -182,6 +182,7 @@ var input = (function () {
 	function inputOn(id) {
 		if (!inputState[id]) {
 			currentInputFrame.push(id);
+            currentInputFrame.sort();
 			inputDelegate(id, inputHistory);
 		}
 		inputState[id] = true;
@@ -193,6 +194,8 @@ var input = (function () {
 
 	function clearInputHistory() {
 		inputHistory.length = 0;
+        currentInputFrame = [];
+        inputHistory.push(currentInputFrame);
 	}
 
 	function clearActionHistory() {
@@ -202,8 +205,8 @@ var input = (function () {
 	var idleInputFrameCount = 0;
 	function pushInputFrame() {
 		if(currentInputFrame.length > 0) {
-			inputHistory.push(currentInputFrame.sort());
 			currentInputFrame = [];
+            inputHistory.push(currentInputFrame);
 			idleInputFrameCount = 0;
 		}
 		else {
@@ -281,6 +284,7 @@ var input = (function () {
 	var inputDelegate;
 	return {
 		initialize: function (onAction,onInput) {
+            inputHistory.push(currentInputFrame);
 			actionDelegate = onAction;
 			inputDelegate = onInput;
 			document.onkeydown = handleKeyDown;
@@ -551,7 +555,6 @@ var main = (function () {
 	function notifyOnInput(id, stack) {
 		audio.soundOn(id,3);
         var index = stack.length;
-        console.log("input:", id, stack, stack.length);
         switch(id) {
             case FOOT1: if(index==0) { 
                             player.actionStep(-1);
