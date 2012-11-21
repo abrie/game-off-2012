@@ -166,6 +166,7 @@ var input = (function () {
 	var ACTIONS = [
 		{action:"FORWARD",	sequence:[[1],[2],[3]].reverse()},
 		{action:"BACKWARD",	sequence:[[3],[2],[1]].reverse()},
+        {action:"BRAKE",    sequence:[[2,3]].reverse()},
 		{action:"STAND",	sequence:[[4]]}
 	];
 
@@ -478,9 +479,9 @@ var player = (function() {
             var impel = this.body().GetMass() * velChange;
             this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
         },
-        jump: function(direction) {
+        jump: function(magnitude) {
             var velocity = this.body().GetLinearVelocity();
-            velocity.y = -0.75;
+            velocity.y = -0.75*magnitude;
             this.body().SetLinearVelocity(velocity);
         },
 		initialize: function( fixture, skin ) {
@@ -494,12 +495,16 @@ var player = (function() {
             var velocity = this.body().GetLinearVelocity().x;
             camera.lookAt( current );
 		},
-        actionStep: function() {
-            this.impulse(-1, 1, 1);
+        actionStep: function(direction) {
+            this.impulse(direction, 1, 1);
         },
 		actionForward: function() {
 			this.impulse(-1, 2, 5);
-            this.jump();
+            this.jump(1);
+		},
+		actionSuperforward: function() {
+			this.impulse(-1, 2, 5);
+            this.jump(1.5);
 		},
 		actionBackward: function() {
 			this.impulse(1, 1, 5);
@@ -535,7 +540,7 @@ var main = (function () {
 				player.actionBrake();
 				break;
             case "SUPERFORWARD":
-                console.log("Superforward!");
+                player.actionSuperforward();
                 break;
 			default:
 				console.log("action unhandled:",action);
@@ -547,11 +552,23 @@ var main = (function () {
 		audio.soundOn(id,3);
         console.log("input index:",index);
         switch(id) {
-            case FOOT1: player.actionStep();
-                        player.sprite.gotoAndPlay("step1");
+            case FOOT1: if(index==0) { 
+                            player.actionStep(-1);
+                            player.sprite.gotoAndPlay("step1");
+                        }
                         break;
-            case FOOT2: player.actionStep();
-                        player.sprite.gotoAndPlay("step2");
+            case FOOT2: if(index==0) {
+                            player.actionStep(-1);
+                            player.sprite.gotoAndPlay("step1");
+                        }
+                        if(index==1) {
+                            player.actionStep(-1);
+                            player.sprite.gotoAndPlay("step2");
+                        }
+                        break;
+            case FOOT3: if(index==0) {
+                            player.actionStep(1);
+                        }
                         break;
         }
 	}
