@@ -182,7 +182,7 @@ var input = (function () {
 	function inputOn(id) {
 		if (!inputState[id]) {
 			currentInputFrame.unshift(id);
-			inputDelegate(id, inputHistory.length);
+			inputDelegate(id, inputHistory);
 		}
 		inputState[id] = true;
 	}
@@ -522,6 +522,7 @@ var main = (function () {
 	"use strict";
 
 	function fireAction(action) {
+        console.log("action:",action);
 		switch(action) {
 			case "FORWARD": 
                 console.log("forward.");
@@ -548,9 +549,10 @@ var main = (function () {
 		}
 	}
 
-	function notifyOnInput(id, index) {
+	function notifyOnInput(id, stack) {
 		audio.soundOn(id,3);
-        console.log("input index:",index);
+        var index = stack.length;
+        console.log("input:", id, stack, stack.length);
         switch(id) {
             case FOOT1: if(index==0) { 
                             player.actionStep(-1);
@@ -567,7 +569,7 @@ var main = (function () {
                         }
                         break;
             case FOOT3: if(index==0) {
-                            player.actionStep(1);
+                            player.actionStep(-1);
                         }
                         break;
         }
