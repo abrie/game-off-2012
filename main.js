@@ -207,7 +207,7 @@ var input = (function () {
 
 	function scanForAction() {
 		ACTIONS.every( function(element) {
-			if(matchSequence(element.sequence)) {
+			if(matchSequence(element.sequence, inputHistory)) {
 				clearInputHistory();
 				actionDelegate(element.action);
 				return false;
@@ -221,10 +221,10 @@ var input = (function () {
 	// thanks to http://stackoverflow.com/a/5115066
 	function arrays_equal(a,b) { return !(a<b || b<a); }
 
-	function matchSequence(sequence) {
-		var inputHistoryIndex = inputHistory.length - 1;
+	function matchSequence(sequence,stack) {
+		var stackIndex = stack.length - 1;
 		return sequence.every( function(element,index) {
-			var frame = inputHistory[ inputHistoryIndex - index];
+			var frame = stack[ stackIndex - index];
 			return frame ? arrays_equal(element,frame) : false;
 		});
 	}
