@@ -181,7 +181,7 @@ var input = (function () {
 	function inputOn(id) {
 		if (!inputState[id]) {
 			currentInputFrame.push(id);
-			inputDelegate(id);
+			inputDelegate(id, inputHistory.length);
 		}
 		inputState[id] = true;
 	}
@@ -543,8 +543,9 @@ var main = (function () {
 		}
 	}
 
-	function notifyOnInput(id) {
+	function notifyOnInput(id, index) {
 		audio.soundOn(id,3);
+        console.log("input index:",index);
         switch(id) {
             case FOOT1: player.actionStep();
                         player.sprite.gotoAndPlay("step1");
