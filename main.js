@@ -164,7 +164,7 @@ var input = (function () {
 	"use strict";
     var actionTree =
     {
-        1: {action: "FWD_STEP1", next:{2:{action:"FWD_STEP2", next:{3:{action:"FWD_STEP3", next:undefined}}}}},
+        1: {action: "FWD_STEP1", next:{2:{action:"FWD_STEP2", next:{3:{action:"FORWARD", next:undefined}}}}},
         3: {action: "BWD_STEP1", next:{2:{action:"BWD_STEP2", next:{1:{action:"BWD_STEP3", next:undefined}}}}},
     }
     var actionNode = actionTree;
@@ -174,6 +174,11 @@ var input = (function () {
 		if (!inputState[id]) {
             actionNode = actionNode[id];
             if(actionNode) {
+                actionDelegate(actionNode.action);
+                actionNode = actionNode.next ? actionNode.next : actionTree;
+            }
+            else if(actionTree[id]) {
+                actionNode = actionTree[id];
                 actionDelegate(actionNode.action);
                 actionNode = actionNode.next ? actionNode.next : actionTree;
             }
@@ -458,7 +463,6 @@ var main = (function () {
 	"use strict";
 
 	function fireAction(action) {
-        console.log("fire action:",action);
 		switch(action) {
 			case "FWD_STEP1": 
                 player.actionStep(-1);
@@ -486,6 +490,7 @@ var main = (function () {
 				break;
             case "FORWARD":
                 player.actionForward();
+                player.sprite.gotoAndPlay("jump");
                 break;
 			default:
 				console.log("action unhandled:",action);
