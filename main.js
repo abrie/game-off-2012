@@ -154,31 +154,67 @@ var audio = (function () {
 
 var input = (function () {
 	"use strict";
-    var actionTree =
-    {
-        1: {action: "FWD_STEP1", next:{2:{action:"FWD_STEP2", next:{3:{action:"FORWARD", next:undefined}}}}},
-        3: {action: "BWD_STEP1", next:{2:{action:"BWD_STEP2", next:{1:{action:"BWD_STEP3", next:undefined}}}}},
+
+    var ActionTree = function() {
+        this.addNext = function( actionNode ) {
+            this[ actionNode.key ] = actionNode;
+            return actionNode;
+        }
+        this.follow = function( sequence ) {
+            var nextFollow = this[ sequence.shift() ];
+            if( nextFollow ) {
+                return nextFollow.follow(sequence);
+            }
+            else {
+                return this;
+            }
+        }
     }
-    var actionNode = actionTree;
+
+    var ActionNode = function(key, action) {
+        this.key = key;
+        this.action = action;
+        this.next = {};
+        this.addNext = function( actionNode ) {
+            this.next[actionNode.key] = actionNode;
+            return actionNode;
+        }
+        this.follow = function( sequence ) {
+            var nextFollow = this.next[ sequence.shift() ];
+            if( nextFollow ) {
+                return nextFollow.follow(sequence);
+            }
+            else {
+                return this;
+            }
+        }
+    }
+
+    var actionTree = new ActionTree();
+    var thisAction = actionTree;
+
+    actionTree.addNext( new ActionNode(1, "FWD_STEP1") ).addNext( new ActionNode(2, "FWD_STEP2") ).addNext( new ActionNode(3, "FWD_STEP3") );
+    actionTree.addNext( new ActionNode(3, "BWD_STEP1") ).addNext( new ActionNode(2, "BWD_STEP2") ).addNext( new ActionNode(1, "BWD_STEP3") );
+    actionTree.follow([1,2]).addNext( new ActionNode(2, "DBL_STEP2") ).addNext( new ActionNode(3, "FORWARD") );
 
     function notifyAndNext() {
-        actionDelegate(actionNode.action);
-        actionNode = actionNode.next ? actionNode.next : actionTree;
+        actionDelegate(thisAction.action);
+        thisAction = thisAction.next ? thisAction.next : actionTree;
     }
 
     var isInputOn = {};
 	function inputOn(id) {
 		if (!isInputOn[id]) {
-            actionNode = actionNode[id];
-            if(actionNode) {
+            thisAction = thisAction[id];
+            if(thisAction) {
                 notifyAndNext();
             }
             else if(actionTree[id]) {
-                actionNode = actionTree[id];
+                thisAction = actionTree[id];
                 notifyAndNext();
             }
             else {
-                actionNode = actionTree;
+                thisAction = actionTree;
             }
 		}
 		isInputOn[id] = true;
@@ -463,6 +499,11 @@ var main = (function () {
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
+                audio.soundOn(FOOT2);
+                player.actionStep(-1);
+                player.sprite.gotoAndPlay("step2");
+				break;
+			case "DBL_STEP2": 
                 audio.soundOn(FOOT2);
                 player.actionStep(-1);
                 player.sprite.gotoAndPlay("step2");
