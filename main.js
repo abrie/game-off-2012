@@ -81,7 +81,7 @@ var physics = (function() {
 var audio = (function () {
 	"use strict";
 
-	function newOscillator( id, frequency, duration ) {
+	function newOscillator( id, frequency ) {
 		var result = {
 			id: id,
 			frequency: frequency,
@@ -136,8 +136,8 @@ var audio = (function () {
 				alert('There is no audio oscillator support in this browser');
 			}
 		},
-		addSound: function( id, frequency, duration ) {
-			oscillators[id] = newOscillator(id, frequency, duration);
+		addSound: function( id, frequency ) {
+			oscillators[id] = newOscillator(id, frequency);
 		},
 		soundOn: function (which) {
 			oscillators[which].start();
@@ -497,10 +497,10 @@ var main = (function () {
 
     function initializeAudio() {
         audio.initialize();
-        audio.addSound(FOOT1, 261.63, 3); 
-        audio.addSound(FOOT2, 329.63, 3); 
-        audio.addSound(FOOT3, 392.00, 3); 
-        audio.addSound(STAND, 400.00, 3); 
+        audio.addSound(FOOT1, 261.63); 
+        audio.addSound(FOOT2, 329.63); 
+        audio.addSound(FOOT3, 392.00); 
+        audio.addSound(STAND, 400.00); 
     }
 
     var canvas, context, stage = undefined;
