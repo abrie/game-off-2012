@@ -162,17 +162,20 @@ var input = (function () {
     var actionNode = actionTree;
     var inputState = {};
 
+    function notifyAndNext() {
+        actionDelegate(actionNode.action);
+        actionNode = actionNode.next ? actionNode.next : actionTree;
+    }
+
 	function inputOn(id) {
 		if (!inputState[id]) {
             actionNode = actionNode[id];
             if(actionNode) {
-                actionDelegate(actionNode.action);
-                actionNode = actionNode.next ? actionNode.next : actionTree;
+                notifyAndNext();
             }
             else if(actionTree[id]) {
                 actionNode = actionTree[id];
-                actionDelegate(actionNode.action);
-                actionNode = actionNode.next ? actionNode.next : actionTree;
+                notifyAndNext();
             }
             else {
                 actionNode = actionTree;
