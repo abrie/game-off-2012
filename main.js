@@ -231,31 +231,31 @@ var input = (function () {
 var assets = (function() {
     var loadCount = 0;
     var spriteSheetDescriptions = [
-    {
-        name: "player",
-        images: ["assets/chin.png"],
-        frames: {count:6, width:150, height:150,regX:75,regY:110},
-        animations: {
-            stand: {frames:[0], next:false, frequency:3},
-            still: {frames:[1], next:false, frequency:1 },
-            step1: {frames:[1,2,1], next:"still", frequency:3 },
-            step2: {frames:[3,4,3,2,1], next:"still", frequency:3 },
-            step3: {frames:[3,5,5,3,2], next:"still", frequency:1 },
-            jump: {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-            land: {frames:[1], next:false, frequency:1},
-        }
-    },
-    {
-        name: "building",
-        images: ["assets/building.png"],
-        frames: {count:4, width:110, height:380,regX:55,regY:190},
-        animations: {
-            a: {frames:[0], next:false, frequency:1},
-            b: {frames:[1], next:false, frequency:1},
-            c: {frames:[2], next:false, frequency:1},
-            d: {frames:[3], next:false, frequency:1},
-        }
-    },
+        {
+            name: "player",
+            images: ["assets/chin.png"],
+            frames: {count:6, width:150, height:150,regX:75,regY:110},
+            animations: {
+                stand: {frames:[0], next:false, frequency:3},
+                still: {frames:[1], next:false, frequency:1 },
+                step1: {frames:[1,2,1], next:"still", frequency:3 },
+                step2: {frames:[3,4,3,2,1], next:"still", frequency:3 },
+                step3: {frames:[3,5,5,3,2], next:"still", frequency:1 },
+                jump: {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
+                land: {frames:[1], next:false, frequency:1},
+            }
+        },
+        {
+            name: "building",
+            images: ["assets/building.png"],
+            frames: {count:4, width:110, height:380,regX:55,regY:190},
+            animations: {
+                a: {frames:[0], next:false, frequency:1},
+                b: {frames:[1], next:false, frequency:1},
+                c: {frames:[2], next:false, frequency:1},
+                d: {frames:[3], next:false, frequency:1},
+            }
+        },
     ];
 
     return {
