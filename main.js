@@ -86,11 +86,11 @@ var audio = (function () {
 			id: id,
 			frequency: frequency,
 			envelope: audioContext.createGainNode(),
-			o : undefined,
+			oscillator : undefined,
 			createOscillator : function() {
-				this.o = audioContext.createOscillator();
-				this.o.frequency.value = frequency;
-				this.o.connect(this.envelope);
+				this.oscillator = audioContext.createOscillator();
+				this.oscillator.frequency.value = frequency;
+				this.oscillator.connect(this.envelope);
 			},
 			initialize : function() {
 				this.envelope.connect(audioContext.destination);
@@ -98,7 +98,7 @@ var audio = (function () {
 			},
 			active : false,
 			start : function() {
-                if( this.o.playbackState != this.o.UNSCHEDULED_STATE ) {
+                if( this.oscillator.playbackState != this.oscillator.UNSCHEDULED_STATE ) {
                     return;
                 }
                 else {
@@ -106,17 +106,17 @@ var audio = (function () {
                     this.envelope.gain.linearRampToValueAtTime(0, now);
                     this.envelope.gain.linearRampToValueAtTime(1, now+1/FPS);
                     this.envelope.gain.linearRampToValueAtTime(0, now+3/FPS);
-                    this.o.noteOn(now);
-                    this.o.noteOff(now+3/FPS);
+                    this.oscillator.noteOn(now);
+                    this.oscillator.noteOff(now+3/FPS);
                 }
 			},
 			reset : function() {
-				this.o.disconnect();
-				this.o = undefined;
+				this.oscillator.disconnect();
+				this.oscillator = undefined;
 				this.createOscillator();
 			},
 			advance : function() {
-				if (this.o.playbackState === this.o.FINISHED_STATE) {
+				if (this.oscillator.playbackState === this.oscillator.FINISHED_STATE) {
 					this.reset();
 				}
 			},
