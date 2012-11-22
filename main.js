@@ -149,7 +149,7 @@ var audio = (function () {
 		addSound: function( id, frequency, duration ) {
 			oscillators[id] = newOscillator(id, frequency, duration);
 		},
-		soundOn: function (which, length) {
+		soundOn: function (which) {
 			oscillators[which].start();
 		},
 		advance: function () {
@@ -222,11 +222,9 @@ var input = (function () {
 	}
 
 	var actionDelegate;
-	var inputDelegate;
 	return {
-		initialize: function (onAction,onInput) {
+		initialize: function (onAction) {
 			actionDelegate = onAction;
-			inputDelegate = onInput;
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
@@ -465,30 +463,39 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FWD_STEP1": 
+                audio.soundOn(FOOT1);
                 player.actionStep(-1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
+                audio.soundOn(FOOT2);
                 player.actionStep(-1);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "FWD_STEP3": 
+                audio.soundOn(FOOT3);
                 player.actionStep(-1);
                 player.sprite.gotoAndPlay("step3");
 				break;
 			case "BWD_STEP1": 
+                audio.soundOn(FOOT3);
                 player.actionStep(1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
+                audio.soundOn(FOOT2);
                 player.actionStep(1);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
+                audio.soundOn(FOOT1);
                 player.actionStep(1);
                 player.sprite.gotoAndPlay("step3");
 				break;
             case "FORWARD":
+                audio.soundOn(FOOT3);
+                audio.soundOn(FOOT2);
+                audio.soundOn(FOOT1);
                 player.actionForward();
                 player.sprite.gotoAndPlay("jump");
                 break;
@@ -496,31 +503,6 @@ var main = (function () {
 				console.log("action unhandled:",action);
 				break;
 		}
-	}
-
-	function notifyOnInput(id, stack) {
-		audio.soundOn(id,3);
-        var index = stack.length;
-        switch(id) {
-            case FOOT1: if(index==0) { 
-                            player.actionStep(-1);
-                            player.sprite.gotoAndPlay("step1");
-                        }
-                        break;
-            case FOOT2: if(index==0) {
-                            player.actionStep(-1);
-                            player.sprite.gotoAndPlay("step1");
-                        }
-                        if(index==1) {
-                            player.actionStep(-1);
-                            player.sprite.gotoAndPlay("step2");
-                        }
-                        break;
-            case FOOT3: if(index==0) {
-                            player.actionStep(-1);
-                        }
-                        break;
-        }
 	}
 
     function initializeAudio() {
@@ -609,7 +591,7 @@ var main = (function () {
             stage.addChild(playspace.container);
 
             camera.initialize( player.body().GetWorldCenter(), stage );
-            input.initialize(fireAction,notifyOnInput);
+            input.initialize(fireAction);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
