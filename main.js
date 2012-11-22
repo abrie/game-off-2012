@@ -85,15 +85,15 @@ var audio = (function () {
 		var result = {
 			id: id,
 			frequency: frequency,
-			volumeNode: audioContext.createGainNode(),
+			envelope: audioContext.createGainNode(),
 			o : undefined,
 			createOscillator : function() {
 				this.o = audioContext.createOscillator();
 				this.o.frequency.value = frequency;
-				this.o.connect(this.volumeNode);
+				this.o.connect(this.envelope);
 			},
 			initialize : function() {
-				this.volumeNode.connect(audioContext.destination);
+				this.envelope.connect(audioContext.destination);
 				this.createOscillator();
 			},
 			active : false,
@@ -103,9 +103,9 @@ var audio = (function () {
                 }
                 else {
                     var now = audioContext.currentTime;
-                    this.volumeNode.gain.linearRampToValueAtTime(0, now);
-                    this.volumeNode.gain.linearRampToValueAtTime(1, now+1/FPS);
-                    this.volumeNode.gain.linearRampToValueAtTime(0, now+3/FPS);
+                    this.envelope.gain.linearRampToValueAtTime(0, now);
+                    this.envelope.gain.linearRampToValueAtTime(1, now+1/FPS);
+                    this.envelope.gain.linearRampToValueAtTime(0, now+3/FPS);
                     this.o.noteOn(now);
                     this.o.noteOff(now+3/FPS);
                 }
