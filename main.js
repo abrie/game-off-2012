@@ -1,5 +1,3 @@
-var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
-
 var b2Vec2 = Box2D.Common.Math.b2Vec2
 ,   b2AABB = Box2D.Collision.b2AABB
 ,	b2BodyDef = Box2D.Dynamics.b2BodyDef
@@ -17,6 +15,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 
 var FPS = 30;
 var PPM = 150;
+var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 
 var physics = (function() {
 	"use strict";
