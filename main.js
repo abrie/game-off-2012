@@ -126,14 +126,16 @@ var audio = (function () {
 	}
 
 	var oscillators = {}
-
 	var audioContext = undefined;
 	return {
 		initialize: function() {
 			try {
 				audioContext = new (window.AudioContext || window.webkitAudioContext);
 			} catch (e) {
-				alert('There is no audio oscillator support in this browser');
+				alert('There is no AudioContext support in this browser, thus sound is disabled.');
+                this.addSound = function() {};
+                this.soundOn = function() {};
+                this.advance = function() {};
 			}
 		},
 		addSound: function( id, frequency ) {
