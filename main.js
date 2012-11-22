@@ -103,31 +103,28 @@ var audio = (function () {
 			start : function() {
 				if (this.active)
 					return;
-				this.volumeNode.gain.value = 1.0;
 				this.active = true;
-				this.o.noteOn(0);
-			},
-			stop : function() {
-				if (!this.active)
-					return;
-				this.volumeNode.gain.value = 0.0;
-				this.o.noteOff(audioContext.currentTime+0.01);
-				this.active = false;
+                if( this.o.playbackState != this.o.UNSCHEDULED_STATE ) {
+                    return;
+                }
+                else {
+                    var now = audioContext.currentTime;
+                    this.volumeNode.gain.linearRampToValueAtTime(0, now);
+                    this.volumeNode.gain.linearRampToValueAtTime(1, now+1/FPS);
+                    this.volumeNode.gain.linearRampToValueAtTime(0, now+3/FPS);
+                    this.o.noteOn(now);
+                    this.o.noteOff(now+3/FPS);
+                }
 			},
 			reset : function() {
 				this.o.disconnect();
 				this.o = undefined;
 				this.createOscillator();
+                this.active = false;
 			},
 			advance : function() {
 				if (this.o.playbackState === this.o.FINISHED_STATE) {
 					this.reset();
-				}
-				else if(this.active) {
-					this.duration--;
-					if (this.duration == 0) {
-						this.stop();
-					}
 				}
 			},
 		}
