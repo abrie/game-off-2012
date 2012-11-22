@@ -162,94 +162,30 @@ var audio = (function () {
 
 var input = (function () {
 	"use strict";
-
-	var ACTIONS = [
-		{action:"FORWARD",	sequence:[[1],[2],[3]]},
-		{action:"BACKWARD",	sequence:[[3],[2],[1]]},
-        {action:"BRAKE",    sequence:[[2,3]]},
-		{action:"STAND",	sequence:[[4]]}
-	];
-
-    var METAACTIONS = [
-        {action:"SUPERFORWARD", sequence:[["FORWARD"],["FORWARD"],["FORWARD"]]}
-    ];
-
-	var currentInputFrame = [],
-		inputState = {},
-		inputHistory = [],
-        actionHistory = [];
+    var actionTree =
+    {
+        1: {action: "FWD_STEP1", next:{2:{action:"FWD_STEP2", next:{3:{action:"FWD_STEP3", next:undefined}}}}},
+        3: {action: "BWD_STEP1", next:{2:{action:"BWD_STEP2", next:{1:{action:"BWD_STEP3", next:undefined}}}}},
+    }
+    var actionNode = actionTree;
+    var inputState = {};
 
 	function inputOn(id) {
 		if (!inputState[id]) {
-			currentInputFrame.push(id);
-            currentInputFrame.sort();
-			inputDelegate(id, inputHistory);
+            actionNode = actionNode[id];
+            if(actionNode) {
+                actionDelegate(actionNode.action);
+                actionNode = actionNode.next ? actionNode.next : actionTree;
+            }
+            else {
+                actionNode = actionTree;
+            }
 		}
 		inputState[id] = true;
 	}
 
 	function inputOff(id) {
 		inputState[id] = false;
-	}
-
-	function clearInputHistory() {
-		inputHistory.length = 0;
-        currentInputFrame = [];
-        inputHistory.push(currentInputFrame);
-	}
-
-	function clearActionHistory() {
-		actionHistory.length = 0;
-	}
-
-	var idleInputFrameCount = 0;
-	function pushInputFrame() {
-		if(currentInputFrame.length > 0) {
-			currentInputFrame = [];
-            inputHistory.push(currentInputFrame);
-			idleInputFrameCount = 0;
-		}
-		else {
-			if( ++idleInputFrameCount > 3) {
-                clearInputHistory();
-                idleInputFrameCount = 0;
-            }
-		}
-	}
-
-	function scanForAction() {
-		ACTIONS.every( function(element) {
-			if(matchSequence(element.sequence, inputHistory)) {
-				clearInputHistory();
-				actionDelegate(element.action);
-                actionHistory.push(element.action);
-				return false;
-			}
-			else {
-				return true;
-			}
-		});
-
-		METAACTIONS.every( function(element) {
-			if(matchSequence(element.sequence, actionHistory)) {
-				clearActionHistory();
-				actionDelegate(element.action);
-				return false;
-			}
-			else {
-				return true;
-			}
-		});
-	}
-
-	// thanks to http://stackoverflow.com/a/5115066
-	function arrays_equal(a,b) { return !(a<b || b<a); }
-
-	function matchSequence(sequence,stack) {
-		return sequence.every( function(element,index) {
-			var frame = stack[ index];
-			return frame ? arrays_equal(element,frame) : false;
-		});
 	}
 
 	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
@@ -284,15 +220,12 @@ var input = (function () {
 	var inputDelegate;
 	return {
 		initialize: function (onAction,onInput) {
-            inputHistory.push(currentInputFrame);
 			actionDelegate = onAction;
 			inputDelegate = onInput;
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
 		advance: function () {
-			pushInputFrame();
-			scanForAction();
 		}
 	};
 }());
@@ -525,26 +458,34 @@ var main = (function () {
 	"use strict";
 
 	function fireAction(action) {
-        console.log("action:",action);
+        console.log("fire action:",action);
 		switch(action) {
-			case "FORWARD": 
-                console.log("forward.");
-				player.actionForward();
-                player.sprite.gotoAndPlay("jump");
+			case "FWD_STEP1": 
+                player.actionStep(-1);
+                player.sprite.gotoAndPlay("step1");
 				break;
-			case "BACKWARD":
-                console.log("backward.");
-				player.actionBackward();
+			case "FWD_STEP2": 
+                player.actionStep(-1);
+                player.sprite.gotoAndPlay("step2");
 				break;
-			case "STAND":
-				player.actionStand();
-                this.sprite.gotoAndPlay("stand");		
+			case "FWD_STEP3": 
+                player.actionStep(-1);
+                player.sprite.gotoAndPlay("step3");
 				break;
-			case "BRAKE":
-				player.actionBrake();
+			case "BWD_STEP1": 
+                player.actionStep(1);
+                player.sprite.gotoAndPlay("step1");
 				break;
-            case "SUPERFORWARD":
-                player.actionSuperforward();
+			case "BWD_STEP2": 
+                player.actionStep(1);
+                player.sprite.gotoAndPlay("step2");
+				break;
+			case "BWD_STEP3": 
+                player.actionStep(1);
+                player.sprite.gotoAndPlay("step3");
+				break;
+            case "FORWARD":
+                player.actionForward();
                 break;
 			default:
 				console.log("action unhandled:",action);
