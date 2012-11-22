@@ -160,15 +160,15 @@ var input = (function () {
         3: {action: "BWD_STEP1", next:{2:{action:"BWD_STEP2", next:{1:{action:"BWD_STEP3", next:undefined}}}}},
     }
     var actionNode = actionTree;
-    var inputState = {};
 
     function notifyAndNext() {
         actionDelegate(actionNode.action);
         actionNode = actionNode.next ? actionNode.next : actionTree;
     }
 
+    var isInputOn = {};
 	function inputOn(id) {
-		if (!inputState[id]) {
+		if (!isInputOn[id]) {
             actionNode = actionNode[id];
             if(actionNode) {
                 notifyAndNext();
@@ -181,11 +181,11 @@ var input = (function () {
                 actionNode = actionTree;
             }
 		}
-		inputState[id] = true;
+		isInputOn[id] = true;
 	}
 
 	function inputOff(id) {
-		inputState[id] = false;
+		isInputOn[id] = false;
 	}
 
 	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
