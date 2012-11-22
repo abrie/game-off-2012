@@ -24,7 +24,7 @@ var physics = (function() {
         debugDraw: undefined,
 		advance: function() {
 			world.ClearForces();
-			world.Step(1 / 30, 10, 10);
+			world.Step(1 / FPS, 10, 10);
 		},
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
@@ -84,12 +84,10 @@ var audio = (function () {
 	function newOscillator( id, frequency, duration ) {
 		var result = {
 			id: id,
-			duration: duration,
 			frequency: frequency,
 			volumeNode: audioContext.createGainNode(),
 			o : undefined,
 			createOscillator : function() {
-				this.duration = duration;
 				this.o = audioContext.createOscillator();
 				this.o.frequency.value = frequency;
 				this.o.connect(this.volumeNode);
@@ -100,9 +98,6 @@ var audio = (function () {
 			},
 			active : false,
 			start : function() {
-				if (this.active)
-					return;
-				this.active = true;
                 if( this.o.playbackState != this.o.UNSCHEDULED_STATE ) {
                     return;
                 }
@@ -119,7 +114,6 @@ var audio = (function () {
 				this.o.disconnect();
 				this.o = undefined;
 				this.createOscillator();
-                this.active = false;
 			},
 			advance : function() {
 				if (this.o.playbackState === this.o.FINISHED_STATE) {
