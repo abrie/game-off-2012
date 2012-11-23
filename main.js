@@ -156,14 +156,15 @@ var input = (function () {
 	"use strict";
 
     var ActionTree = function() {
-        this.addNext = function( actionNode ) {
-            this[ actionNode.key ] = actionNode;
-            return actionNode;
+        this.add = function( key, action ) {
+            var newNode = new ActionNode(key, action);
+            this[ key ] = newNode;
+            return newNode;
         }
-        this.follow = function( sequence ) {
+        this.go = function( sequence ) {
             var nextFollow = this[ sequence.shift() ];
             if( nextFollow ) {
-                return nextFollow.follow(sequence);
+                return nextFollow.go(sequence);
             }
             else {
                 return this;
@@ -175,14 +176,15 @@ var input = (function () {
         this.key = key;
         this.action = action;
         this.next = {};
-        this.addNext = function( actionNode ) {
-            this.next[actionNode.key] = actionNode;
-            return actionNode;
+        this.add = function( key, action ) {
+            var newNode = new ActionNode(key, action);
+            this.next[key] = newNode;
+            return newNode;
         }
-        this.follow = function( sequence ) {
+        this.go = function( sequence ) {
             var nextFollow = this.next[ sequence.shift() ];
             if( nextFollow ) {
-                return nextFollow.follow(sequence);
+                return nextFollow.go(sequence);
             }
             else {
                 return this;
@@ -193,9 +195,9 @@ var input = (function () {
     var actionTree = new ActionTree();
     var thisAction = actionTree;
 
-    actionTree.addNext( new ActionNode(1, "FWD_STEP1") ).addNext( new ActionNode(2, "FWD_STEP2") ).addNext( new ActionNode(3, "FWD_STEP3") );
-    actionTree.addNext( new ActionNode(3, "BWD_STEP1") ).addNext( new ActionNode(2, "BWD_STEP2") ).addNext( new ActionNode(1, "BWD_STEP3") );
-    actionTree.follow([1,2]).addNext( new ActionNode(2, "DBL_STEP2") ).addNext( new ActionNode(3, "FORWARD") );
+    actionTree.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
+    actionTree.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
+    actionTree.go([1,2]).add(2, "DBL_STEP2").add(3, "FORWARD");
 
     function notifyAndNext() {
         actionDelegate(thisAction.action);
