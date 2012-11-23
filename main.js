@@ -189,10 +189,9 @@ var input = (function () {
     rootAction.add(4, "STAND").add(4, "LAND");
     rootAction.go([4]).add(3, "USE").loop( rootAction.go([4]));
 
-    var actionTime = 0;
+    var actionTime = {recovery:0,expiration:15};
     function notifyAndNext() {
-        actionTime = 15;
-        actionDelegate(thisAction.action);
+        actionDelegate(thisAction.action, actionTime);
         return thisAction.looped ? thisAction.looped : thisAction;
     }
 
@@ -203,6 +202,9 @@ var input = (function () {
         }
         else {
             isInputOn[id] = true;
+        }
+        if (actionTime.recovery > 0) {
+            return;
         }
 
         thisAction = thisAction.get(id);
@@ -258,8 +260,12 @@ var input = (function () {
 			document.onkeyup = handleKeyUp;
 		},
 		advance: function () {
-            if( actionTime > 0 ) {
-                if( --actionTime === 0) {
+            if( actionTime.recovery > 0) {
+                actionTime.recovery--;
+            }
+            else if( actionTime.expiration > 0 ) {
+                if( --actionTime.expiration === 0) {
+                    actionDelegate("EXPIRED", actionTime);
                     thisAction = rootAction;
                 }
             }
@@ -496,7 +502,8 @@ var player = (function() {
 var main = (function () {
 	"use strict";
 
-	function fireAction(action) {
+	function fireAction(action, actionTime) {
+        actionTime.expiration = 15;
 		switch(action) {
 			case "FWD_STEP1": 
                 audio.soundOn(1);
@@ -549,7 +556,12 @@ var main = (function () {
                 break;
             case "USE":
                 console.log("use item");
+                actionTime.recovery = 30;
                 player.sprite.gotoAndPlay("use");
+                break;
+            case "EXPIRED":
+                console.log("action time expired.");
+                player.sprite.gotoAndPlay("land");
                 break;
 			default:
 				console.log("action unhandled:",action);
