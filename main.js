@@ -103,7 +103,7 @@ var audio = (function () {
                 else {
                     var now = audioContext.currentTime;
                     this.envelope.gain.linearRampToValueAtTime(0, now);
-                    this.envelope.gain.linearRampToValueAtTime(1, now+1/FPS);
+                    this.envelope.gain.linearRampToValueAtTime(0.25, now+1/FPS);
                     this.envelope.gain.linearRampToValueAtTime(0, now+3/FPS);
                     this.oscillator.noteOn(now);
                     this.oscillator.noteOff(now+3/FPS);
@@ -154,31 +154,20 @@ var audio = (function () {
 var input = (function () {
 	"use strict";
 
-    var ActionTree = function() {
-        this.add = function( key, action ) {
-            var newNode = new ActionNode(key, action);
-            this[ key ] = newNode;
-            return newNode;
-        }
-        this.go = function( sequence ) {
-            var nextFollow = this[ sequence.shift() ];
-            if( nextFollow ) {
-                return nextFollow.go(sequence);
-            }
-            else {
-                return this;
-            }
-        }
-    }
-
     var ActionNode = function(key, action) {
-        this.key = key;
         this.action = action;
+        this.looped = undefined;
         this.next = {};
+        this.get = function( key ) {
+            return this.next[key];
+        }
         this.add = function( key, action ) {
             var newNode = new ActionNode(key, action);
             this.next[key] = newNode;
             return newNode;
+        }
+        this.loop = function( node ) {
+            this.looped = node;
         }
         this.go = function( sequence ) {
             var nextFollow = this.next[ sequence.shift() ];
@@ -191,20 +180,20 @@ var input = (function () {
         }
     }
 
-    var actionTree = new ActionTree();
-    var thisAction = actionTree;
+    var rootAction = new ActionNode();
+    var thisAction = rootAction;
 
-    actionTree.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
-    actionTree.go([1,2]).add(2, "DBL_STEP2").add(3, "FORWARD");
-    actionTree.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
-    actionTree.add(4, "STAND").add(4, "LAND");
-    actionTree.go([4]).add(2, "USE");
+    rootAction.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
+    rootAction.go([1,2,3]).add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3").add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FORWARD");
+    rootAction.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
+    rootAction.add(4, "STAND").add(4, "LAND");
+    rootAction.go([4]).add(3, "USE").loop( rootAction.go([4]));
 
     var actionTime = 0;
     function notifyAndNext() {
         actionTime = 15;
         actionDelegate(thisAction.action);
-        thisAction = thisAction.next ? thisAction.next : actionTree;
+        return thisAction.looped ? thisAction.looped : thisAction;
     }
 
     var isInputOn = {};
@@ -216,16 +205,13 @@ var input = (function () {
             isInputOn[id] = true;
         }
 
-        thisAction = thisAction[id];
+        thisAction = thisAction.get(id);
         if(thisAction) {
-            notifyAndNext();
-        }
-        else if(actionTree[id]) {
-            thisAction = actionTree[id];
-            notifyAndNext();
+            thisAction = notifyAndNext();
         }
         else {
-            thisAction = actionTree;
+            thisAction = rootAction.get(id);
+            thisAction = thisAction ? notifyAndNext() : rootAction;
         }
 	}
 
@@ -274,7 +260,7 @@ var input = (function () {
 		advance: function () {
             if( actionTime > 0 ) {
                 if( --actionTime === 0) {
-                    thisAction = actionTree;
+                    thisAction = rootAction;
                 }
             }
 		}
