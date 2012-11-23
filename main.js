@@ -199,7 +199,9 @@ var input = (function () {
     actionTree.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
     actionTree.go([1,2]).add(2, "DBL_STEP2").add(3, "FORWARD");
 
+    var actionTime = 0;
     function notifyAndNext() {
+        actionTime = 15;
         actionDelegate(thisAction.action);
         thisAction = thisAction.next ? thisAction.next : actionTree;
     }
@@ -266,6 +268,11 @@ var input = (function () {
 			document.onkeyup = handleKeyUp;
 		},
 		advance: function () {
+            if( actionTime > 0 ) {
+                if( --actionTime === 0) {
+                    thisAction = actionTree;
+                }
+            }
 		}
 	};
 }());
