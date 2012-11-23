@@ -206,20 +206,24 @@ var input = (function () {
 
     var isInputOn = {};
 	function inputOn(id) {
-		if (!isInputOn[id]) {
-            thisAction = thisAction[id];
-            if(thisAction) {
-                notifyAndNext();
-            }
-            else if(actionTree[id]) {
-                thisAction = actionTree[id];
-                notifyAndNext();
-            }
-            else {
-                thisAction = actionTree;
-            }
-		}
-		isInputOn[id] = true;
+		if (isInputOn[id]) {
+            return;
+        }
+        else {
+            isInputOn[id] = true;
+        }
+
+        thisAction = thisAction[id];
+        if(thisAction) {
+            notifyAndNext();
+        }
+        else if(actionTree[id]) {
+            thisAction = actionTree[id];
+            notifyAndNext();
+        }
+        else {
+            thisAction = actionTree;
+        }
 	}
 
 	function inputOff(id) {
