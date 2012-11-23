@@ -462,11 +462,11 @@ var player = (function() {
 		},
 		advance: function() {
             var current = this.body().GetWorldCenter();
-            var velocity = this.body().GetLinearVelocity().x;
+            var velocity = this.body().GetLinearVelocity().x+1;
             camera.lookAt( current );
 		},
-        actionStep: function(direction) {
-            this.impulse(direction, 1, 1);
+        actionStep: function(direction,mag) {
+            this.impulse(direction, mag, mag);
         },
 		actionForward: function() {
 			this.impulse(-1, 2, 5);
@@ -495,37 +495,37 @@ var main = (function () {
 		switch(action) {
 			case "FWD_STEP1": 
                 audio.soundOn(FOOT1);
-                player.actionStep(-1);
+                player.actionStep(-1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
                 audio.soundOn(FOOT2);
-                player.actionStep(-1);
+                player.actionStep(-1,1.2);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "DBL_STEP2": 
                 audio.soundOn(FOOT2);
-                player.actionStep(-1);
+                player.actionStep(-1,1.5);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "FWD_STEP3": 
                 audio.soundOn(FOOT3);
-                player.actionStep(-1);
+                player.actionStep(-1,1.5);
                 player.sprite.gotoAndPlay("step3");
 				break;
 			case "BWD_STEP1": 
                 audio.soundOn(FOOT3);
-                player.actionStep(1);
+                player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
                 audio.soundOn(FOOT2);
-                player.actionStep(1);
+                player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
                 audio.soundOn(FOOT1);
-                player.actionStep(1);
+                player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step3");
 				break;
             case "FORWARD":
