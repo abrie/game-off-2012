@@ -15,7 +15,6 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 
 var FPS = 30;
 var PPM = 150;
-var FOOT1 = 1, FOOT2 = 2, FOOT3 = 3, STAND = 4;
 
 var physics = (function() {
 	"use strict";
@@ -196,8 +195,10 @@ var input = (function () {
     var thisAction = actionTree;
 
     actionTree.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
-    actionTree.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
     actionTree.go([1,2]).add(2, "DBL_STEP2").add(3, "FORWARD");
+    actionTree.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
+    actionTree.add(4, "STAND").add(4, "LAND");
+    actionTree.go([4]).add(2, "USE");
 
     var actionTime = 0;
     function notifyAndNext() {
@@ -232,7 +233,7 @@ var input = (function () {
 		isInputOn[id] = false;
 	}
 
-	var keyMap = {76:FOOT1, 75:FOOT2, 74:FOOT3, 72:STAND};
+	var keyMap = {76:1, 75:2, 74:3, 72:4, 32:5};
 
 	function onKeyDown(keyCode) {
 		var mapped = keyMap[keyCode];
@@ -240,6 +241,9 @@ var input = (function () {
 			inputOn(mapped);
 			return false;
 		}
+        else {
+            console.log("unmapped key down:", keyCode);
+        }
 	}
 
 	function onKeyUp(keyCode) {
@@ -283,15 +287,16 @@ var assets = (function() {
         {
             name: "player",
             images: ["assets/chin.png"],
-            frames: {count:6, width:150, height:150,regX:75,regY:110},
+            frames: {count:8, width:150, height:150,regX:75,regY:110},
             animations: {
-                stand: {frames:[0], next:false, frequency:3},
-                still: {frames:[1], next:false, frequency:1 },
-                step1: {frames:[1,2,1], next:"still", frequency:3 },
-                step2: {frames:[3,4,3,2,1], next:"still", frequency:3 },
-                step3: {frames:[3,5,5,3,2], next:"still", frequency:1 },
-                jump: {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-                land: {frames:[1], next:false, frequency:1},
+                stand:  {frames:[0], next:false, frequency:1},
+                land:   {frames:[1], next:false, frequency:1},
+                still:  {frames:[1], next:false, frequency:1 },
+                step1:  {frames:[1,2,1], next:"still", frequency:3 },
+                step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
+                step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
+                jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
+                use:    {frames:[6,7,7,6], next:"stand", frequency:2},
             }
         },
         {
@@ -319,6 +324,7 @@ var assets = (function() {
         load: function(description) {
             var spriteSheet  = new createjs.SpriteSheet(description);
             var processor = this.process.bind(this, description, spriteSheet);
+            console.log(spriteSheet);
             if (!spriteSheet.complete) {
                 spriteSheet.onComplete = processor;
             }
@@ -507,46 +513,57 @@ var main = (function () {
 	function fireAction(action) {
 		switch(action) {
 			case "FWD_STEP1": 
-                audio.soundOn(FOOT1);
+                audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
-                audio.soundOn(FOOT2);
+                audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "DBL_STEP2": 
-                audio.soundOn(FOOT2);
+                audio.soundOn(2);
                 player.actionStep(-1,1.5);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "FWD_STEP3": 
-                audio.soundOn(FOOT3);
+                audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.sprite.gotoAndPlay("step3");
 				break;
 			case "BWD_STEP1": 
-                audio.soundOn(FOOT3);
+                audio.soundOn(3);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
-                audio.soundOn(FOOT2);
+                audio.soundOn(2);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
-                audio.soundOn(FOOT1);
+                audio.soundOn(1);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step3");
 				break;
             case "FORWARD":
-                audio.soundOn(FOOT3);
-                audio.soundOn(FOOT2);
-                audio.soundOn(FOOT1);
+                audio.soundOn(3);
+                audio.soundOn(2);
+                audio.soundOn(1);
                 player.actionForward();
                 player.sprite.gotoAndPlay("jump");
+                break;
+            case "STAND":
+                audio.soundOn(4);
+                player.sprite.gotoAndPlay("stand");
+                break;
+            case "LAND":
+                player.sprite.gotoAndPlay("land");
+                break;
+            case "USE":
+                console.log("use item");
+                player.sprite.gotoAndPlay("use");
                 break;
 			default:
 				console.log("action unhandled:",action);
@@ -556,10 +573,10 @@ var main = (function () {
 
     function initializeAudio() {
         audio.initialize();
-        audio.addSound(FOOT1, 261.63); 
-        audio.addSound(FOOT2, 329.63); 
-        audio.addSound(FOOT3, 392.00); 
-        audio.addSound(STAND, 400.00); 
+        audio.addSound(1, 261.63); 
+        audio.addSound(2, 329.63); 
+        audio.addSound(3, 392.00); 
+        audio.addSound(4, 400.00); 
     }
 
     var canvas, context, stage = undefined;
