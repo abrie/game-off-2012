@@ -283,7 +283,7 @@ var assets = (function() {
                 step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
                 step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
                 jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-                use:    {frames:[6,7,7,6], next:"stand", frequency:2},
+                use:    {frames:[6,7], next:"stand", frequency:5},
             }
         },
         {
@@ -311,7 +311,6 @@ var assets = (function() {
         load: function(description) {
             var spriteSheet  = new createjs.SpriteSheet(description);
             var processor = this.process.bind(this, description, spriteSheet);
-            console.log(spriteSheet);
             if (!spriteSheet.complete) {
                 spriteSheet.onComplete = processor;
             }
@@ -498,44 +497,45 @@ var main = (function () {
 	"use strict";
 
 	function fireAction(action, actionTime) {
-        actionTime.expiration = 15;
 		switch(action) {
 			case "FWD_STEP1": 
+                actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
+                actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.sprite.gotoAndPlay("step2");
 				break;
-			case "DBL_STEP2": 
-                audio.soundOn(2);
-                player.actionStep(-1,1.5);
-                player.sprite.gotoAndPlay("step2");
-				break;
 			case "FWD_STEP3": 
+                actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.sprite.gotoAndPlay("step3");
 				break;
 			case "BWD_STEP1": 
+                actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
+                actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
+                actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(1,1);
                 player.sprite.gotoAndPlay("step3");
 				break;
             case "FORWARD":
+                actionTime.expiration = 15;
                 audio.soundOn(3);
                 audio.soundOn(2);
                 audio.soundOn(1);
@@ -543,15 +543,18 @@ var main = (function () {
                 player.sprite.gotoAndPlay("jump");
                 break;
             case "STAND":
+                actionTime.expiration = 15;
                 audio.soundOn(4);
                 player.sprite.gotoAndPlay("stand");
                 break;
             case "LAND":
+                actionTime.expiration = 15;
                 player.sprite.gotoAndPlay("land");
                 break;
             case "USE":
+                actionTime.expiration = 0;
                 console.log("use item");
-                actionTime.recovery = 30;
+                actionTime.recovery = 15;
                 player.sprite.gotoAndPlay("use");
                 break;
             case "EXPIRED":
