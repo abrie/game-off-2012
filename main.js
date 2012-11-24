@@ -44,6 +44,21 @@ var physics = (function() {
 
 			return body.CreateFixture(fixtureDef);
 		},
+		createItemFixture: function(x,y,radius,mask) {
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_dynamicBody;
+            bodyDef.position.Set(x/PPM,y/PPM);
+			var body = world.CreateBody(bodyDef);
+
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 10.0;
+			fixtureDef.friction = 1.0;
+			fixtureDef.restitution = 0.2;
+            fixtureDef.filter.maskBits = mask;
+			fixtureDef.shape = new b2CircleShape(radius/PPM);
+
+			return body.CreateFixture(fixtureDef);
+		},
 		createStaticBody: function(x,y,width,height,category) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_staticBody;
@@ -297,6 +312,14 @@ var assets = (function() {
                 d: {frames:[3], next:false, frequency:1},
             }
         },
+        {
+            name: "item",
+            images: ["assets/item.png"],
+            frames: {count:2, width:50, height:50,regX:25,regY:25},
+            animations: {
+                food: {frames:[0,1], next:"food", frequency:2},
+            }
+        },
     ];
 
     return {
@@ -350,6 +373,13 @@ var playspace = (function() {
             layer.push( {body:body,skin:skin, origin:{x:origin.x, y:origin.y}} );
             this.container.addChild(skin);
         },
+        addItem: function(item,skin,layerNumber) {
+            var layer = this.getLayer(layerNumber);
+            var body = item.GetBody();
+            var origin = body.GetWorldCenter();
+            layer.push( {body:body, skin:skin, origin:{x:origin.x, y:origin.y}});
+            this.container.addChild(skin);
+        },
         getLayer: function(layer) {
             var result = this.layers[layer];
             if(result) {
@@ -399,7 +429,7 @@ var playspace = (function() {
 
 var camera = (function() {
     return {
-        zoomFactorTarget: 0.5,
+        zoomFactorTarget: 1.0,
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
@@ -431,7 +461,6 @@ var camera = (function() {
         },
         advance: function() {
             if( this.zoomFactorTarget != this.zoomFactor ) {
-                console.log(this.zoomFactorTarget, this.zoomFactor);
                 if( this.zoomFactorTarget > this.zoomFactor ) {
                     this.setZoom( Math.min(this.zoomFactor+0.01, this.zoomFactorTarget) );
                 }
@@ -635,6 +664,11 @@ var main = (function () {
             buildingSkin.gotoAndPlay( buildingNames[Math.floor( Math.random() * 4 )] );
             playspace.addStaticBody( buildingBody, buildingSkin, 3 );
         }
+
+        var itemFixture = physics.createItemFixture(-100,10,25,1);
+        var itemSkin = assets.getAnimation("item");
+        itemSkin.gotoAndPlay("food");
+        playspace.addItem(itemFixture, itemSkin, 1);
     }
 
 	return {
@@ -688,7 +722,7 @@ var main = (function () {
             playspace.advance();
 			player.advance();
 			stage.update();
-            //this.drawDebug();
+            this.drawDebug();
 		}
 	}
 }());
