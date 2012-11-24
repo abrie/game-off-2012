@@ -157,26 +157,21 @@ var input = (function () {
     var ActionNode = function(key, action) {
         this.action = action;
         this.looped = undefined;
-        this.next = {};
+        this.branch = {};
         this.get = function( key ) {
-            return this.next[key];
+            return this.branch[key];
         }
         this.add = function( key, action ) {
             var newNode = new ActionNode(key, action);
-            this.next[key] = newNode;
+            this.branch[key] = newNode;
             return newNode;
         }
         this.loop = function( node ) {
             this.looped = node;
         }
-        this.go = function( sequence ) {
-            var nextFollow = this.next[ sequence.shift() ];
-            if( nextFollow ) {
-                return nextFollow.go(sequence);
-            }
-            else {
-                return this;
-            }
+        this.seek = function( sequence ) {
+            var branch = this.branch[ sequence.shift() ];
+            return branch ? branch.seek(sequence) : this;
         }
     }
 
@@ -184,13 +179,13 @@ var input = (function () {
     var thisAction = rootAction;
 
     rootAction.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
-    rootAction.go([1,2,3]).add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3").add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FORWARD");
+    rootAction.seek([1,2,3]).add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3").add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FORWARD");
     rootAction.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
     rootAction.add(4, "STAND").add(4, "LAND");
-    rootAction.go([4]).add(3, "USE").loop( rootAction.go([4]));
+    rootAction.seek([4]).add(3, "USE").loop( rootAction.seek([4]));
 
     var actionTime = {recovery:0,expiration:15};
-    function notifyAndNext() {
+    function notifyThenNext() {
         actionDelegate(thisAction.action, actionTime);
         return thisAction.looped ? thisAction.looped : thisAction;
     }
@@ -209,11 +204,11 @@ var input = (function () {
 
         thisAction = thisAction.get(id);
         if(thisAction) {
-            thisAction = notifyAndNext();
+            thisAction = notifyThenNext();
         }
         else {
             thisAction = rootAction.get(id);
-            thisAction = thisAction ? notifyAndNext() : rootAction;
+            thisAction = thisAction ? notifyThenNext() : rootAction;
         }
 	}
 
