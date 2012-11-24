@@ -399,6 +399,7 @@ var playspace = (function() {
 
 var camera = (function() {
     return {
+        zoomFactorTarget: 0.5,
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
@@ -406,7 +407,7 @@ var camera = (function() {
             this.stage = stage;
             this.origin = {x:target.x, y:target.y};
             this.target = {x:target.x, y:target.y};
-            this.setZoom(1.0);
+            this.setZoom(0.01);
             this.updateRequiredTranslation();
         },
         updateRequiredTranslation: function() {
@@ -418,23 +419,32 @@ var camera = (function() {
             this.zoomFactor = factor;
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
-            this.offset = {x:this.stage.canvas.width/2/factor, y:this.stage.canvas.height/2/factor};
+            this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+200)/factor};
 			physics.debugDraw.SetDrawScale(PPM*factor);
-            //this.lookAt(this.target);
+            this.lookAt(this.target);
 
         },
         lookAt: function(point) {
             this.target.x = point.x;
             this.target.y = point.y;
             this.updateRequiredTranslation();
+        },
+        advance: function() {
+            if( this.zoomFactorTarget != this.zoomFactor ) {
+                console.log(this.zoomFactorTarget, this.zoomFactor);
+                if( this.zoomFactorTarget > this.zoomFactor ) {
+                    this.setZoom( Math.min(this.zoomFactor+0.01, this.zoomFactorTarget) );
+                }
+                else {
+                    this.setZoom( Math.max(this.zoomFactor-0.01, this.zoomFactorTarget) );
+                }
+            }
         }
     }
 
 }());
 
 var player = (function() {
-    var zoomLevel = 1;
-    var zoomDirection = 1;
 	return {
 		sprite: undefined,
         body: undefined,
@@ -467,7 +477,6 @@ var player = (function() {
 		},
 		advance: function() {
             var current = this.body().GetWorldCenter();
-            var velocity = this.body().GetLinearVelocity().x+1;
             camera.lookAt( current );
 		},
         actionStep: function(direction,mag) {
@@ -583,7 +592,7 @@ var main = (function () {
         stage.autoClear = true;
     }
 
-    function generateTestSprite(width,height, fill,depth) {
+    function generateFloorSprite(width,height, fill,depth) {
         var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
         var margins = blurFilter.getBounds();
 
@@ -611,7 +620,7 @@ var main = (function () {
             Graphics.getRGB(0,128,128)]; 
             
         var floorBody = physics.createStaticBody(0,500,100000,10,255);
-        var floorSkin = generateTestSprite(10000,10,colors[0],10);
+        var floorSkin = generateFloorSprite(10000,10,colors[0],10);
         playspace.addStaticBody( floorBody, floorSkin, 255 );
         var buildingNames = ["a","b","c","d"]
         for( var count=0; count<100; count+=1 ) {
@@ -674,9 +683,10 @@ var main = (function () {
             this.debugClear();
 			input.advance();
 			audio.advance();
-			player.advance();
-            playspace.advance();
+            camera.advance();
 			physics.advance();
+            playspace.advance();
+			player.advance();
 			stage.update();
             //this.drawDebug();
 		}
