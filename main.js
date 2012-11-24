@@ -28,7 +28,7 @@ var physics = (function() {
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
 		},
-		createDynamicBody: function(x,y,width,height,mask) {
+		createPlayerFixture: function(x,y,width,height,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
             bodyDef.position.Set(x/PPM,y/PPM);
@@ -648,7 +648,7 @@ var main = (function () {
             physics.initialize();
             physics.setDebugDraw(context);
 
-            var playerFixture = physics.createDynamicBody(0,0,75,75,1);
+            var playerFixture = physics.createPlayerFixture(0,0,75,75,1);
             var playerSkin = assets.getAnimation("player");
             player.initialize( playerFixture, playerSkin );
 
