@@ -13,6 +13,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 ,	b2Math = Box2D.Common.Math.b2Math
 ;
 
+var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
 
@@ -20,6 +21,7 @@ var score = (function(context) {
     return {
         context: undefined,
         container: new Container,
+        gradient: undefined,
         scoreSprite:undefined,
         ball: undefined,
         player: undefined,
@@ -36,13 +38,20 @@ var score = (function(context) {
             return this.normalize(this.player,2);
         },
         update: function() {
-            this.context.strokeStyle='rgb(0,250,0)';
+            this.context.strokeStyle='#AAA';
+            this.context.lineWidth=30;
+            this.context.beginPath();
+            this.context.arc(100,100,45,Math.PI,2*Math.PI,false);
+            this.context.stroke();
+
+            score.setText( "b:"+score.ball.toFixed(1)+"p:"+score.player.toFixed(1) );
+            this.context.strokeStyle=this.gradient;
             this.context.lineWidth=20;
             this.context.beginPath();
             this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.ball,2)*Math.PI,false);
             this.context.stroke();
 
-            this.context.strokeStyle='rgba(250,0,0,0.5)';
+            this.context.strokeStyle='#B7FA00';
             this.context.lineWidth=10;
             this.context.beginPath();
             this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.player,2)*Math.PI,false);
@@ -51,6 +60,10 @@ var score = (function(context) {
         },
         initialize : function(context) {
             this.context = context;
+            this.gradient = this.context.createLinearGradient(0,100,100,100);
+            this.gradient.addColorStop(0.5, '#B7FA00');
+            this.gradient.addColorStop(1, '#FA9600');
+            console.log(context);
             this.container.x = 0;
             this.container.y = 0;
             this.scoreSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
@@ -773,8 +786,12 @@ var main = (function () {
             physics.drawDebug();
             context.restore();
         },
-		tick: function (elapsedTime) {
+        debugUpdate: function(elapsedTime) {
             this.debugClear();
+            this.update(elapsedTime);
+            this.drawDebug();
+        },
+        update: function(elapsedTime) {
 			input.advance();
 			audio.advance();
             camera.advance();
@@ -783,7 +800,14 @@ var main = (function () {
 			player.advance();
 			stage.update();
             score.update();
-            //this.drawDebug();
-		}
-	}
+        },
+		tick: function (elapsedTime) {
+            if(DEBUG) {
+                this.debugUpdate();
+            }
+            else {
+                this.update(elapsedTime);
+            }
+        }
+	};
 }());
