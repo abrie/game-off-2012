@@ -16,23 +16,51 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 var FPS = 30;
 var PPM = 150;
 
-var scoreSprite;
-
-var score = (function() {
+var score = (function(context) {
     return {
+        context: undefined,
+        container: new Container,
+        scoreSprite:undefined,
         ball: undefined,
         player: undefined,
-        normalize: function(value, min, max) {
-            return value/(min+max)*Math.PI;
+        setText: function(string) {
+            this.scoreSprite.text = string;
         },
-        ballNormalizedToPI: function() {
-            return this.normalize(this.ball,0,2);
+        normalize: function(value, max) {
+            return value/(0+max);
         },
-        playerNormalizedToPI: function() {
-            return this.normalize(this.player,0,2);
+        normalizedBallVelocity: function() {
+            return this.normalize(this.ball,2);
+        },
+        normalizedPlayerVelocity: function() {
+            return this.normalize(this.player,2);
+        },
+        update: function() {
+            this.context.strokeStyle='rgb(0,250,0)';
+            this.context.lineWidth=20;
+            this.context.beginPath();
+            this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.ball,2)*Math.PI,false);
+            this.context.stroke();
+
+            this.context.strokeStyle='rgba(250,0,0,0.5)';
+            this.context.lineWidth=10;
+            this.context.beginPath();
+            this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.player,2)*Math.PI,false);
+            this.context.stroke();
+            score.setText( "b:"+score.ball.toFixed(1)+"p:"+score.player.toFixed(1) );
+        },
+        initialize : function(context) {
+            this.context = context;
+            this.container.x = 0;
+            this.container.y = 0;
+            this.scoreSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
+            this.scoreSprite.x = 0;
+            this.scoreSprite.y = 0;
+            this.container.addChild(this.scoreSprite);
         }
     };
 }());
+
 var physics = (function() {
 	"use strict";
 	var world = undefined;
@@ -724,10 +752,8 @@ var main = (function () {
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
 
-            scoreSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
-            scoreSprite.x = 0;
-            scoreSprite.y = 0;
-            stage.addChild(scoreSprite);
+            score.initialize(context);
+            stage.addChild(score.container);
 
             camera.initialize( player.body().GetWorldCenter(), stage );
             input.initialize(fireAction);
@@ -747,20 +773,6 @@ var main = (function () {
             physics.drawDebug();
             context.restore();
         },
-        drawScore: function() {
-            context.strokeStyle='rgb(0,250,0)';
-            context.lineWidth=20;
-            context.beginPath();
-            context.arc(100,100,45,Math.PI,Math.PI+score.ballNormalizedToPI(),false);
-            context.stroke();
-
-            context.strokeStyle='rgba(250,0,0,0.5)';
-            context.lineWidth=10;
-            context.beginPath();
-            context.arc(100,100,45,Math.PI,Math.PI+score.playerNormalizedToPI(),false);
-            context.stroke();
-            scoreSprite.text = "b:"+score.ball.toFixed(1)+"p:"+score.player.toFixed(1);
-        },
 		tick: function (elapsedTime) {
             this.debugClear();
 			input.advance();
@@ -770,7 +782,7 @@ var main = (function () {
             playspace.advance();
 			player.advance();
 			stage.update();
-            this.drawScore();
+            score.update();
             //this.drawDebug();
 		}
 	}
