@@ -422,13 +422,13 @@ var playspace = (function() {
         initialize: function() {},
         addPlayer: function(fixture,skin) {
             this.player.fixture = fixture;
-            this.player.body = function() { return this.fixture.GetBody(); };
+            this.player.body = fixture.GetBody();
             this.player.skin = skin;
             this.container.addChild(this.player.skin);
         },
         addBall: function(fixture,skin) {
             this.ball.fixture = fixture;
-            this.ball.body = function() { return this.fixture.GetBody(); };
+            this.ball.body = fixture.GetBody();
             this.ball.skin = skin;
             this.container.addChild(skin);
         },
@@ -456,14 +456,14 @@ var playspace = (function() {
             }
         },
         advance: function() {
-            this.player.skin.rotation = this.player.body().GetAngle() * (180 / Math.PI);
-            this.player.skin.x = this.player.body().GetWorldCenter().x * PPM;
-            this.player.skin.y = this.player.body().GetWorldCenter().y * PPM;
-            this.ball.skin.rotation = this.ball.body().GetAngle() * (180 / Math.PI);
-            this.ball.skin.x = this.ball.body().GetWorldCenter().x * PPM;
-            this.ball.skin.y = this.ball.body().GetWorldCenter().y * PPM;
-            score.player = Math.abs( this.player.body().GetLinearVelocity().x );
-            score.ball = Math.abs( this.ball.body().GetLinearVelocity().x );
+            this.player.skin.rotation = this.player.body.GetAngle() * (180 / Math.PI);
+            this.player.skin.x = this.player.body.GetWorldCenter().x * PPM;
+            this.player.skin.y = this.player.body.GetWorldCenter().y * PPM;
+            this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
+            this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
+            this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
+            score.player = Math.abs( this.player.body.GetLinearVelocity().x );
+            score.ball = Math.abs( this.ball.body.GetLinearVelocity().x );
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
@@ -548,34 +548,34 @@ var player = (function() {
 		sprite: undefined,
         body: undefined,
         impulse: function(direction, rate, max) {
-            var velocity = this.body().GetLinearVelocity().x;
+            var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
                 b2Math.Max( velocity - rate, -max ) : b2Math.Min( -velocity + rate, max ); 
             var velChange = targetVelocity - velocity;
-            var impel = this.body().GetMass() * velChange;
-            this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
+            var impel = this.body.GetMass() * velChange;
+            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
         brake: function(direction) {
-            var velocity = this.body().GetLinearVelocity().x;
+            var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
                 b2Math.Max( velocity - 0.5, 0 ) : b2Math.Min( velocity + 0.5, 0 ); 
             var velChange = targetVelocity - velocity;
-            var impel = this.body().GetMass() * velChange;
-            this.body().ApplyImpulse( new b2Vec2(impel,0), this.body().GetWorldCenter() );
+            var impel = this.body.GetMass() * velChange;
+            this.body.ApplyImpulse( new b2Vec2(impel,0), this.body.GetWorldCenter() );
         },
         jump: function(magnitude) {
-            var velocity = this.body().GetLinearVelocity();
+            var velocity = this.body.GetLinearVelocity();
             velocity.y = -0.75*magnitude;
-            this.body().SetLinearVelocity(velocity);
+            this.body.SetLinearVelocity(velocity);
         },
 		initialize: function( fixture, skin ) {
             this.fixture = fixture;
-            this.body = function() { return fixture.GetBody(); }
+            this.body = this.fixture.GetBody();
             this.sprite = skin;
             this.sprite.gotoAndPlay("still");
 		},
 		advance: function() {
-            var current = this.body().GetWorldCenter();
+            var current = this.body.GetWorldCenter();
             camera.lookAt( current );
 		},
         actionStep: function(direction,mag) {
@@ -768,7 +768,7 @@ var main = (function () {
             score.initialize(context);
             stage.addChild(score.container);
 
-            camera.initialize( player.body().GetWorldCenter(), stage );
+            camera.initialize( player.body.GetWorldCenter(), stage );
             input.initialize(fireAction);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
