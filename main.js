@@ -17,7 +17,27 @@ var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
 
-var score = (function() {
+var manager = (function(){
+    return {
+        playerVelocity: 0,
+        ballVelocity: 0,
+        targetVelocity: 0,
+        set: function(playerVelocity, ballVelocity) {
+            this.playerVelocity = Math.abs( playerVelocity );
+            this.ballVelocity = Math.abs( ballVelocity );
+            hud.set( playerVelocity, ballVelocity );
+            if( this.targetVelocity - this.ballVelocity <= 0 ) {
+                console.log("objective achieved");
+            }
+        },
+        initialize: function() {
+            this.targetVelocity = 1.2;
+            hud.targetVelocity = this.targetVelocity;
+        }
+    }
+}());
+
+var hud = (function() {
     var context, gradient, textSprite = undefined;
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
@@ -31,22 +51,23 @@ var score = (function() {
     };
     return {
         container: new Container,
-        ballVelocity: undefined,
-        playerVelocity: undefined,
+        ballNormalizedVelocity: undefined,
+        playerNormalizedVelocity: undefined,
         targetVelocity: undefined,
         set: function(playerVelocity, ballVelocity) {
             this.playerVelocity = Math.abs( playerVelocity );
             this.ballVelocity = Math.abs( ballVelocity );
+            this.playerNormalizedVelocity = normalize( this.playerVelocity, this.targetVelocity);
+            this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
         update: function() {
             drawMeter( "#AAA", 30, 1 );
-            drawMeter( gradient, 20, normalize(this.ballVelocity, this.targetVelocity) );
-            drawMeter( "#B7FA00", 10, normalize(this.playerVelocity, this.targetVelocity) );
+            drawMeter( gradient, 20, this.ballNormalizedVelocity );
+            drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
             textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
         },
         initialize : function(ctx) {
             context = ctx;
-            this.targetVelocity = 2;
             gradient = context.createLinearGradient(0,100,100,100);
             gradient.addColorStop(0.5, '#B7FA00');
             gradient.addColorStop(1, '#FA9600');
@@ -449,7 +470,7 @@ var playspace = (function() {
             this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
             this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
             this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
-            score.set( this.player.body.GetLinearVelocity().x, this.ball.body.GetLinearVelocity().x );
+            manager.set( this.player.body.GetLinearVelocity().x, this.ball.body.GetLinearVelocity().x );
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
@@ -733,6 +754,7 @@ var main = (function () {
             assets.initialize();
         },
 		start: function () {
+            manager.initialize();
             initializeAudio();
             initializeCanvas();
             physics.initialize();
@@ -751,8 +773,8 @@ var main = (function () {
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
 
-            score.initialize(context);
-            stage.addChild(score.container);
+            hud.initialize(context);
+            stage.addChild(hud.container);
 
             camera.initialize( player.body.GetWorldCenter(), stage );
             input.initialize(fireAction);
@@ -785,7 +807,7 @@ var main = (function () {
             playspace.advance();
 			player.advance();
 			stage.update();
-            score.update();
+            hud.update();
         },
 		tick: function (elapsedTime) {
             if(DEBUG) {
