@@ -17,7 +17,7 @@ var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
 
-var score = (function(context) {
+var score = (function() {
     return {
         context: undefined,
         container: new Container,
