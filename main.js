@@ -18,58 +18,45 @@ var FPS = 30;
 var PPM = 150;
 
 var score = (function() {
+    var context, gradient, textSprite = undefined;
+    var normalize = function(value, range) {
+        return Math.min( value/range, 1);
+    }          
+    var drawMeter = function(stroke, width, level) {
+        context.strokeStyle=stroke;
+        context.lineWidth=width;
+        context.beginPath();
+        context.arc(100,100,45,Math.PI,Math.PI+level*Math.PI,false);
+        context.stroke();
+    };
     return {
-        context: undefined,
         container: new Container,
-        gradient: undefined,
-        scoreSprite:undefined,
-        ball: undefined,
-        player: undefined,
-        setText: function(string) {
-            this.scoreSprite.text = string;
-        },
-        normalize: function(value, max) {
-            return value/(0+max);
-        },
-        normalizedBallVelocity: function() {
-            return this.normalize(this.ball,2);
-        },
-        normalizedPlayerVelocity: function() {
-            return this.normalize(this.player,2);
+        ballVelocity: undefined,
+        playerVelocity: undefined,
+        targetVelocity: undefined,
+        set: function(playerVelocity, ballVelocity) {
+            this.playerVelocity = Math.abs( playerVelocity );
+            this.ballVelocity = Math.abs( ballVelocity );
         },
         update: function() {
-            this.context.strokeStyle='#AAA';
-            this.context.lineWidth=30;
-            this.context.beginPath();
-            this.context.arc(100,100,45,Math.PI,2*Math.PI,false);
-            this.context.stroke();
-
-            score.setText( "b:"+score.ball.toFixed(1)+"p:"+score.player.toFixed(1) );
-            this.context.strokeStyle=this.gradient;
-            this.context.lineWidth=20;
-            this.context.beginPath();
-            this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.ball,2)*Math.PI,false);
-            this.context.stroke();
-
-            this.context.strokeStyle='#B7FA00';
-            this.context.lineWidth=10;
-            this.context.beginPath();
-            this.context.arc(100,100,45,Math.PI,Math.PI+this.normalize(this.player,2)*Math.PI,false);
-            this.context.stroke();
-            score.setText( "b:"+score.ball.toFixed(1)+"p:"+score.player.toFixed(1) );
+            drawMeter( "#AAA", 30, 1 );
+            drawMeter( gradient, 20, normalize(this.ballVelocity, this.targetVelocity) );
+            drawMeter( "#B7FA00", 10, normalize(this.playerVelocity, this.targetVelocity) );
+            textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
         },
-        initialize : function(context) {
-            this.context = context;
-            this.gradient = this.context.createLinearGradient(0,100,100,100);
-            this.gradient.addColorStop(0.5, '#B7FA00');
-            this.gradient.addColorStop(1, '#FA9600');
-            console.log(context);
+        initialize : function(ctx) {
+            context = ctx;
+            this.targetVelocity = 2;
+            gradient = context.createLinearGradient(0,100,100,100);
+            gradient.addColorStop(0.5, '#B7FA00');
+            gradient.addColorStop(1, '#FA9600');
             this.container.x = 0;
             this.container.y = 0;
-            this.scoreSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
-            this.scoreSprite.x = 0;
-            this.scoreSprite.y = 0;
-            this.container.addChild(this.scoreSprite);
+            textSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
+            textSprite.x = 0;
+            textSprite.y = 0;
+            console.log(textSprite);
+            this.container.addChild(textSprite);
         }
     };
 }());
@@ -462,8 +449,7 @@ var playspace = (function() {
             this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
             this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
             this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
-            score.player = Math.abs( this.player.body.GetLinearVelocity().x );
-            score.ball = Math.abs( this.ball.body.GetLinearVelocity().x );
+            score.set( this.player.body.GetLinearVelocity().x, this.ball.body.GetLinearVelocity().x );
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
