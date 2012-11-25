@@ -15,6 +15,7 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 
 var FPS = 30;
 var PPM = 150;
+var score;
 
 var physics = (function() {
 	"use strict";
@@ -358,6 +359,7 @@ var assets = (function() {
 var playspace = (function() {
     return {
         player: {body:undefined, skin:undefined, origin:undefined},
+        ball: {body:undefined, skin:undefined, origin:undefined},
         layers: {},
         container: new Container,
         initialize: function() {},
@@ -366,6 +368,12 @@ var playspace = (function() {
             this.player.body = function() { return this.fixture.GetBody(); };
             this.player.skin = skin;
             this.container.addChild(this.player.skin);
+        },
+        addBall: function(fixture,skin) {
+            this.ball.fixture = fixture;
+            this.ball.body = function() { return this.fixture.GetBody(); };
+            this.ball.skin = skin;
+            this.container.addChild(skin);
         },
         addStaticBody: function(body,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
@@ -394,6 +402,10 @@ var playspace = (function() {
             this.player.skin.rotation = this.player.body().GetAngle() * (180 / Math.PI);
             this.player.skin.x = this.player.body().GetWorldCenter().x * PPM;
             this.player.skin.y = this.player.body().GetWorldCenter().y * PPM;
+            this.ball.skin.rotation = this.ball.body().GetAngle() * (180 / Math.PI);
+            this.ball.skin.x = this.ball.body().GetWorldCenter().x * PPM;
+            this.ball.skin.y = this.ball.body().GetWorldCenter().y * PPM;
+            score.text = Math.abs( this.ball.body().GetLinearVelocity().x).toFixed(1);
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
@@ -668,7 +680,7 @@ var main = (function () {
         var itemFixture = physics.createItemFixture(-100,10,25,1);
         var itemSkin = assets.getAnimation("item");
         itemSkin.gotoAndPlay("food");
-        playspace.addItem(itemFixture, itemSkin, 1);
+        playspace.addBall(itemFixture, itemSkin, 1);
     }
 
 	return {
@@ -694,6 +706,11 @@ var main = (function () {
 
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
+
+            score = new createjs.Text(0,"bold 36px Arial","#F00");
+            score.x = 100;
+            score.y = 100;
+            stage.addChild(score);
 
             camera.initialize( player.body().GetWorldCenter(), stage );
             input.initialize(fireAction);
@@ -722,7 +739,7 @@ var main = (function () {
             playspace.advance();
 			player.advance();
 			stage.update();
-            this.drawDebug();
+            //this.drawDebug();
 		}
 	}
 }());
