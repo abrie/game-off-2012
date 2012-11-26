@@ -18,21 +18,25 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
+    var objectives = [{title:"level 1", targetVelocity:0.5}];
+    var currentObjective = objectives[0];
+
     return {
         playerVelocity: 0,
         ballVelocity: 0,
-        targetVelocity: 0,
         set: function(playerVelocity, ballVelocity) {
             this.playerVelocity = Math.abs( playerVelocity );
             this.ballVelocity = Math.abs( ballVelocity );
             hud.set( playerVelocity, ballVelocity );
-            if( this.targetVelocity - this.ballVelocity <= 0 ) {
+            if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
                 console.log("objective achieved");
             }
         },
+        setObjective: function(objectiveIndex) {
+            currentObjective = objectives[objectiveIndex];
+            hud.targetVelocity = currentObjective.targetVelocity;
+        },
         initialize: function() {
-            this.targetVelocity = 1.2;
-            hud.targetVelocity = this.targetVelocity;
         }
     }
 }());
@@ -86,7 +90,6 @@ var physics = (function() {
 	"use strict";
 	var world = undefined;
 	return {
-        debugDraw: undefined,
 		advance: function() {
 			world.ClearForces();
 			world.Step(1 / FPS, 10, 10);
@@ -298,7 +301,6 @@ var input = (function () {
 	}
 
 	var keyMap = {76:1, 75:2, 74:3, 72:4, 32:5};
-
 	function onKeyDown(keyCode) {
 		var mapped = keyMap[keyCode];
 		if (mapped) {
@@ -330,11 +332,13 @@ var input = (function () {
 
 	var actionDelegate;
 	return {
-		initialize: function (onAction) {
-			actionDelegate = onAction;
+		initialize: function () {
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
+        setActionDelegate: function (delegate) {
+            actionDelegate = delegate;
+        },
 		advance: function () {
             if( actionTime.recovery > 0) {
                 actionTime.recovery--;
@@ -438,7 +442,7 @@ var playspace = (function() {
             this.ball.fixture = fixture;
             this.ball.body = fixture.GetBody();
             this.ball.skin = skin;
-            this.container.addChild(skin);
+            this.container.addChild(this.ball.skin);
         },
         addStaticBody: function(body,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
@@ -548,6 +552,20 @@ var camera = (function() {
         }
     }
 
+}());
+
+var ball = (function() {
+    return {
+        sprite: undefined,
+        body: undefined,
+		initialize: function( fixture, skin ) {
+            this.fixture = fixture;
+            this.body = this.fixture.GetBody();
+            this.sprite = skin;
+            this.sprite.gotoAndPlay("food");
+		},
+    }
+    
 }());
 
 var player = (function() {
@@ -742,10 +760,6 @@ var main = (function () {
             playspace.addStaticBody( buildingBody, buildingSkin, 3 );
         }
 
-        var itemFixture = physics.createItemFixture(-100,10,25,1);
-        var itemSkin = assets.getAnimation("item");
-        itemSkin.gotoAndPlay("food");
-        playspace.addBall(itemFixture, itemSkin, 1);
     }
 
 	return {
@@ -757,6 +771,7 @@ var main = (function () {
             manager.initialize();
             initializeAudio();
             initializeCanvas();
+            input.initialize();
             physics.initialize();
             physics.setDebugDraw(context);
 
@@ -773,14 +788,20 @@ var main = (function () {
             playspace.addPlayer( playerFixture, playerSkin );
             stage.addChild(playspace.container);
 
+            var ballFixture = physics.createItemFixture(-100,10,25,1);
+            var ballSkin = assets.getAnimation("item");
+            ball.initialize( ballFixture, ballSkin );
+            playspace.addBall(ballFixture, ballSkin);
+
             hud.initialize(context);
             stage.addChild(hud.container);
 
             camera.initialize( player.body.GetWorldCenter(), stage );
-            input.initialize(fireAction);
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
+            input.setActionDelegate(fireAction);
+            manager.setObjective(0);
 		},
         debugClear: function() {
             context.save();
