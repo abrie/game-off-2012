@@ -103,6 +103,9 @@ var physics = (function() {
 		initialize: function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
 		},
+        removeBody: function(body) {
+            world.DestroyBody(body);
+        },
 		createPlayerFixture: function(x,y,width,height,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
@@ -131,6 +134,22 @@ var physics = (function() {
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.maskBits = mask;
 			fixtureDef.shape = new b2CircleShape(radius/PPM);
+
+			return body.CreateFixture(fixtureDef);
+		},
+		createMarkerFixture: function(x,y,width,height,mask) {
+			var bodyDef = new b2BodyDef;
+			bodyDef.type = b2Body.b2_dynamicBody;
+            bodyDef.position.Set(x,y);
+			var body = world.CreateBody(bodyDef);
+
+			var fixtureDef = new b2FixtureDef;
+			fixtureDef.density = 1.0;
+			fixtureDef.friction = 0.5;
+			fixtureDef.restitution = 1.0;
+            fixtureDef.filter.maskBits = mask;
+			fixtureDef.shape = new b2PolygonShape;
+			fixtureDef.shape.SetAsBox( width/2, height/2 );
 
 			return body.CreateFixture(fixtureDef);
 		},
@@ -447,10 +466,9 @@ var playspace = (function() {
             this.ball = entity;
             this.container.addChild(this.ball.skin);
         },
-        addMarker: function(position, skin) {
-            this.markers.push(skin);
-            skin.x = position.x * PPM;
-            skin.y = position.y * PPM;
+        addMarker: function(fixture, skin) {
+            var entity = {frames:30,fixture:fixture, body:fixture.GetBody(), skin:skin};
+            this.markers.push(entity);
             this.container.addChild(skin);
         },
         addStaticBody: function(body,skin,layerNumber) {
@@ -496,6 +514,18 @@ var playspace = (function() {
                     piece.skin.y = piece.body.GetWorldCenter().y * PPM;
                 });
             }, this);
+            this.markers = _.filter( this.markers, function(entity) {
+                if( entity.frames-- === 0 ) {
+                    this.container.removeChild(entity.skin);
+                    physics.removeBody( entity.body );
+                    return false;
+                }
+                var center = entity.body.GetWorldCenter();
+                entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
+                entity.skin.x = center.x * PPM;
+                entity.skin.y = center.y * PPM;
+                return true;
+            },this);
         },
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
@@ -650,9 +680,11 @@ var trails = (function (){
     return {
         addMessage: function(body,message) {
             var bodyCenter = body.GetWorldCenter();
+            var fixture = physics.createMarkerFixture( bodyCenter.x, bodyCenter.y, 0.5, 0.5, 0 );
+            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), bodyCenter );
             var sprite = new createjs.Text(0,"bold 32px Arial","#FFF");
             sprite.text = message;
-            playspace.addMarker(bodyCenter, sprite);
+            playspace.addMarker(fixture, sprite);
         }
     }
 }());
@@ -723,7 +755,6 @@ var main = (function () {
                 player.skin.gotoAndPlay("use");
                 break;
             case "EXPIRED":
-                console.log("action time expired.");
                 player.skin.gotoAndPlay("land");
                 break;
 			default:
