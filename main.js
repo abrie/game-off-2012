@@ -463,13 +463,19 @@ var playspace = (function() {
                 return this.layers[layer];
             }
         },
-        advance: function() {
+        updatePlayer: function() {
             this.player.skin.rotation = this.player.body.GetAngle() * (180 / Math.PI);
             this.player.skin.x = this.player.body.GetWorldCenter().x * PPM;
             this.player.skin.y = this.player.body.GetWorldCenter().y * PPM;
+        },
+        updateBall: function() {
             this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
             this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
             this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
+        },
+        advance: function() {
+            this.updatePlayer();
+            this.updateBall();
             manager.set( this.player.body.GetLinearVelocity().x, this.ball.body.GetLinearVelocity().x );
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
