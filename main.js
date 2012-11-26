@@ -212,10 +212,10 @@ var audio = (function () {
                 else {
                     var now = audioContext.currentTime;
                     this.envelope.gain.linearRampToValueAtTime(0, now);
-                    this.envelope.gain.linearRampToValueAtTime(0.25, now+1/FPS);
-                    this.envelope.gain.linearRampToValueAtTime(0, now+3/FPS);
+                    this.envelope.gain.linearRampToValueAtTime(0.90, now+1/FPS);
+                    this.envelope.gain.linearRampToValueAtTime(0, now+2/FPS);
                     this.oscillator.noteOn(now);
-                    this.oscillator.noteOff(now+3/FPS);
+                    this.oscillator.noteOff(now+2/FPS);
                 }
 			},
 			reset : function() {
@@ -514,7 +514,7 @@ var playspace = (function() {
                     piece.skin.y = piece.body.GetWorldCenter().y * PPM;
                 });
             }, this);
-            // filter seems fairly inefficient here, garbage might be a problem
+            // filter seems fairly inefficient here, garbage collection might present a problem
             this.markers = _.filter( this.markers, function(entity) {
                 if( entity.frames-- === 0 ) {
                     this.container.removeChild(entity.skin);
