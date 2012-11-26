@@ -507,6 +507,7 @@ var playspace = (function() {
 var camera = (function() {
     return {
         zoomFactorTarget: 1.0,
+        subjectOfInterest: undefined,
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
@@ -535,6 +536,9 @@ var camera = (function() {
             this.target.y = point.y;
             this.updateRequiredTranslation();
         },
+        watch: function(entity) {
+            this.entityOfInterest = entity;
+        },
         advance: function() {
             if( this.zoomFactorTarget != this.zoomFactor ) {
                 if( this.zoomFactorTarget > this.zoomFactor ) {
@@ -544,6 +548,7 @@ var camera = (function() {
                     this.setZoom( Math.max(this.zoomFactor-0.01, this.zoomFactorTarget) );
                 }
             }
+            this.lookAt(this.entityOfInterest.body.GetWorldCenter());
         }
     }
 
@@ -595,8 +600,6 @@ var player = (function() {
             this.skin.gotoAndPlay("still");
 		},
 		advance: function() {
-            var current = this.body.GetWorldCenter();
-            camera.lookAt( current );
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
@@ -778,6 +781,7 @@ var main = (function () {
 
             player.initialize();
             playspace.addPlayer( player );
+            camera.watch( player );
 
             ball.initialize();
             playspace.addBall( ball );
@@ -787,7 +791,6 @@ var main = (function () {
             hud.initialize(context);
             stage.addChild(hud.container);
 
-            camera.lookAt( player.body.GetWorldCenter() );
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
