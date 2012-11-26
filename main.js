@@ -34,7 +34,7 @@ var manager = (function(){
         },
         advance: function(playerVelocity, ballVelocity) {
             if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
-                console.log("objective achieved");
+                // objective acheived code here...
             }
         },
         setObjective: function(objectiveIndex) {
@@ -436,6 +436,7 @@ var playspace = (function() {
         player: {body:undefined, skin:undefined, origin:undefined},
         ball: {body:undefined, skin:undefined, origin:undefined},
         layers: {},
+        markers: [],
         container: new Container,
         initialize: function() {},
         addPlayer: function(entity) {
@@ -445,6 +446,12 @@ var playspace = (function() {
         addBall: function(entity) {
             this.ball = entity;
             this.container.addChild(this.ball.skin);
+        },
+        addMarker: function(position, skin) {
+            this.markers.push(skin);
+            skin.x = position.x * PPM;
+            skin.y = position.y * PPM;
+            this.container.addChild(skin);
         },
         addStaticBody: function(body,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
@@ -639,6 +646,17 @@ var player = (function() {
 	}
 }());
 
+var trails = (function (){
+    return {
+        addMessage: function(body,message) {
+            var bodyCenter = body.GetWorldCenter();
+            var sprite = new createjs.Text(0,"bold 32px Arial","#FFF");
+            sprite.text = message;
+            playspace.addMarker(bodyCenter, sprite);
+        }
+    }
+}());
+
 var main = (function () {
 	"use strict";
 
@@ -687,6 +705,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionForward();
                 player.skin.gotoAndPlay("jump");
+                trails.addMessage(player.body, "boing!");
                 break;
             case "STAND":
                 actionTime.expiration = 15;
