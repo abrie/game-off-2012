@@ -87,7 +87,6 @@ var hud = (function() {
             textSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
             textSprite.x = 0;
             textSprite.y = 0;
-            console.log(textSprite);
             this.container.addChild(textSprite);
         }
     };
@@ -120,7 +119,7 @@ var physics = (function() {
 
 			return body.CreateFixture(fixtureDef);
 		},
-		createItemFixture: function(x,y,radius,mask) {
+		createBallFixture: function(x,y,radius,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
             bodyDef.position.Set(x/PPM,y/PPM);
@@ -390,11 +389,11 @@ var assets = (function() {
             }
         },
         {
-            name: "item",
-            images: ["assets/item.png"],
+            name: "ball",
+            images: ["assets/ball.png"],
             frames: {count:2, width:50, height:50,regX:25,regY:25},
             animations: {
-                food: {frames:[0,1], next:"food", frequency:2},
+                ready: {frames:[0,1], next:"ready", frequency:2},
             }
         },
     ];
@@ -571,10 +570,10 @@ var ball = (function() {
         skin: undefined,
         body: undefined,
 		initialize: function() {
-            this.fixture = physics.createItemFixture(-100,10,25,1);
+            this.fixture = physics.createBallFixture(-100,10,25,1);
             this.body = this.fixture.GetBody();
-            this.skin = assets.getAnimation("item");
-            this.skin.gotoAndPlay("food");
+            this.skin = assets.getAnimation("ball");
+            this.skin.gotoAndPlay("ready");
 		},
         advance: function() {
             manager.recordBallVelocity( this.body.GetLinearVelocity().x );
