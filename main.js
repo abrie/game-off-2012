@@ -24,6 +24,7 @@ var manager = (function(){
     return {
         playerVelocity: 0,
         ballVelocity: 0,
+        onObjectiveComplete: undefined,
         recordPlayerVelocity: function(velocity) {
             this.playerVelocity = Math.abs( velocity );
             hud.setPlayerVelocity( this.playerVelocity );
@@ -34,7 +35,7 @@ var manager = (function(){
         },
         advance: function(playerVelocity, ballVelocity) {
             if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
-                // objective acheived code here...
+                this.onObjectiveComplete(currentObjective);
             }
         },
         setObjective: function(objectiveIndex) {
@@ -830,6 +831,10 @@ var main = (function () {
 
     }
 
+    var handleObjectiveComplete = function(objective) {
+        console.log("objective complete.");
+    };
+
 	return {
         preload: function() {
             assets.onReady = this.start.bind(this);
@@ -837,6 +842,7 @@ var main = (function () {
         },
 		start: function () {
             manager.initialize();
+            manager.onObjectiveComplete = handleObjectiveComplete;
             initializeAudio();
             initializeCanvas();
             input.initialize();
