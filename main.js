@@ -432,16 +432,12 @@ var playspace = (function() {
         layers: {},
         container: new Container,
         initialize: function() {},
-        addPlayer: function(fixture,skin) {
-            this.player.fixture = fixture;
-            this.player.body = fixture.GetBody();
-            this.player.skin = skin;
+        addPlayer: function(entity) {
+            this.player = entity;
             this.container.addChild(this.player.skin);
         },
-        addBall: function(fixture,skin) {
-            this.ball.fixture = fixture;
-            this.ball.body = fixture.GetBody();
-            this.ball.skin = skin;
+        addBall: function(entity) {
+            this.ball = entity;
             this.container.addChild(this.ball.skin);
         },
         addStaticBody: function(body,skin,layerNumber) {
@@ -455,7 +451,7 @@ var playspace = (function() {
             var body = item.GetBody();
             var origin = body.GetWorldCenter();
             layer.push( {body:body, skin:skin, origin:{x:origin.x, y:origin.y}});
-            this.container.addChild(skin);
+            this.container.addChildAt(skin,0);
         },
         getLayer: function(layer) {
             var result = this.layers[layer];
@@ -514,10 +510,9 @@ var camera = (function() {
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
-		initialize: function( target, stage ) {
+		initialize: function( stage ) {
             this.stage = stage;
-            this.origin = {x:target.x, y:target.y};
-            this.target = {x:target.x, y:target.y};
+            this.target = {x:0, y:0};
             this.setZoom(0.01);
             this.updateRequiredTranslation();
         },
@@ -558,10 +553,10 @@ var ball = (function() {
     return {
         skin: undefined,
         body: undefined,
-		initialize: function( fixture, skin ) {
-            this.fixture = fixture;
+		initialize: function() {
+            this.fixture = physics.createItemFixture(-100,10,25,1);
             this.body = this.fixture.GetBody();
-            this.skin = skin;
+            this.skin = assets.getAnimation("item");
             this.skin.gotoAndPlay("food");
 		},
     }
@@ -593,10 +588,10 @@ var player = (function() {
             velocity.y = -0.75*magnitude;
             this.body.SetLinearVelocity(velocity);
         },
-		initialize: function( fixture, skin ) {
-            this.fixture = fixture;
+		initialize: function() {
+            this.fixture = physics.createPlayerFixture(0,0,75,75,1);
             this.body = this.fixture.GetBody();
-            this.skin = skin;
+            this.skin = assets.getAnimation("player");
             this.skin.gotoAndPlay("still");
 		},
 		advance: function() {
@@ -774,29 +769,25 @@ var main = (function () {
             input.initialize();
             physics.initialize();
             physics.setDebugDraw(context);
-
-            var playerFixture = physics.createPlayerFixture(0,0,75,75,1);
-            var playerSkin = assets.getAnimation("player");
-            player.initialize( playerFixture, playerSkin );
+            camera.initialize(stage);
 
             playspace.initialize();
+            populatePlayspace();
             playspace.bindCamera(camera);
             playspace.bindParallax(camera);
 
-            populatePlayspace();
+            player.initialize();
+            playspace.addPlayer( player );
 
-            playspace.addPlayer( playerFixture, playerSkin );
+            ball.initialize();
+            playspace.addBall( ball );
+
             stage.addChild(playspace.container);
-
-            var ballFixture = physics.createItemFixture(-100,10,25,1);
-            var ballSkin = assets.getAnimation("item");
-            ball.initialize( ballFixture, ballSkin );
-            playspace.addBall(ballFixture, ballSkin);
 
             hud.initialize(context);
             stage.addChild(hud.container);
 
-            camera.initialize( player.body.GetWorldCenter(), stage );
+            camera.lookAt( player.body.GetWorldCenter() );
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
