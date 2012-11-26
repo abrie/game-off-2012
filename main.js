@@ -24,17 +24,22 @@ var manager = (function(){
     return {
         playerVelocity: 0,
         ballVelocity: 0,
-        set: function(playerVelocity, ballVelocity) {
-            this.playerVelocity = Math.abs( playerVelocity );
-            this.ballVelocity = Math.abs( ballVelocity );
-            hud.set( playerVelocity, ballVelocity );
+        recordPlayerVelocity: function(velocity) {
+            this.playerVelocity = Math.abs( velocity );
+            hud.setPlayerVelocity( this.playerVelocity );
+        },
+        recordBallVelocity: function(velocity) {
+            this.ballVelocity = Math.abs( velocity );
+            hud.setBallVelocity( this.ballVelocity );
+        },
+        advance: function(playerVelocity, ballVelocity) {
             if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
                 console.log("objective achieved");
             }
         },
         setObjective: function(objectiveIndex) {
             currentObjective = objectives[objectiveIndex];
-            hud.targetVelocity = currentObjective.targetVelocity;
+            hud.setTargetVelocity( currentObjective.targetVelocity );
         },
         initialize: function() {
         }
@@ -55,13 +60,15 @@ var hud = (function() {
     };
     return {
         container: new Container,
-        ballNormalizedVelocity: undefined,
-        playerNormalizedVelocity: undefined,
-        targetVelocity: undefined,
-        set: function(playerVelocity, ballVelocity) {
-            this.playerVelocity = Math.abs( playerVelocity );
-            this.ballVelocity = Math.abs( ballVelocity );
+        setTargetVelocity: function(velocity) {
+            this.targetVelocity = Math.abs( velocity );
+        },
+        setPlayerVelocity: function(velocity) {
+            this.playerVelocity = Math.abs( velocity );
             this.playerNormalizedVelocity = normalize( this.playerVelocity, this.targetVelocity);
+        },
+        setBallVelocity: function(velocity) {
+            this.ballVelocity = Math.abs( velocity );
             this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
         update: function() {
@@ -476,7 +483,6 @@ var playspace = (function() {
         advance: function() {
             this.updatePlayer();
             this.updateBall();
-            manager.set( this.player.body.GetLinearVelocity().x, this.ball.body.GetLinearVelocity().x );
             _.each( this.layers, function(layer, key) {
                 _.each( layer, function(piece) {
                     piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
@@ -570,6 +576,9 @@ var ball = (function() {
             this.skin = assets.getAnimation("item");
             this.skin.gotoAndPlay("food");
 		},
+        advance: function() {
+            manager.recordBallVelocity( this.body.GetLinearVelocity().x );
+        }
     }
     
 }());
@@ -606,6 +615,7 @@ var player = (function() {
             this.skin.gotoAndPlay("still");
 		},
 		advance: function() {
+            manager.recordPlayerVelocity( this.body.GetLinearVelocity().x );
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
@@ -821,12 +831,14 @@ var main = (function () {
             this.drawDebug();
         },
         update: function(elapsedTime) {
-			input.advance();
 			audio.advance();
-            camera.advance();
+			input.advance();
 			physics.advance();
-            playspace.advance();
 			player.advance();
+            ball.advance();
+            camera.advance();
+            playspace.advance();
+            manager.advance();
 			stage.update();
             hud.update();
         },
