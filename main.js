@@ -556,13 +556,13 @@ var camera = (function() {
 
 var ball = (function() {
     return {
-        sprite: undefined,
+        skin: undefined,
         body: undefined,
 		initialize: function( fixture, skin ) {
             this.fixture = fixture;
             this.body = this.fixture.GetBody();
-            this.sprite = skin;
-            this.sprite.gotoAndPlay("food");
+            this.skin = skin;
+            this.skin.gotoAndPlay("food");
 		},
     }
     
@@ -570,7 +570,7 @@ var ball = (function() {
 
 var player = (function() {
 	return {
-		sprite: undefined,
+		skin: undefined,
         body: undefined,
         impulse: function(direction, rate, max) {
             var velocity = this.body.GetLinearVelocity().x;
@@ -596,8 +596,8 @@ var player = (function() {
 		initialize: function( fixture, skin ) {
             this.fixture = fixture;
             this.body = this.fixture.GetBody();
-            this.sprite = skin;
-            this.sprite.gotoAndPlay("still");
+            this.skin = skin;
+            this.skin.gotoAndPlay("still");
 		},
 		advance: function() {
             var current = this.body.GetWorldCenter();
@@ -635,37 +635,37 @@ var main = (function () {
                 actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(-1,1);
-                player.sprite.gotoAndPlay("step1");
+                player.skin.gotoAndPlay("step1");
 				break;
 			case "FWD_STEP2": 
                 actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
-                player.sprite.gotoAndPlay("step2");
+                player.skin.gotoAndPlay("step2");
 				break;
 			case "FWD_STEP3": 
                 actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
-                player.sprite.gotoAndPlay("step3");
+                player.skin.gotoAndPlay("step3");
 				break;
 			case "BWD_STEP1": 
                 actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(1,1);
-                player.sprite.gotoAndPlay("step1");
+                player.skin.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
                 actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(1,1);
-                player.sprite.gotoAndPlay("step2");
+                player.skin.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
                 actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(1,1);
-                player.sprite.gotoAndPlay("step3");
+                player.skin.gotoAndPlay("step3");
 				break;
             case "FORWARD":
                 actionTime.expiration = 15;
@@ -673,26 +673,26 @@ var main = (function () {
                 audio.soundOn(2);
                 audio.soundOn(1);
                 player.actionForward();
-                player.sprite.gotoAndPlay("jump");
+                player.skin.gotoAndPlay("jump");
                 break;
             case "STAND":
                 actionTime.expiration = 15;
                 audio.soundOn(4);
-                player.sprite.gotoAndPlay("stand");
+                player.skin.gotoAndPlay("stand");
                 break;
             case "LAND":
                 actionTime.expiration = 15;
-                player.sprite.gotoAndPlay("land");
+                player.skin.gotoAndPlay("land");
                 break;
             case "USE":
                 actionTime.expiration = 0;
                 console.log("use item");
                 actionTime.recovery = 15;
-                player.sprite.gotoAndPlay("use");
+                player.skin.gotoAndPlay("use");
                 break;
             case "EXPIRED":
                 console.log("action time expired.");
-                player.sprite.gotoAndPlay("land");
+                player.skin.gotoAndPlay("land");
                 break;
 			default:
 				console.log("action unhandled:",action);
