@@ -55,7 +55,7 @@ var hud = (function() {
         context.strokeStyle=stroke;
         context.lineWidth=width;
         context.beginPath();
-        context.arc(100,100,45,Math.PI,Math.PI+level*Math.PI,false);
+        context.arc(100,100,45,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
         context.stroke();
     };
     return {
@@ -514,6 +514,7 @@ var playspace = (function() {
                     piece.skin.y = piece.body.GetWorldCenter().y * PPM;
                 });
             }, this);
+            // filter seems fairly inefficient here, garbage might be a problem
             this.markers = _.filter( this.markers, function(entity) {
                 if( entity.frames-- === 0 ) {
                     this.container.removeChild(entity.skin);
@@ -524,6 +525,7 @@ var playspace = (function() {
                 entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
                 entity.skin.x = center.x * PPM;
                 entity.skin.y = center.y * PPM;
+                entity.skin.alpha -= 0.05;
                 return true;
             },this);
         },
@@ -699,18 +701,21 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.skin.gotoAndPlay("step1");
+                trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP2": 
                 actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.skin.gotoAndPlay("step2");
+                trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP3": 
                 actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.skin.gotoAndPlay("step3");
+                trails.addMessage(player.body, ".");
 				break;
 			case "BWD_STEP1": 
                 actionTime.expiration = 15;
