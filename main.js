@@ -213,7 +213,6 @@ var hud = (function() {
     }
 
     var initializeGradients = function() {
-        drawMeter( "#AAA", 30, 1 );
         gradient = context.createLinearGradient(0,100,100,100);
         gradient.addColorStop(0.5, '#B7FA00');
         gradient.addColorStop(1, '#FA9600');
@@ -244,6 +243,7 @@ var hud = (function() {
             var normalizedBallVelocity = normalize( ballVelocity, this.targetVelocity);
             var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
             var normalizedPlayerVelocity = normalize( playerVelocity, this.targetVelocity);
+            drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, normalizedBallVelocity );
             drawMeter( "#B7FA00", 10, normalizedPlayerVelocity );
             drawDebug("b:"+ballVelocity.toFixed(3)+"p:"+playerVelocity.toFixed(3));
