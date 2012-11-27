@@ -22,11 +22,9 @@ var manager = (function(){
         this.initiated = false;
         this.title = title;
         this.targetVelocity = targetVelocity;
-        this.playerVelocity = 0;
-        this.ballVelocity = 0;
         this.encodeActions = actions;
-        this.isComplete = function() {
-            return this.targetVelocity - this.ballVelocity <= 0; 
+        this.evaluate = function(measuredVelocity) {
+            return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
     }
 
@@ -115,26 +113,22 @@ var manager = (function(){
     return {
         onInitiateObjective: undefined,
         onCompleteObjective: undefined,
-        recordPlayerVelocity: function(velocity) {
-            if(current) {
-                current.playerVelocity = Math.abs( velocity );
-            }
-        },
-        recordBallVelocity: function(velocity) {
-            if( current) {
-                current.ballVelocity = Math.abs( velocity );
-            }
-        },
-        advance: function(playerVelocity, ballVelocity) {
+        advance: function() {
             if( current ) {
                 if( !current.initiated ) {
                     this.onInitiateObjective(current);
                     current.initiated = true;
                 }
-                if( current.isComplete() ) {
+                if( current.evaluate( this.ball.getLinearVelocity().x ) ) {
                     this.onCompleteObjective(current);
                 }
             }
+        },
+        setPlayer: function(player) {
+            this.player = player;
+        },
+        setBall: function(ball) {
+            this.ball = ball;
         },
         firstObjective: function() {
             this.setObjective( objectives[0] );
@@ -817,9 +811,11 @@ var ball = (function() {
             this.body.SetAngularVelocity(0);
             this.skin.gotoAndPlay("ready");
         },
+        getLinearVelocity: function() {
+            return this.body.GetLinearVelocity();
+        },
         advance: function() {
-            var velocity = this.body.GetLinearVelocity().x; 
-            manager.recordBallVelocity( velocity );
+            var velocity = this.getLinearVelocity().x; 
             hud.setBallVelocity( velocity );
         }
     }
@@ -869,9 +865,11 @@ var player = (function() {
             this.body.SetAngularVelocity(0);
             this.skin.gotoAndPlay("still");
         },
+        getLinearVelocity: function() {
+            return this.body.GetLinearVelocity();
+        },
 		advance: function() {
-            var velocity = this.body.GetLinearVelocity().x; 
-            manager.recordPlayerVelocity( velocity );
+            var velocity = this.getLinearVelocity().x; 
             hud.setPlayerVelocity( velocity );
 		},
         actionStep: function(direction,mag) {
@@ -1084,10 +1082,12 @@ var main = (function () {
             playspace.bindParallax(camera);
 
             player.initialize();
+            manager.setPlayer( player );
             playspace.addPlayer( player );
             camera.watch( player );
 
             ball.initialize();
+            manager.setBall( ball );
             playspace.addBall( ball );
 
             stage.addChild(playspace.container);
