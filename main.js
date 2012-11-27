@@ -156,7 +156,7 @@ var manager = (function(){
             this.ball = ball;
         },
         firstObjective: function() {
-            this.setObjective( objectives[0] );
+            this.setObjective( objectives[5] );
         },
         nextObjective: function( objective ) {
             var next = objectives[ objectives.indexOf(objective)+1 ];
@@ -598,7 +598,7 @@ var assets = (function() {
         {
             name: "player",
             images: ["assets/chin.png"],
-            frames: {count:8, width:150, height:150,regX:75,regY:110},
+            frames: {count:9, width:150, height:150,regX:75,regY:110},
             animations: {
                 stand:  {frames:[0], next:false, frequency:1},
                 land:   {frames:[1], next:false, frequency:1},
@@ -607,7 +607,8 @@ var assets = (function() {
                 step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
                 step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
                 jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-                use:    {frames:[6,7], next:"stand", frequency:5},
+                fly:    {frames:[6], next:false, frequency:3},
+                use:    {frames:[7,8], next:"stand", frequency:5},
             }
         },
         {
@@ -669,8 +670,14 @@ var playspace = (function() {
     return {
         layers: {},
         markers: [],
+        playerArticles: [],
         container: new Container,
         initialize: function() {},
+        addPlayerArticle: function(entity) {
+            this.playerArticles.push(entity)
+            var playerIndex = this.container.getChildIndex(this.player.skin);
+            this.container.addChild(entity.skin, playerIndex);
+        },
         addPlayer: function(entity) {
             this.player = entity;
             this.container.addChild(this.player.skin);
@@ -854,6 +861,7 @@ var ball = (function() {
 var player = (function() {
 	"use strict";
 	return {
+        itemSkin: undefined,
 		skin: undefined,
         body: undefined,
         impulse: function(direction, rate, max) {
@@ -1001,7 +1009,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionFlight();
                 player.skin.gotoAndPlay("fly");
-                trails.addMessage(player.body, "nice!");
+                trails.addMessage(player.body, "super!");
                 break;
             case "STAND":
                 actionTime.expiration = 15;
