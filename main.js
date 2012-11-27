@@ -637,9 +637,10 @@ var camera = (function() {
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
             this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+200)/factor};
-			physics.debugDraw.SetDrawScale(PPM*factor);
             this.lookAt(this.target);
-
+            if(DEBUG) {
+                physics.debugDraw.SetDrawScale(PPM*factor);
+            }
         },
         lookAt: function(point) {
             this.target.x = point.x;
