@@ -18,12 +18,12 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
-    var Objective = function(title, targetVelocity, actions) {
-        this.initiated = false;
+    var Objective = function(title, targetVelocity, encodeActions) {
         this.title = title;
         this.targetVelocity = targetVelocity;
-        this.encodeActions = actions;
-        this.evaluate = function(measuredVelocity) {
+        this.encodeActions = encodeActions;
+        this.isInitiated = false;
+        this.isCompleted = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
     }
@@ -114,14 +114,17 @@ var manager = (function(){
         onInitiateObjective: undefined,
         onCompleteObjective: undefined,
         advance: function() {
-            if( current ) {
-                if( !current.initiated ) {
-                    this.onInitiateObjective(current);
-                    current.initiated = true;
-                }
-                if( current.evaluate( this.ball.getLinearVelocity().x ) ) {
-                    this.onCompleteObjective(current);
-                }
+            if( !current ) {
+                return;
+            }
+            if( !current.isInitiated ) {
+                this.onInitiateObjective(current);
+                current.isInitiated = true;
+                return;
+            }
+            if( current.isCompleted( this.ball.getLinearVelocity().x ) ) {
+                this.onCompleteObjective(current);
+                return;
             }
         },
         setPlayer: function(player) {
