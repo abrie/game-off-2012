@@ -18,22 +18,96 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
-    var Objective = function(title, targetVelocity) {
+    var Objective = function(title, targetVelocity, actions) {
         this.initiated = false;
         this.title = title;
         this.targetVelocity = targetVelocity;
         this.playerVelocity = 0;
         this.ballVelocity = 0;
+        this.encodeActions = actions;
         this.isComplete = function() {
-            return this.targetVelocity - this.ballVelocity <= 0; 
+            return this.targetVelocity - this.ballVelocity <= 0.05; 
         }
     }
 
     var objectives = [
-        new Objective("baby step", 0.2),
-        new Objective("little steps", 0.5),
-        new Objective("all three legs", 1.0),
-        new Objective("boing!", 1.3)
+        new Objective("baby step", 0.2, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("little steps", 0.5, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("all three legs", 1.0, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("boing!", 1.3, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("reverse", 1.3, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD");
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
+        }),
+        new Objective("use", 1.3, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD");
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
+        })
     ];
 
     var current = undefined;
@@ -354,6 +428,10 @@ var input = (function () {
         this.action = action;
         this.looped = undefined;
         this.branch = {};
+        this.clear = function() {
+            this.looped = false;
+            this.branch = {};
+        }
         this.get = function( key ) {
             return this.branch[key];
         }
@@ -373,14 +451,8 @@ var input = (function () {
 
     var rootAction = new ActionNode();
     var thisAction = rootAction;
-
-    rootAction.add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3");
-    rootAction.seek([1,2,3]).add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FWD_STEP3").add(1, "FWD_STEP1").add(2, "FWD_STEP2").add(3, "FORWARD");
-    rootAction.add(3, "BWD_STEP1").add(2, "BWD_STEP2").add(1, "BWD_STEP3");
-    rootAction.add(4, "STAND").add(4, "LAND");
-    rootAction.seek([4]).add(3, "USE").loop( rootAction.seek([4]));
-
     var actionTime = {recovery:0,expiration:15};
+
     function notifyThenNext() {
         actionDelegate(thisAction.action, actionTime);
         return thisAction.looped ? thisAction.looped : thisAction;
@@ -451,6 +523,9 @@ var input = (function () {
 			document.onkeyup = handleKeyUp;
             this.setActive(false);
 		},
+        getRootAction: function() {
+            return rootAction;
+        },
         setActive: function(state) {
             active = state;
             isInputOn = {};
@@ -967,6 +1042,7 @@ var main = (function () {
     };
 
     var handleInitiateObjective = function(objective) {
+        objective.encodeActions( input.getRootAction() );
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,2,function() { input.setActive(true); } );
     };
