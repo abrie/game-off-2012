@@ -18,6 +18,7 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
+	"use strict";
     var Objective = function(title, targetVelocity, encodeActions) {
         this.title = title;
         this.targetVelocity = targetVelocity;
@@ -149,6 +150,7 @@ var manager = (function(){
 
 
 var hud = (function() {
+	"use strict";
     var Announcements = function(container) {
         var list = [];
 
@@ -214,12 +216,14 @@ var hud = (function() {
         debugText.text = text;
     }
 
+    var gradient = undefined;
     var initializeGradients = function() {
         gradient = context.createLinearGradient(0,100,100,100);
         gradient.addColorStop(0.5, '#B7FA00');
         gradient.addColorStop(1, '#FA9600');
     }
     
+    var debugText = undefined;
     var initializeDebugText = function() {
         debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
         debugText.x = 10;
@@ -227,6 +231,9 @@ var hud = (function() {
         stage.addChild(debugText);
     }
 
+    var stage = undefined;
+    var announcements = undefined;
+    var context = undefined;
     return {
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
@@ -412,7 +419,7 @@ var audio = (function () {
 			try {
 				audioContext = new (window.AudioContext || window.webkitAudioContext);
 			} catch (e) {
-				alert('There is no AudioContext support in this browser, thus sound is disabled.');
+				alert('To me there appears to be no AudioContext support in this browser, thus sound is sadly disabled.');
                 this.addSound = function() {};
                 this.soundOn = function() {};
                 this.advance = function() {};
@@ -636,6 +643,7 @@ var assets = (function() {
 }());
 
 var playspace = (function() {
+	"use strict";
     return {
         layers: {},
         markers: [],
@@ -739,6 +747,7 @@ var playspace = (function() {
 }());
 
 var camera = (function() {
+	"use strict";
     return {
         zoomFactorTarget: 1.0,
         subjectOfInterest: undefined,
@@ -788,6 +797,7 @@ var camera = (function() {
 }());
 
 var ball = (function() {
+	"use strict";
     return {
         skin: undefined,
         body: undefined,
@@ -820,6 +830,7 @@ var ball = (function() {
 }());
 
 var player = (function() {
+	"use strict";
 	return {
 		skin: undefined,
         body: undefined,
@@ -892,6 +903,7 @@ var player = (function() {
 }());
 
 var trails = (function (){
+	"use strict";
     return {
         addMessage: function(body,message) {
             var bodyCenter = body.GetWorldCenter();
