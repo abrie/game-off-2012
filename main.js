@@ -72,7 +72,39 @@ var manager = (function(){
 }());
 
 var hud = (function() {
-    var context, gradient, textSprite, announceSprite,announceFrames;
+    var announcements = [];
+    var Announcement = function(container, message, frames) {
+        var container = container;
+        var frames = frames;
+        var count = 0;
+        var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
+        sprite.regX = sprite.getMeasuredWidth()/2;
+        sprite.regY = sprite.getMeasuredHeight()/2;
+        sprite.x = container.canvas.width/2;
+        sprite.y = container.canvas.height/2;
+        
+        return {
+            show: function() {
+                container.addChild(sprite);
+                return this;
+            },
+            remove: function() {
+                container.removeChild(sprite);
+            },
+            advance: function() {
+                if( count === frames ) {
+                    this.remove();
+                    return false;
+                }
+                else {
+                    sprite.alpha = ++count > frames/2 ? sprite.alpha/2 : sprite.alpha;
+                    return true;
+                }
+            }
+        }
+    }
+
+    var context, gradient, textSprite;
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
     }          
@@ -98,28 +130,17 @@ var hud = (function() {
             this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
         announce : function(message, seconds) {
-            if( announceSprite ) {
-                this.container.removeChild(announceSprite);
-            }
-            announceSprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
-            announceSprite.regX = announceSprite.getMeasuredWidth()/2;
-            announceSprite.regY = announceSprite.getMeasuredHeight()/2;
-            announceSprite.x = this.container.canvas.width/2;
-            announceSprite.y = this.container.canvas.height/2;
-            announceFrames = FPS*seconds;
-            this.container.addChild(announceSprite);
+            var announcement = new Announcement(this.container, message, FPS*seconds)
+            announcements.push( announcement.show() );
         },
         update: function() {
             drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
             textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
-            if(announceFrames>0) {
-                announceFrames--;
-            }
-            else {
-                this.container.removeChild(announceSprite);
-            }
+            announcements = _.filter(announcements, function(announcement) {
+                return announcement.advance();
+            });
             this.container.update();
         },
         initialize : function(canvas) {
