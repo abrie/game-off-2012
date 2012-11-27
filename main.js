@@ -179,7 +179,7 @@ var hud = (function() {
                         return false;
                     }
                     else {
-                        sprite.alpha = ++count > frames - frames/3 ? sprite.alpha-0.05 : sprite.alpha;
+                        sprite.alpha = ++count > frames - frames/4 ? sprite.alpha-0.025 : sprite.alpha;
                         return true;
                     }
                 }
