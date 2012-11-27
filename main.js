@@ -53,7 +53,7 @@ var manager = (function(){
 }());
 
 var hud = (function() {
-    var context, gradient, textSprite = undefined;
+    var context, gradient, textSprite, announceSprite,announceFrames;
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
     }          
@@ -76,11 +76,29 @@ var hud = (function() {
             this.ballVelocity = Math.abs( velocity );
             this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
+        announce : function(message, seconds) {
+            if( announceSprite ) {
+                this.container.removeChild(announceSprite);
+            }
+            announceSprite = new createjs.Text(message,"bold 32px Arial", "#FFF");
+            announceSprite.rX = announceSprite.getMeasuredWidth()/2;
+            announceSprite.rY = announceSprite.getMeasuredHeight()/2;
+            announceSprite.x = this.container.canvas.width/2;
+            announceSprite.y = this.container.canvas.height/2;
+            announceFrames = FPS*seconds;
+            this.container.addChild(announceSprite);
+        },
         update: function() {
             drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
             textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
+            if(announceFrames>0) {
+                announceFrames--;
+            }
+            else {
+                this.container.removeChild(announceSprite);
+            }
             this.container.update();
         },
         initialize : function(canvas) {
@@ -94,6 +112,7 @@ var hud = (function() {
             textSprite.x = 10;
             textSprite.y = 10;
             this.container.addChild(textSprite);
+            this.announce("Push, Chinchilla!",10);
         }
     };
 }());
@@ -838,7 +857,7 @@ var main = (function () {
     }
 
     var handleObjectiveComplete = function(objective) {
-        console.log("objective complete.");
+        hud.announce(objective.title,10);
     };
 
 	return {
