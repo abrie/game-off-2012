@@ -16,11 +16,13 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2
 var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
+var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, targetVelocity, encodeActions) {
+    var Objective = function(title, targetVelocity, encodeActions, article) {
         this.title = title;
+        this.article = article;
         this.targetVelocity = targetVelocity;
         this.encodeActions = encodeActions;
         this.isInitiated = false;
@@ -107,7 +109,7 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
-        }),
+        },"cape"),
         new Objective("use", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -156,7 +158,7 @@ var manager = (function(){
             this.ball = ball;
         },
         firstObjective: function() {
-            this.setObjective( objectives[5] );
+            this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
         nextObjective: function( objective ) {
             var next = objectives[ objectives.indexOf(objective)+1 ];
@@ -598,7 +600,23 @@ var assets = (function() {
         {
             name: "player",
             images: ["assets/chin.png"],
-            frames: {count:9, width:150, height:150,regX:75,regY:110},
+            frames: {count:9, width:150, height:150},
+            animations: {
+                stand:  {frames:[0], next:false, frequency:1},
+                land:   {frames:[1], next:false, frequency:1},
+                still:  {frames:[1], next:false, frequency:1 },
+                step1:  {frames:[1,2,1], next:"still", frequency:3 },
+                step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
+                step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
+                jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
+                fly:    {frames:[6], next:false, frequency:3},
+                use:    {frames:[7,8], next:"stand", frequency:5},
+            }
+        },
+        {
+            name: "cape",
+            images: ["assets/cape.png"],
+            frames: {count:9, width:150, height:150},
             animations: {
                 stand:  {frames:[0], next:false, frequency:1},
                 land:   {frames:[1], next:false, frequency:1},
@@ -673,14 +691,9 @@ var playspace = (function() {
         playerArticles: [],
         container: new Container,
         initialize: function() {},
-        addPlayerArticle: function(entity) {
-            this.playerArticles.push(entity)
-            var playerIndex = this.container.getChildIndex(this.player.skin);
-            this.container.addChild(entity.skin, playerIndex);
-        },
         addPlayer: function(entity) {
             this.player = entity;
-            this.container.addChild(this.player.skin);
+            this.container.addChild(this.player.container);
         },
         addBall: function(entity) {
             this.ball = entity;
@@ -715,9 +728,9 @@ var playspace = (function() {
             }
         },
         updatePlayer: function() {
-            this.player.skin.rotation = this.player.body.GetAngle() * (180 / Math.PI);
-            this.player.skin.x = this.player.body.GetWorldCenter().x * PPM;
-            this.player.skin.y = this.player.body.GetWorldCenter().y * PPM;
+            this.player.container.rotation = this.player.body.GetAngle() * (180 / Math.PI);
+            this.player.container.x = this.player.body.GetWorldCenter().x * PPM;
+            this.player.container.y = this.player.body.GetWorldCenter().y * PPM;
         },
         updateBall: function() {
             this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
@@ -861,7 +874,8 @@ var ball = (function() {
 var player = (function() {
 	"use strict";
 	return {
-        itemSkin: undefined,
+        articles: [],
+        container: undefined,
 		skin: undefined,
         body: undefined,
         impulse: function(direction, rate, max) {
@@ -888,11 +902,23 @@ var player = (function() {
 		initialize: function() {
             this.fixture = physics.createPlayerFixture(0,0,75,75,1);
             this.body = this.fixture.GetBody();
+            this.container = new Container;
+            this.container.regX = 75, this.container.regY = 110;
             this.skin = assets.getAnimation("player");
+            this.container.addChild(this.skin);
             this.gotoAndPlay("still");
 		},
+        giveArticle: function(name) {
+            var article = assets.getAnimation(name); 
+            this.articles.push( article );
+            this.container.addChild(article);
+            this.gotoAndPlay("still"); // maybe celebrate?
+        },
         gotoAndPlay: function(frame) {
             this.skin.gotoAndPlay(frame);
+            this.articles.forEach(function(skin) {
+                skin.gotoAndPlay(frame);
+            },this);
         },
         reset: function() {
             this.body.SetAngularVelocity(0);
@@ -1109,6 +1135,7 @@ var main = (function () {
 
     var handleInitiateObjective = function(objective) {
         objective.encodeActions( input.getRootAction() );
+        if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,2,function() { 
             objective.isInitiated = true;
