@@ -30,6 +30,9 @@ var manager = (function(){
         playerVelocity: 0,
         ballVelocity: 0,
         onObjectiveComplete: undefined,
+        onObjectiveCommence: undefined,
+        onAllObjectivesComplete: undefined,
+        countDown: 0,
         recordPlayerVelocity: function(velocity) {
             this.playerVelocity = Math.abs( velocity );
             hud.setPlayerVelocity( this.playerVelocity );
@@ -39,13 +42,30 @@ var manager = (function(){
             hud.setBallVelocity( this.ballVelocity );
         },
         advance: function(playerVelocity, ballVelocity) {
+            if( this.countDown-- > 0 ) {
+                if( this.countDown === 0) {
+                    this.onObjectiveCommence(currentObjective);
+                }
+                return;
+            }
             if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
                 this.onObjectiveComplete(currentObjective);
             }
         },
-        setObjective: function(objectiveIndex) {
+        nextObjective: function() {
+            var nextObjectiveIndex = objectives.indexOf(currentObjective)+1;
+            if( nextObjectiveIndex >= objectives.length ) {
+                this.onAllObjectivesComplete();
+            }
+            else {
+                this.setObjective(nextObjectiveIndex, 5);
+            }
+        },
+        setObjective: function(objectiveIndex, secondsToStart) {
             currentObjective = objectives[objectiveIndex];
             hud.setTargetVelocity( currentObjective.targetVelocity );
+            hud.announce(currentObjective.title, 5);
+            this.countDown = FPS*secondsToStart;
         },
         initialize: function() {
         }
@@ -67,6 +87,8 @@ var hud = (function() {
     return {
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
+            this.setPlayerVelocity(0);
+            this.setBallVelocity(0);
         },
         setPlayerVelocity: function(velocity) {
             this.playerVelocity = Math.abs( velocity );
@@ -327,7 +349,7 @@ var input = (function () {
 
     var isInputOn = {};
 	function inputOn(id) {
-		if (isInputOn[id]) {
+		if (isInputOn[id] || !active) {
             return;
         }
         else {
@@ -348,7 +370,7 @@ var input = (function () {
 	}
 
 	function inputOff(id) {
-		isInputOn[id] = false;
+        isInputOn[id] = false;
 	}
 
 	var keyMap = {76:1, 75:2, 74:3, 72:4, 32:5};
@@ -365,7 +387,7 @@ var input = (function () {
 
 	function onKeyUp(keyCode) {
 		var mapped = keyMap[keyCode];
-		if (mapped) {
+		if (mapped && active) {
 			inputOff(mapped);
 			return false;
 		}
@@ -380,13 +402,19 @@ var input = (function () {
 		if(!e){ var e = window.event; }
 		return onKeyUp(e.keyCode);
 	}
-
+    
+    var active;
 	var actionDelegate;
 	return {
 		initialize: function () {
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
+            this.setActive(false);
 		},
+        setActive: function(state) {
+            active = state;
+            isInputOn = {};
+        },
         setActionDelegate: function (delegate) {
             actionDelegate = delegate;
         },
@@ -394,6 +422,7 @@ var input = (function () {
             actionTime.recovery = 0;
             actionTime.expiration = 0;
             thisAction = rootAction;
+            this.setActive(false);
         },
 		advance: function () {
             if( actionTime.recovery > 0) {
@@ -886,10 +915,19 @@ var main = (function () {
     }
 
     var handleObjectiveComplete = function(objective) {
-        hud.announce(objective.title,10);
         input.reset();
         ball.reset();
         player.reset();
+        manager.nextObjective();
+    };
+
+    var handleObjectiveCommence = function(objective) {
+        hud.announce("go!",1);
+        input.setActive(true);
+    };
+
+    var handleAllObjectivesComplete = function() {
+        hud.announce(":)",1);
     };
 
 	return {
@@ -900,6 +938,8 @@ var main = (function () {
 		start: function () {
             manager.initialize();
             manager.onObjectiveComplete = handleObjectiveComplete;
+            manager.onObjectiveCommence = handleObjectiveCommence;
+            manager.onAllObjectivesComplete = handleAllObjectivesComplete;
             initializeAudio();
             initializeCanvas();
             input.initialize();
@@ -927,7 +967,7 @@ var main = (function () {
             Ticker.useRAF = true;
             Ticker.addListener(this);
             input.setActionDelegate(fireAction);
-            manager.setObjective(0);
+            manager.setObjective(0, 5);
 		},
         debugClear: function() {
             context.save();
