@@ -889,8 +889,11 @@ var player = (function() {
             this.fixture = physics.createPlayerFixture(0,0,75,75,1);
             this.body = this.fixture.GetBody();
             this.skin = assets.getAnimation("player");
-            this.skin.gotoAndPlay("still");
+            this.gotoAndPlay("still");
 		},
+        gotoAndPlay: function(frame) {
+            this.skin.gotoAndPlay(frame);
+        },
         reset: function() {
             this.body.SetAngularVelocity(0);
 
@@ -902,7 +905,7 @@ var player = (function() {
             velocity.x = 0, velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
 
-            this.skin.gotoAndPlay("still");
+            this.gotoAndPlay("still");
         },
         getLinearVelocity: function() {
             return this.body.GetLinearVelocity();
@@ -958,40 +961,40 @@ var main = (function () {
                 actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(-1,1);
-                player.skin.gotoAndPlay("step1");
+                player.gotoAndPlay("step1");
                 trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP2": 
                 actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
-                player.skin.gotoAndPlay("step2");
+                player.gotoAndPlay("step2");
                 trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP3": 
                 actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
-                player.skin.gotoAndPlay("step3");
+                player.gotoAndPlay("step3");
                 trails.addMessage(player.body, ".");
 				break;
 			case "BWD_STEP1": 
                 actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(1,1);
-                player.skin.gotoAndPlay("step1");
+                player.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
                 actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(1,1);
-                player.skin.gotoAndPlay("step2");
+                player.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
                 actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(1,1);
-                player.skin.gotoAndPlay("step3");
+                player.gotoAndPlay("step3");
 				break;
             case "FORWARD":
                 actionTime.expiration = 15;
@@ -999,7 +1002,7 @@ var main = (function () {
                 audio.soundOn(2);
                 audio.soundOn(1);
                 player.actionForward();
-                player.skin.gotoAndPlay("jump");
+                player.gotoAndPlay("jump");
                 trails.addMessage(player.body, "boing!");
                 break;
             case "FLIGHT":
@@ -1008,26 +1011,26 @@ var main = (function () {
                 audio.soundOn(2);
                 audio.soundOn(1);
                 player.actionFlight();
-                player.skin.gotoAndPlay("fly");
+                player.gotoAndPlay("fly");
                 trails.addMessage(player.body, "super!");
                 break;
             case "STAND":
                 actionTime.expiration = 15;
                 audio.soundOn(4);
-                player.skin.gotoAndPlay("stand");
+                player.gotoAndPlay("stand");
                 break;
             case "LAND":
                 actionTime.expiration = 15;
-                player.skin.gotoAndPlay("land");
+                player.gotoAndPlay("land");
                 break;
             case "USE":
                 actionTime.expiration = 0;
                 console.log("use item");
                 actionTime.recovery = 15;
-                player.skin.gotoAndPlay("use");
+                player.gotoAndPlay("use");
                 break;
             case "EXPIRED":
-                player.skin.gotoAndPlay("land");
+                player.gotoAndPlay("land");
                 break;
 			default:
 				console.log("action unhandled:", action);
