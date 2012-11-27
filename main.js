@@ -81,10 +81,7 @@ var announcements = (function() {
     var list = [];
 
     var Announcement = function(container, message, frames, whenDone) {
-        var container = container;
-        var totalFrames = frames;
         var count = 0;
-        var onRemove = whenDone;
         var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
         sprite.regX = sprite.getMeasuredWidth()/2;
         sprite.regY = sprite.getMeasuredHeight()/2;
@@ -97,18 +94,18 @@ var announcements = (function() {
                 return this;
             },
             remove: function() {
-                if( onRemove ) {
-                    onRemove();
+                if( whenDone ) {
+                    whenDone();
                 }
                 container.removeChild(sprite);
             },
             advance: function() {
-                if( count === totalFrames ) {
+                if( count === frames ) {
                     this.remove();
                     return false;
                 }
                 else {
-                    sprite.alpha = ++count > totalFrames/2 ? sprite.alpha/1.2 : sprite.alpha;
+                    sprite.alpha = ++count > frames - frames/3 ? sprite.alpha-0.05 : sprite.alpha;
                     return true;
                 }
             }
