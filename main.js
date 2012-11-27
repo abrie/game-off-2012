@@ -50,7 +50,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("boing!", 1.3, function(root) {
+        new Objective("boing!", 1.0, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -86,6 +86,28 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
+        new Objective("haz a cape", 1.3, function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD")
+                .add(3, "FLIGHT");
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
+        }),
         new Objective("use", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -97,7 +119,7 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FORWARD");
+                .add(3, ".ORWARD");
             root.add(3, "BWD_STEP1")
                 .add(2, "BWD_STEP2")
                 .add(1, "BWD_STEP3");
@@ -886,6 +908,9 @@ var player = (function() {
 			this.impulse(-1, 2, 5);
             this.jump(1);
 		},
+		actionFlight: function() {
+            this.jump(1);
+		},
 		actionSuperforward: function() {
 			this.impulse(-1, 2, 5);
             this.jump(1.5);
@@ -968,6 +993,15 @@ var main = (function () {
                 player.actionForward();
                 player.skin.gotoAndPlay("jump");
                 trails.addMessage(player.body, "boing!");
+                break;
+            case "FLIGHT":
+                actionTime.expiration = 15;
+                audio.soundOn(3);
+                audio.soundOn(2);
+                audio.soundOn(1);
+                player.actionFlight();
+                player.skin.gotoAndPlay("fly");
+                trails.addMessage(player.body, "nice!");
                 break;
             case "STAND":
                 actionTime.expiration = 15;
