@@ -18,7 +18,12 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
-    var objectives = [{title:"level 1", targetVelocity:0.5}];
+    var objectives = [
+        {title:"baby step", targetVelocity:0.2},
+        {title:"little steps", targetVelocity:0.5},
+        {title:"all three legs", targetVelocity:1.0},
+        {title:"boing!", targetVelocity:1.3}
+        ];
     var currentObjective = objectives[0];
 
     return {
@@ -60,7 +65,6 @@ var hud = (function() {
         context.stroke();
     };
     return {
-        container: new Container,
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
         },
@@ -77,17 +81,18 @@ var hud = (function() {
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
             textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
+            this.container.update();
         },
-        initialize : function(ctx) {
-            context = ctx;
+        initialize : function(canvas) {
+            this.container = new Stage(canvas);
+            context = canvas.getContext("2d");
+            this.container.autoClear = false;
             gradient = context.createLinearGradient(0,100,100,100);
             gradient.addColorStop(0.5, '#B7FA00');
             gradient.addColorStop(1, '#FA9600');
-            this.container.x = 0;
-            this.container.y = 0;
             textSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
-            textSprite.x = 0;
-            textSprite.y = 0;
+            textSprite.x = 10;
+            textSprite.y = 10;
             this.container.addChild(textSprite);
         }
     };
@@ -171,7 +176,8 @@ var physics = (function() {
 			body.CreateFixture(fixtureDef);
 			return body;
 		},
-		setDebugDraw: function(context) {
+		setDebugDraw: function(canvas) {
+            var context = canvas.getContext("2d");
 			this.debugDraw = new b2DebugDraw();
 			this.debugDraw.SetSprite(context);
 			this.debugDraw.SetDrawScale(PPM);
@@ -847,7 +853,7 @@ var main = (function () {
             initializeCanvas();
             input.initialize();
             physics.initialize();
-            physics.setDebugDraw(context);
+            physics.setDebugDraw(canvas);
             camera.initialize(stage);
 
             playspace.initialize();
@@ -864,8 +870,7 @@ var main = (function () {
 
             stage.addChild(playspace.container);
 
-            hud.initialize(context);
-            stage.addChild(hud.container);
+            hud.initialize(canvas);
 
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
