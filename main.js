@@ -229,24 +229,24 @@ var hud = (function() {
     return {
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
-            this.setPlayerVelocity(0);
-            this.setBallVelocity(0);
         },
-        setPlayerVelocity: function(velocity) {
-            this.playerVelocity = Math.abs( velocity );
-            this.playerNormalizedVelocity = normalize( this.playerVelocity, this.targetVelocity);
+        setPlayer: function(entity) {
+            this.player = entity;
         },
-        setBallVelocity: function(velocity) {
-            this.ballVelocity = Math.abs( velocity );
-            this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
+        setBall: function(entity) {
+            this.ball = entity;
         },
         announce: function(message, seconds, whenDone) {
             announcements.add(message, seconds, whenDone);
         },
         update: function() {
-            drawMeter( gradient, 20, this.ballNormalizedVelocity );
-            drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
-            drawDebug("b:"+this.ballVelocity.toFixed(3)+"p:"+this.playerVelocity.toFixed(3));
+            var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
+            var normalizedBallVelocity = normalize( ballVelocity, this.targetVelocity);
+            var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
+            var normalizedPlayerVelocity = normalize( playerVelocity, this.targetVelocity);
+            drawMeter( gradient, 20, normalizedBallVelocity );
+            drawMeter( "#B7FA00", 10, normalizedPlayerVelocity );
+            drawDebug("b:"+ballVelocity.toFixed(3)+"p:"+playerVelocity.toFixed(3));
             announcements.update();
             stage.update();
         },
@@ -815,8 +815,6 @@ var ball = (function() {
             return this.body.GetLinearVelocity();
         },
         advance: function() {
-            var velocity = this.getLinearVelocity().x; 
-            hud.setBallVelocity( velocity );
         }
     }
     
@@ -869,8 +867,6 @@ var player = (function() {
             return this.body.GetLinearVelocity();
         },
 		advance: function() {
-            var velocity = this.getLinearVelocity().x; 
-            hud.setPlayerVelocity( velocity );
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
@@ -1074,6 +1070,7 @@ var main = (function () {
             input.initialize();
             physics.initialize();
             physics.setDebugDraw(canvas);
+            hud.initialize(canvas);
             camera.initialize(stage);
 
             playspace.initialize();
@@ -1083,16 +1080,17 @@ var main = (function () {
 
             player.initialize();
             manager.setPlayer( player );
+            hud.setPlayer(player);
             playspace.addPlayer( player );
             camera.watch( player );
 
             ball.initialize();
             manager.setBall( ball );
+            hud.setBall(ball);
             playspace.addBall( ball );
 
             stage.addChild(playspace.container);
 
-            hud.initialize(canvas);
 
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
