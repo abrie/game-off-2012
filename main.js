@@ -134,7 +134,7 @@ var physics = (function() {
 		createPlayerFixture: function(x,y,width,height,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
-            bodyDef.position.Set(x/PPM,y/PPM);
+            bodyDef.position.Set(x,y);
 			var body = world.CreateBody(bodyDef);
 
 			var fixtureDef = new b2FixtureDef;
@@ -150,7 +150,7 @@ var physics = (function() {
 		createBallFixture: function(x,y,radius,mask) {
 			var bodyDef = new b2BodyDef;
 			bodyDef.type = b2Body.b2_dynamicBody;
-            bodyDef.position.Set(x/PPM,y/PPM);
+            bodyDef.position.Set(x,y);
 			var body = world.CreateBody(bodyDef);
 
 			var fixtureDef = new b2FixtureDef;
@@ -389,6 +389,11 @@ var input = (function () {
 		},
         setActionDelegate: function (delegate) {
             actionDelegate = delegate;
+        },
+        reset: function() {
+            actionTime.recovery = 0;
+            actionTime.expiration = 0;
+            thisAction = rootAction;
         },
 		advance: function () {
             if( actionTime.recovery > 0) {
@@ -635,11 +640,23 @@ var ball = (function() {
         skin: undefined,
         body: undefined,
 		initialize: function() {
-            this.fixture = physics.createBallFixture(-100,10,25,1);
+            this.fixture = physics.createBallFixture(-1,1,25,1);
             this.body = this.fixture.GetBody();
             this.skin = assets.getAnimation("ball");
             this.skin.gotoAndPlay("ready");
 		},
+        reset: function() {
+            var position = this.body.GetWorldCenter();
+            position.x = -1;
+            position.y = 1;
+            this.body.SetPositionAndAngle(position,0);
+            var velocity = this.body.GetLinearVelocity();
+            velocity.x = 0;
+            velocity.y = 0;
+            this.body.SetLinearVelocity(velocity);
+            this.body.SetAngularVelocity(0);
+            this.skin.gotoAndPlay("ready");
+        },
         advance: function() {
             manager.recordBallVelocity( this.body.GetLinearVelocity().x );
         }
@@ -678,6 +695,18 @@ var player = (function() {
             this.skin = assets.getAnimation("player");
             this.skin.gotoAndPlay("still");
 		},
+        reset: function() {
+            var position = this.body.GetWorldCenter();
+            position.x = 0;
+            position.y = 0;
+            this.body.SetPositionAndAngle(position,0);
+            var velocity = this.body.GetLinearVelocity();
+            velocity.x = 0;
+            velocity.y = 0;
+            this.body.SetLinearVelocity(velocity);
+            this.body.SetAngularVelocity(0);
+            this.skin.gotoAndPlay("still");
+        },
 		advance: function() {
             manager.recordPlayerVelocity( this.body.GetLinearVelocity().x );
 		},
@@ -858,6 +887,9 @@ var main = (function () {
 
     var handleObjectiveComplete = function(objective) {
         hud.announce(objective.title,10);
+        input.reset();
+        ball.reset();
+        player.reset();
     };
 
 	return {
