@@ -18,54 +18,53 @@ var FPS = 30;
 var PPM = 150;
 
 var manager = (function(){
+    var Objective = function(title, targetVelocity) {
+        this.introTime = 5;
+        this.title = title;
+        this.targetVelocity = targetVelocity;
+        this.playerVelocity = 0;
+        this.ballVelocity = 0;
+        this.isComplete = function() {
+            return this.targetVelocity - this.ballVelocity <= 0; 
+        }
+    }
+
     var objectives = [
-        {title:"baby step", targetVelocity:0.2},
-        {title:"little steps", targetVelocity:0.5},
-        {title:"all three legs", targetVelocity:1.0},
-        {title:"boing!", targetVelocity:1.3}
-        ];
-    var currentObjective = objectives[0];
+        new Objective("baby step", 0.2),
+        new Objective("little steps", 0.5),
+        new Objective("all three legs", 1.0),
+        new Objective("boing!", 1.3)
+    ];
+
+    var current = undefined;
 
     return {
-        playerVelocity: 0,
-        ballVelocity: 0,
-        onObjectiveComplete: undefined,
-        onObjectiveCommence: undefined,
-        onAllObjectivesComplete: undefined,
-        countDown: 0,
+        onInitiateObjective: undefined,
+        onCompleteObjective: undefined,
         recordPlayerVelocity: function(velocity) {
-            this.playerVelocity = Math.abs( velocity );
-            hud.setPlayerVelocity( this.playerVelocity );
+            current.playerVelocity = Math.abs( velocity );
         },
         recordBallVelocity: function(velocity) {
-            this.ballVelocity = Math.abs( velocity );
-            hud.setBallVelocity( this.ballVelocity );
+            current.ballVelocity = Math.abs( velocity );
         },
         advance: function(playerVelocity, ballVelocity) {
-            if( this.countDown-- > 0 ) {
-                if( this.countDown === 0) {
-                    this.onObjectiveCommence(currentObjective);
+            if( current ) {
+                if( current.isComplete() ) {
+                    this.onCompleteObjective(current);
+                    this.nextObjective(current);
                 }
-                return;
-            }
-            if( currentObjective.targetVelocity - this.ballVelocity <= 0 ) {
-                this.onObjectiveComplete(currentObjective);
             }
         },
-        nextObjective: function() {
-            var nextObjectiveIndex = objectives.indexOf(currentObjective)+1;
-            if( nextObjectiveIndex >= objectives.length ) {
-                this.onAllObjectivesComplete();
-            }
-            else {
-                this.setObjective(nextObjectiveIndex, 5);
-            }
+        firstObjective: function() {
+            this.setObjective( objectives[0] );
         },
-        setObjective: function(objectiveIndex, secondsToStart) {
-            currentObjective = objectives[objectiveIndex];
-            hud.setTargetVelocity( currentObjective.targetVelocity );
-            hud.announce(currentObjective.title, 5);
-            this.countDown = FPS*secondsToStart;
+        nextObjective: function( objective ) {
+            var next = objectives[ objectives.indexOf(objective)+1 ];
+            next ? this.setObjective(next) : console.log("no more objectives");
+        },
+        setObjective: function(newObjective) {
+            current = newObjective;
+            this.onInitiateObjective(current);
         },
         initialize: function() {
         }
@@ -349,18 +348,19 @@ var input = (function () {
 
     var isInputOn = {};
 	function inputOn(id) {
-		if (isInputOn[id] || !active) {
+        if( !active ) {
             return;
-        }
-        else {
-            isInputOn[id] = true;
         }
         if (actionTime.recovery > 0) {
             return;
         }
+		if (isInputOn[id] ) {
+            return;
+        }
 
+        isInputOn[id] = true;
         thisAction = thisAction.get(id);
-        if(thisAction) {
+        if (thisAction) {
             thisAction = notifyThenNext();
         }
         else {
@@ -688,6 +688,7 @@ var ball = (function() {
         },
         advance: function() {
             manager.recordBallVelocity( this.body.GetLinearVelocity().x );
+            hud.setBallVelocity( this.ballVelocity );
         }
     }
     
@@ -738,6 +739,7 @@ var player = (function() {
         },
 		advance: function() {
             manager.recordPlayerVelocity( this.body.GetLinearVelocity().x );
+            hud.setPlayerVelocity( this.playerVelocity );
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
@@ -914,20 +916,16 @@ var main = (function () {
 
     }
 
-    var handleObjectiveComplete = function(objective) {
+    var handleCompleteObjective = function(objective) {
+        player.reset();
         input.reset();
         ball.reset();
-        player.reset();
-        manager.nextObjective();
     };
 
-    var handleObjectiveCommence = function(objective) {
-        hud.announce("go!",1);
+    var handleInitiateObjective = function(objective) {
+        hud.setTargetVelocity( objective.targetVelocity );
+        hud.announce(objective.title, 2);
         input.setActive(true);
-    };
-
-    var handleAllObjectivesComplete = function() {
-        hud.announce(":)",1);
     };
 
 	return {
@@ -937,9 +935,8 @@ var main = (function () {
         },
 		start: function () {
             manager.initialize();
-            manager.onObjectiveComplete = handleObjectiveComplete;
-            manager.onObjectiveCommence = handleObjectiveCommence;
-            manager.onAllObjectivesComplete = handleAllObjectivesComplete;
+            manager.onCompleteObjective = handleCompleteObjective;
+            manager.onInitiateObjective = handleInitiateObjective;
             initializeAudio();
             initializeCanvas();
             input.initialize();
@@ -967,7 +964,7 @@ var main = (function () {
             Ticker.useRAF = true;
             Ticker.addListener(this);
             input.setActionDelegate(fireAction);
-            manager.setObjective(0, 5);
+            manager.firstObjective();
 		},
         debugClear: function() {
             context.save();
