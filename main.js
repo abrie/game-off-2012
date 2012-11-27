@@ -119,7 +119,6 @@ var manager = (function(){
             }
             if( !current.isInitiated ) {
                 this.onInitiateObjective(current);
-                current.isInitiated = true;
                 return;
             }
             if( current.isCompleted( this.ball.getLinearVelocity().x ) ) {
@@ -1056,7 +1055,10 @@ var main = (function () {
     var handleInitiateObjective = function(objective) {
         objective.encodeActions( input.getRootAction() );
         hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title,2,function() { input.setActive(true); } );
+        hud.announce(objective.title,2,function() { 
+            objective.isInitiated = true;
+            input.setActive(true);
+        });
     };
 
 	return {
