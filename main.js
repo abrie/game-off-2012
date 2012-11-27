@@ -688,8 +688,9 @@ var ball = (function() {
             this.skin.gotoAndPlay("ready");
         },
         advance: function() {
-            manager.recordBallVelocity( this.body.GetLinearVelocity().x );
-            hud.setBallVelocity( this.ballVelocity );
+            var velocity = this.body.GetLinearVelocity().x; 
+            manager.recordBallVelocity( velocity );
+            hud.setBallVelocity( velocity );
         }
     }
     
@@ -739,8 +740,9 @@ var player = (function() {
             this.skin.gotoAndPlay("still");
         },
 		advance: function() {
-            manager.recordPlayerVelocity( this.body.GetLinearVelocity().x );
-            hud.setPlayerVelocity( this.playerVelocity );
+            var velocity = this.body.GetLinearVelocity().x; 
+            manager.recordPlayerVelocity( velocity );
+            hud.setPlayerVelocity( velocity );
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
