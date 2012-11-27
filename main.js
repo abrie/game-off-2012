@@ -153,10 +153,10 @@ var manager = (function(){
 
 
 var hud = (function() {
-    var announcements = (function() {
+    var Announcements = function(container) {
         var list = [];
 
-        var Announcement = function(container, message, frames, whenDone) {
+        var Announcement = function(message, frames, whenDone) {
             var count = 0;
             var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
             sprite.regX = sprite.getMeasuredWidth()/2;
@@ -189,8 +189,8 @@ var hud = (function() {
         }
 
         return {
-            add: function(container, message, seconds, whenDone) {
-                var announcement = new Announcement(container, message, FPS*seconds, whenDone)
+            add: function(message, seconds, whenDone) {
+                var announcement = new Announcement(message, FPS*seconds, whenDone)
                 list.push( announcement.show() );
             },
             update: function() {
@@ -200,11 +200,12 @@ var hud = (function() {
             }
         };
 
-    }());
-    var context, gradient, textSprite;
+    };
+
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
     }          
+
     var drawMeter = function(stroke, width, level) {
         context.strokeStyle=stroke;
         context.lineWidth=width;
@@ -212,6 +213,25 @@ var hud = (function() {
         context.arc(100,100,45,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
         context.stroke();
     };
+
+    var drawDebug = function(text) {
+        debugText.text = text;
+    }
+
+    var initializeGradients = function() {
+        drawMeter( "#AAA", 30, 1 );
+        gradient = context.createLinearGradient(0,100,100,100);
+        gradient.addColorStop(0.5, '#B7FA00');
+        gradient.addColorStop(1, '#FA9600');
+    }
+    
+    var initializeDebugText = function() {
+        debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
+        debugText.x = 10;
+        debugText.y = 10;
+        stage.addChild(debugText);
+    }
+
     return {
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
@@ -227,27 +247,22 @@ var hud = (function() {
             this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
         announce: function(message, seconds, whenDone) {
-            announcements.add(this.container, message, seconds, whenDone);
+            announcements.add(message, seconds, whenDone);
         },
         update: function() {
-            drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
-            textSprite.text = "b:"+this.ballVelocity.toFixed(3)+"p:"+this.playerVelocity.toFixed(3);
+            drawDebug("b:"+this.ballVelocity.toFixed(3)+"p:"+this.playerVelocity.toFixed(3));
             announcements.update();
-            this.container.update();
+            stage.update();
         },
         initialize : function(canvas) {
-            this.container = new Stage(canvas);
+            stage = new Stage(canvas);
+            stage.autoClear = false;
+            announcements = new Announcements(stage);
             context = canvas.getContext("2d");
-            this.container.autoClear = false;
-            gradient = context.createLinearGradient(0,100,100,100);
-            gradient.addColorStop(0.5, '#B7FA00');
-            gradient.addColorStop(1, '#FA9600');
-            textSprite = new createjs.Text(0,"bold 16px Arial","#FFF");
-            textSprite.x = 10;
-            textSprite.y = 10;
-            this.container.addChild(textSprite);
+            initializeGradients();
+            initializeDebugText();
         }
     };
 }());
