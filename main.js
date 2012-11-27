@@ -101,9 +101,9 @@ var hud = (function() {
             if( announceSprite ) {
                 this.container.removeChild(announceSprite);
             }
-            announceSprite = new createjs.Text(message,"bold 32px Arial", "#FFF");
-            announceSprite.rX = announceSprite.getMeasuredWidth()/2;
-            announceSprite.rY = announceSprite.getMeasuredHeight()/2;
+            announceSprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
+            announceSprite.regX = announceSprite.getMeasuredWidth()/2;
+            announceSprite.regY = announceSprite.getMeasuredHeight()/2;
             announceSprite.x = this.container.canvas.width/2;
             announceSprite.y = this.container.canvas.height/2;
             announceFrames = FPS*seconds;
