@@ -26,7 +26,7 @@ var manager = (function(){
         this.ballVelocity = 0;
         this.encodeActions = actions;
         this.isComplete = function() {
-            return this.targetVelocity - this.ballVelocity <= 0.05; 
+            return this.targetVelocity - this.ballVelocity <= 0; 
         }
     }
 
@@ -43,7 +43,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("all three legs", 1.0, function(root) {
+        new Objective("all three legs", 0.75, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -151,56 +151,56 @@ var manager = (function(){
     }
 }());
 
-var announcements = (function() {
-    var list = [];
 
-    var Announcement = function(container, message, frames, whenDone) {
-        var count = 0;
-        var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
-        sprite.regX = sprite.getMeasuredWidth()/2;
-        sprite.regY = sprite.getMeasuredHeight()/2;
-        sprite.x = container.canvas.width/2;
-        sprite.y = container.canvas.height/2;
-        
-        return {
-            show: function() {
-                container.addChild(sprite);
-                return this;
-            },
-            remove: function() {
-                if( whenDone ) {
-                    whenDone();
-                }
-                container.removeChild(sprite);
-            },
-            advance: function() {
-                if( count === frames ) {
-                    this.remove();
-                    return false;
-                }
-                else {
-                    sprite.alpha = ++count > frames - frames/3 ? sprite.alpha-0.05 : sprite.alpha;
-                    return true;
+var hud = (function() {
+    var announcements = (function() {
+        var list = [];
+
+        var Announcement = function(container, message, frames, whenDone) {
+            var count = 0;
+            var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
+            sprite.regX = sprite.getMeasuredWidth()/2;
+            sprite.regY = sprite.getMeasuredHeight()/2;
+            sprite.x = container.canvas.width/2;
+            sprite.y = container.canvas.height/2;
+            
+            return {
+                show: function() {
+                    container.addChild(sprite);
+                    return this;
+                },
+                remove: function() {
+                    if( whenDone ) {
+                        whenDone();
+                    }
+                    container.removeChild(sprite);
+                },
+                advance: function() {
+                    if( count === frames ) {
+                        this.remove();
+                        return false;
+                    }
+                    else {
+                        sprite.alpha = ++count > frames - frames/3 ? sprite.alpha-0.05 : sprite.alpha;
+                        return true;
+                    }
                 }
             }
         }
-    }
 
-    return {
-        add: function(container, message, seconds, whenDone) {
-            var announcement = new Announcement(container, message, FPS*seconds, whenDone)
-            list.push( announcement.show() );
-        },
-        update: function() {
-            list = _.filter(list, function(announcement) {
-                return announcement.advance();
-            });
-        }
-    };
+        return {
+            add: function(container, message, seconds, whenDone) {
+                var announcement = new Announcement(container, message, FPS*seconds, whenDone)
+                list.push( announcement.show() );
+            },
+            update: function() {
+                list = _.filter(list, function(announcement) {
+                    return announcement.advance();
+                });
+            }
+        };
 
-}());
-
-var hud = (function() {
+    }());
     var context, gradient, textSprite;
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
@@ -233,7 +233,7 @@ var hud = (function() {
             drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
-            textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
+            textSprite.text = "b:"+this.ballVelocity.toFixed(3)+"p:"+this.playerVelocity.toFixed(3);
             announcements.update();
             this.container.update();
         },
