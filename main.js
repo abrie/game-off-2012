@@ -19,7 +19,7 @@ var PPM = 150;
 
 var manager = (function(){
     var Objective = function(title, targetVelocity) {
-        this.introTime = 5;
+        this.initiated = false;
         this.title = title;
         this.targetVelocity = targetVelocity;
         this.playerVelocity = 0;
@@ -42,16 +42,23 @@ var manager = (function(){
         onInitiateObjective: undefined,
         onCompleteObjective: undefined,
         recordPlayerVelocity: function(velocity) {
-            current.playerVelocity = Math.abs( velocity );
+            if(current) {
+                current.playerVelocity = Math.abs( velocity );
+            }
         },
         recordBallVelocity: function(velocity) {
-            current.ballVelocity = Math.abs( velocity );
+            if( current) {
+                current.ballVelocity = Math.abs( velocity );
+            }
         },
         advance: function(playerVelocity, ballVelocity) {
             if( current ) {
+                if( !current.initiated ) {
+                    this.onInitiateObjective(current);
+                    current.initiated = true;
+                }
                 if( current.isComplete() ) {
                     this.onCompleteObjective(current);
-                    this.nextObjective(current);
                 }
             }
         },
@@ -64,19 +71,20 @@ var manager = (function(){
         },
         setObjective: function(newObjective) {
             current = newObjective;
-            this.onInitiateObjective(current);
         },
         initialize: function() {
         }
     }
 }());
 
-var hud = (function() {
-    var announcements = [];
-    var Announcement = function(container, message, frames) {
+var announcements = (function() {
+    var list = [];
+
+    var Announcement = function(container, message, frames, whenDone) {
         var container = container;
-        var frames = frames;
+        var totalFrames = frames;
         var count = 0;
+        var onRemove = whenDone;
         var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
         sprite.regX = sprite.getMeasuredWidth()/2;
         sprite.regY = sprite.getMeasuredHeight()/2;
@@ -89,21 +97,39 @@ var hud = (function() {
                 return this;
             },
             remove: function() {
+                if( onRemove ) {
+                    onRemove();
+                }
                 container.removeChild(sprite);
             },
             advance: function() {
-                if( count === frames ) {
+                if( count === totalFrames ) {
                     this.remove();
                     return false;
                 }
                 else {
-                    sprite.alpha = ++count > frames/2 ? sprite.alpha/2 : sprite.alpha;
+                    sprite.alpha = ++count > totalFrames/2 ? sprite.alpha/1.2 : sprite.alpha;
                     return true;
                 }
             }
         }
     }
 
+    return {
+        add: function(container, message, seconds, whenDone) {
+            var announcement = new Announcement(container, message, FPS*seconds, whenDone)
+            list.push( announcement.show() );
+        },
+        update: function() {
+            list = _.filter(list, function(announcement) {
+                return announcement.advance();
+            });
+        }
+    };
+
+}());
+
+var hud = (function() {
     var context, gradient, textSprite;
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
@@ -129,18 +155,15 @@ var hud = (function() {
             this.ballVelocity = Math.abs( velocity );
             this.ballNormalizedVelocity = normalize( this.ballVelocity, this.targetVelocity);
         },
-        announce : function(message, seconds) {
-            var announcement = new Announcement(this.container, message, FPS*seconds)
-            announcements.push( announcement.show() );
+        announce: function(message, seconds, whenDone) {
+            announcements.add(this.container, message, seconds, whenDone);
         },
         update: function() {
             drawMeter( "#AAA", 30, 1 );
             drawMeter( gradient, 20, this.ballNormalizedVelocity );
             drawMeter( "#B7FA00", 10, this.playerNormalizedVelocity );
             textSprite.text = "b:"+this.ballVelocity.toFixed(1)+"p:"+this.playerVelocity.toFixed(1);
-            announcements = _.filter(announcements, function(announcement) {
-                return announcement.advance();
-            });
+            announcements.update();
             this.container.update();
         },
         initialize : function(canvas) {
@@ -154,7 +177,6 @@ var hud = (function() {
             textSprite.x = 10;
             textSprite.y = 10;
             this.container.addChild(textSprite);
-            this.announce("Push, Chinchilla!",10);
         }
     };
 }());
@@ -944,12 +966,12 @@ var main = (function () {
         player.reset();
         input.reset();
         ball.reset();
+        manager.nextObjective(objective);
     };
 
     var handleInitiateObjective = function(objective) {
         hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title, 2);
-        input.setActive(true);
+        hud.announce(objective.title,2,function() { input.setActive(true); } );
     };
 
 	return {
@@ -988,7 +1010,7 @@ var main = (function () {
             Ticker.useRAF = true;
             Ticker.addListener(this);
             input.setActionDelegate(fireAction);
-            manager.firstObjective();
+            hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
 		},
         debugClear: function() {
             context.save();
