@@ -545,8 +545,7 @@ var input = (function () {
             actionDelegate = delegate;
         },
         reset: function() {
-            actionTime.recovery = 0;
-            actionTime.expiration = 0;
+            actionTime.recovery = 0, actionTime.expiration = 0;
             thisAction = rootAction;
             this.setActive(false);
         },
@@ -638,8 +637,6 @@ var assets = (function() {
 
 var playspace = (function() {
     return {
-        player: {body:undefined, skin:undefined, origin:undefined},
-        ball: {body:undefined, skin:undefined, origin:undefined},
         layers: {},
         markers: [],
         container: new Container,
@@ -700,7 +697,8 @@ var playspace = (function() {
                     piece.skin.y = piece.body.GetWorldCenter().y * PPM;
                 });
             }, this);
-            // filter seems fairly inefficient here, garbage collection might present a problem
+            // filter seems fairly inefficient here, garbage collection might
+            // present a problem, reconsider implementation if time allows.
             this.markers = _.filter( this.markers, function(entity) {
                 if( entity.frames-- === 0 ) {
                     this.container.removeChild(entity.skin);
@@ -764,9 +762,7 @@ var camera = (function() {
             this.stage.scaleY = factor;
             this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+200)/factor};
             this.lookAt(this.target);
-            if(DEBUG) {
-                physics.debugDraw.SetDrawScale(PPM*factor);
-            }
+            if(DEBUG) { physics.debugDraw.SetDrawScale(PPM*factor); }
         },
         lookAt: function(point) {
             this.target.x = point.x;
@@ -802,15 +798,16 @@ var ball = (function() {
             this.skin.gotoAndPlay("ready");
 		},
         reset: function() {
-            var position = this.body.GetWorldCenter();
-            position.x = -1;
-            position.y = 1;
-            this.body.SetPositionAndAngle(position,0);
-            var velocity = this.body.GetLinearVelocity();
-            velocity.x = 0;
-            velocity.y = 0;
-            this.body.SetLinearVelocity(velocity);
             this.body.SetAngularVelocity(0);
+
+            var position = this.body.GetWorldCenter();
+            position.x = -1, position.y = 1;
+            this.body.SetPositionAndAngle(position,0);
+
+            var velocity = this.body.GetLinearVelocity();
+            velocity.x = 0, velocity.y = 0;
+            this.body.SetLinearVelocity(velocity);
+
             this.skin.gotoAndPlay("ready");
         },
         getLinearVelocity: function() {
@@ -854,15 +851,16 @@ var player = (function() {
             this.skin.gotoAndPlay("still");
 		},
         reset: function() {
-            var position = this.body.GetWorldCenter();
-            position.x = 0;
-            position.y = 0;
-            this.body.SetPositionAndAngle(position,0);
-            var velocity = this.body.GetLinearVelocity();
-            velocity.x = 0;
-            velocity.y = 0;
-            this.body.SetLinearVelocity(velocity);
             this.body.SetAngularVelocity(0);
+
+            var position = this.body.GetWorldCenter();
+            position.x = 0, position.y = 0;
+            this.body.SetPositionAndAngle(position,0);
+
+            var velocity = this.body.GetLinearVelocity();
+            velocity.x = 0, velocity.y = 0;
+            this.body.SetLinearVelocity(velocity);
+
             this.skin.gotoAndPlay("still");
         },
         getLinearVelocity: function() {
@@ -978,7 +976,7 @@ var main = (function () {
                 player.skin.gotoAndPlay("land");
                 break;
 			default:
-				console.log("action unhandled:",action);
+				console.log("action unhandled:", action);
 				break;
 		}
 	}
