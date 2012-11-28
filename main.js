@@ -589,6 +589,10 @@ var actionInput = (function () {
     }
 
 	function inputOn(id) {
+        if (!isEnabled) {
+            return;
+        }
+
         if (actionTime.recovery > 0) {
             return;
         }
@@ -607,16 +611,25 @@ var actionInput = (function () {
         // nothing here except a comment.
 	}
 
-	var actionDelegate;
+    var isEnabled = false;
+	var actionDelegate = undefined;
 	return {
 		initialize: function () {
             this.reset();
+            isEnabled = false;
 		},
         getRootAction: function() {
             return rootAction;
         },
         setActionDelegate: function (delegate) {
             actionDelegate = delegate;
+        },
+        enable: function() {
+            isEnabled = true;
+            this.reset();
+        },
+        disable: function() {
+            isEnabled = false;
         },
         reset: function() {
             thisAction = rootAction;
@@ -672,10 +685,6 @@ var input = (function () {
             return false;
         }
 
-        if( !isEnabled ) {
-            return;
-        }
-
 		if(playKey[keyCode]) {
             inputOn(playKey[keyCode]);
             return false;
@@ -691,10 +700,6 @@ var input = (function () {
                         break;
             }
             return false;
-        }
-
-        if( !isEnabled ) {
-            return;
         }
 
 		if(playKey[keyCode]) {
@@ -713,27 +718,12 @@ var input = (function () {
 		return onKeyUp(e.keyCode);
 	}
     
-    var isEnabled;
 	return {
 		initialize: function () {
             actionInput.initialize();
-            this.disable();
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
-        disable: function() {
-            isEnabled = false;
-        },
-        setActionDelegate: function (delegate) {
-            actionInput.setActionDelegate(delegate);
-        },
-        getRootAction: function() {
-            return actionInput.getRootAction();
-        },
-        enable: function() {
-            isEnabled = true;
-            actionInput.reset();
-        },
 		advance: function () {
             actionInput.advance();
 		}
@@ -1273,7 +1263,7 @@ var main = (function () {
     }
 
     var handleCompleteObjective = function(objective) {
-        input.disable();
+        actionInput.disable();
         player.reset();
         ball.reset();
         manager.nextObjective(objective);
@@ -1291,8 +1281,8 @@ var main = (function () {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,1, function() { 
-            objective.encodeActions( input.getRootAction() );
-            input.enable();
+            objective.encodeActions( actionInput.getRootAction() );
+            actionInput.enable();
         });
     };
 
@@ -1337,7 +1327,7 @@ var main = (function () {
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
-            input.setActionDelegate(fireAction);
+            actionInput.setActionDelegate(fireAction);
             hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
 		},
         debugClear: function() {
