@@ -1320,9 +1320,6 @@ var main = (function () {
         }
     }());
 
-    function initializeVideo() {
-    }
-
     var handleCompleteObjective = function(objective) {
         playInput.disable();
         player.reset();
