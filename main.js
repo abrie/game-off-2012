@@ -1348,44 +1348,45 @@ var main = (function () {
             assets.initialize();
         },
 		start: function () {
-            manager.initialize();
-            manager.onCompleteObjective = handleCompleteObjective;
-            manager.onInitiateObjective = handleInitiateObjective;
-            manager.onConcludeObjective = handleConcludeObjective;
 
             initializeAudio();
             initializeCanvas();
             input.initialize();
+            playInput.setActionDelegate(firePlayAction);
+            menuInput.setActionDelegate(fireMenuAction);
+            menuInput.enable();
+
             physics.initialize();
             physics.setDebugDraw(canvas);
-            hud.initialize(canvas);
             camera.initialize(stage);
+
+            player.initialize();
+            ball.initialize();
 
             playspace.initialize();
             populatePlayspace();
             playspace.bindCamera(camera);
             playspace.bindParallax(camera);
-
-            player.initialize();
-            manager.setPlayer( player );
-            hud.setPlayer(player);
             playspace.addPlayer( player );
-            camera.watch( player );
-
-            ball.initialize();
-            manager.setBall( ball );
-            hud.setBall(ball);
             playspace.addBall( ball );
-
             stage.addChild(playspace.container);
 
+            camera.watch( player );
+
+            hud.initialize(canvas);
+            hud.setPlayer(player);
+            hud.setBall(ball);
+
+            manager.initialize();
+            manager.onCompleteObjective = handleCompleteObjective;
+            manager.onInitiateObjective = handleInitiateObjective;
+            manager.onConcludeObjective = handleConcludeObjective;
+            manager.setPlayer( player );
+            manager.setBall( ball );
 
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
-            playInput.setActionDelegate(firePlayAction);
-            menuInput.setActionDelegate(fireMenuAction);
-            menuInput.enable();
             hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
 		},
         debugClear: function() {
