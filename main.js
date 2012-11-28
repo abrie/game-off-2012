@@ -592,7 +592,7 @@ var menuInput = (function () {
 	};
 }());
 
-var actionInput = (function () {
+var playInput = (function () {
 	"use strict";
 
     var ActionNode = function(key, action, timing) {
@@ -735,7 +735,7 @@ var input = (function () {
         }
 
 		if(playKey[keyCode]) {
-            inputOn(playKey[keyCode], actionInput);
+            inputOn(playKey[keyCode], playInput);
             return false;
         }
 
@@ -749,7 +749,7 @@ var input = (function () {
         }
 
 		if(playKey[keyCode]) {
-            inputOff(playKey[keyCode], actionInput);
+            inputOff(playKey[keyCode], playInput);
             return false;
         }
 	}
@@ -766,13 +766,13 @@ var input = (function () {
     
 	return {
 		initialize: function () {
-            actionInput.initialize();
+            playInput.initialize();
             menuInput.initialize();
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
 		advance: function () {
-            actionInput.advance();
+            playInput.advance();
             menuInput.advance();
 		}
 	};
@@ -1187,12 +1187,12 @@ var main = (function () {
                 hud.toggleMenu();
                 break;
             default:
-                console.log("unknown menu action");
+                console.log("unknown menu action:", action);
                 break;
         }
     }
     
-	function fireAction(action) {
+	function firePlayAction(action) {
 		switch(action) {
 			case "FWD_STEP1": 
                 audio.soundOn(1);
@@ -1258,7 +1258,7 @@ var main = (function () {
                 player.gotoAndPlay("land");
                 break;
 			default:
-				console.log("action unhandled:", action);
+				console.log("unknown play action:", action);
 				break;
 		}
 	}
@@ -1319,14 +1319,14 @@ var main = (function () {
     }
 
     var handleCompleteObjective = function(objective) {
-        actionInput.disable();
+        playInput.disable();
         player.reset();
         ball.reset();
         manager.nextObjective(objective);
     };
 
     var handleConcludeObjective = function(objective) {
-        actionInput.disable();
+        playInput.disable();
         player.reset();
         ball.reset();
         camera.zoomFactorTarget = 1.0;
@@ -1337,8 +1337,8 @@ var main = (function () {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,1, function() { 
-            objective.encodeActions( actionInput.getRootAction() );
-            actionInput.enable();
+            objective.encodeActions( playInput.getRootAction() );
+            playInput.enable();
         });
     };
 
@@ -1383,7 +1383,7 @@ var main = (function () {
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
-            actionInput.setActionDelegate(fireAction);
+            playInput.setActionDelegate(firePlayAction);
             menuInput.setActionDelegate(fireMenuAction);
             menuInput.enable();
             hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
