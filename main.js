@@ -541,7 +541,7 @@ var input = (function () {
 
 	function onKeyUp(keyCode) {
 		var mapped = keyMap[keyCode];
-		if (mapped && active) {
+		if (mapped) {
 			inputOff(mapped);
 			return false;
 		}
@@ -570,24 +570,26 @@ var input = (function () {
         },
         setActive: function(state) {
             active = state;
-            isInputOn = {};
         },
         setActionDelegate: function (delegate) {
             actionDelegate = delegate;
         },
         reset: function() {
-            actionTime.recovery = 0, actionTime.expiration = 0;
             thisAction = rootAction;
+            actionTime.recovery = 0, actionTime.expiration = 0;
             this.setActive(false);
+            this.inputOn = {};
         },
 		advance: function () {
             if( actionTime.recovery > 0) {
                 actionTime.recovery--;
             }
-            else if( actionTime.expiration > 0 ) {
-                if( --actionTime.expiration === 0) {
-                    actionDelegate("EXPIRED", actionTime);
-                    thisAction = rootAction;
+            else {
+                if( actionTime.expiration > 0 ) {
+                    if( --actionTime.expiration === 0) {
+                        actionDelegate("EXPIRED", actionTime);
+                        thisAction = rootAction;
+                    }
                 }
             }
 		}
@@ -651,7 +653,7 @@ var assets = (function() {
         {
             name: "background",
             images: ["assets/trees.png"],
-            frames: {count:1, width:1206, height:500,regX:1206/2,regY:0},
+            frames: {count:1, width:600, height:250,regX:600/2,regY:-250},
             animations: {
                 a: {frames:[0], next:false, frequency:1},
             }
@@ -820,7 +822,7 @@ var camera = (function() {
             this.zoomFactor = factor;
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
-            this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+200)/factor};
+            this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+100)/factor};
             this.lookAt(this.target);
             if(DEBUG) { physics.debugDraw.SetDrawScale(PPM*factor); }
         },
@@ -1120,22 +1122,22 @@ var main = (function () {
         var floorSkin = generateFloorSprite(10000,10,colors[0],10);
         playspace.addStaticBody( floorBody, floorSkin, 255 );
 
-        var backgroundBody1 = physics.createStaticBody(0,-60,1206,500,2);
+        var backgroundBody1 = physics.createStaticBody(0,-60,600,250,2);
         var backgroundSkin1 = assets.getAnimation("background").clone();
         backgroundSkin1.gotoAndPlay( "a" );
         playspace.addStaticBody( backgroundBody1, backgroundSkin1, 30 );
 
-        var backgroundBody2 = physics.createStaticBody(-1206/2,-30,1206,500,2);
+        var backgroundBody2 = physics.createStaticBody(-600/2,-30,600,250,2);
         var backgroundSkin2 = assets.getAnimation("background").clone();
         backgroundSkin2.gotoAndPlay( "a" );
         playspace.addStaticBody( backgroundBody2, backgroundSkin2, 10 );
 
-        var backgroundBody3 = physics.createStaticBody(-1206,0,1206,500,2);
+        var backgroundBody3 = physics.createStaticBody(-600,0,600,250,2);
         var backgroundSkin3 = assets.getAnimation("background").clone();
         backgroundSkin3.gotoAndPlay( "a" );
         playspace.addStaticBody( backgroundBody3, backgroundSkin3, 1 );
 
-        var backgroundBody4 = physics.createStaticBody(1206/2,0,1206,500,2);
+        var backgroundBody4 = physics.createStaticBody(600/2,0,600,250,2);
         var backgroundSkin4 = assets.getAnimation("background").clone();
         backgroundSkin4.gotoAndPlay( "a" );
         playspace.addStaticBody( backgroundBody4, backgroundSkin4, 60 );
