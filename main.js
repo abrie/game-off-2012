@@ -236,8 +236,10 @@ var hud = (function() {
                 list.push( announcement.show() );
             },
             update: function() {
-                list = list.filter( function(announcement) {
-                    return announcement.advance.apply(announcement);
+                list.forEach( function(announcement, index, array) {
+                    if(!announcement.advance()) {
+                        array.splice(index,1);
+                    }
                 });
             }
         };
