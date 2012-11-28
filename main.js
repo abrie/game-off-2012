@@ -38,13 +38,13 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("little steps", 0.5, function(root) {
+        new Objective("little steps", 0.40, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("all three legs", 0.75, function(root) {
+        new Objective("all three legs", 0.80, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -180,7 +180,6 @@ var hud = (function() {
         var list = [];
 
         var Announcement = function(message, frames, whenDone) {
-            console.log("announcement creation");
             var count = 0;
             var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
             sprite.regX = sprite.getMeasuredWidth()/2;
@@ -862,7 +861,7 @@ var ball = (function() {
         skin: undefined,
         body: undefined,
 		initialize: function() {
-            this.fixture = physics.createBallFixture(-1,1,25,1);
+            this.fixture = physics.createBallFixture(-1.5,1,25,1);
             this.body = this.fixture.GetBody();
             this.skin = assets.getAnimation("ball");
             this.skin.gotoAndPlay("ready");
@@ -896,6 +895,7 @@ var player = (function() {
         container: undefined,
 		skin: undefined,
         body: undefined,
+        maximumRotation: Math.PI*2/360*30,
         impulse: function(direction, rate, max) {
             var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
@@ -955,6 +955,13 @@ var player = (function() {
             return this.body.GetLinearVelocity();
         },
 		advance: function() {
+            var angle = this.body.GetAngle();
+            if( angle > this.maximumRotation ) {
+                this.body.SetAngle( this.maximumRotation );
+            }
+            else if( angle < -this.maximumRotation ) {
+                this.body.SetAngle( -this.maximumRotation );
+            }
 		},
         actionStep: function(direction,mag) {
             this.impulse(direction, mag, mag);
@@ -1042,7 +1049,6 @@ var main = (function () {
 				break;
             case "FORWARD":
                 actionTime.expiration = 15;
-                actionTime.recovery = 15;
                 audio.soundOn(3);
                 audio.soundOn(2);
                 audio.soundOn(1);
