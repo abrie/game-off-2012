@@ -241,12 +241,25 @@ var hud = (function() {
         return Math.min( value/range, 1);
     }          
 
-    var drawMeter = function(stroke, width, level) {
+    var drawMeter = function(radius, stroke, width, level) {
         context.strokeStyle=stroke;
         context.lineWidth=width;
         context.beginPath();
-        context.arc(100,100,45,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
+        context.arc(100,100,radius,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
         context.stroke();
+    };
+
+    var drawIndicator = function(radius, stroke, width, level) {
+        context.save();
+        context.translate(100,100);
+        context.rotate(Math.PI-0.25+level*(Math.PI+0.5));
+        context.strokeStyle=stroke;
+        context.lineWidth=width;
+        context.beginPath();
+        context.moveTo(0, 0);
+        context.lineTo(radius, 0);
+        context.stroke();
+        context.restore();
     };
 
     var drawDebug = function(text) {
@@ -272,6 +285,7 @@ var hud = (function() {
     var announcements = undefined;
     var context = undefined;
     return {
+        maximumVelocity: 5.0,
         setTargetVelocity: function(velocity) {
             this.targetVelocity = Math.abs( velocity );
         },
@@ -286,12 +300,15 @@ var hud = (function() {
         },
         update: function() {
             var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
-            var normalizedBallVelocity = normalize( ballVelocity, this.targetVelocity);
+            var normalizedBallVelocity = normalize( ballVelocity, this.maximumVelocity);
             var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
-            var normalizedPlayerVelocity = normalize( playerVelocity, this.targetVelocity);
-            drawMeter( "#AAA", 30, 1 );
-            drawMeter( gradient, 20, normalizedBallVelocity );
-            drawMeter( "#B7FA00", 10, normalizedPlayerVelocity );
+            var normalizedPlayerVelocity = normalize( playerVelocity, this.maximumVelocity);
+            var normalizedTargetVelocity = normalize( this.targetVelocity, this.maximumVelocity);
+            drawMeter( 40, "#555", 30, 1 );
+            drawMeter( 30, gradient, 10, normalizedBallVelocity );
+            drawMeter( 40,"#B7FA00", 10, normalizedPlayerVelocity );
+            drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
+            drawIndicator( 60, "#FFF", 3, normalizedBallVelocity );
             drawDebug("b:"+ballVelocity.toFixed(3)+"p:"+playerVelocity.toFixed(3));
             announcements.update();
             stage.update();
