@@ -48,7 +48,7 @@ var manager = (function(){
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
+                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
@@ -63,7 +63,7 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FORWARD");
+                .add(3, "FORWARD", {expiration:30, recovery:15});
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
@@ -78,7 +78,7 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FORWARD");
+                .add(3, "FORWARD", {expiration:30, recovery:15});
             root.add(3, "BWD_STEP1")
                 .add(2, "BWD_STEP2")
                 .add(1, "BWD_STEP3");
@@ -99,8 +99,8 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FORWARD")
-                .add(3, "FLIGHT");
+                .add(3, "FORWARD", {expiration:30, recovery:5})
+                .add(3, "FLIGHT", {expiration:25, recovery:5});
             root.add(3, "BWD_STEP1")
                 .add(2, "BWD_STEP2")
                 .add(1, "BWD_STEP3");
@@ -656,7 +656,7 @@ var assets = (function() {
                 step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
                 step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
                 jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-                fly:    {frames:[6], next:false, frequency:3},
+                fly:    {frames:[6,6,6,5,4], next:"still", frequency:2},
                 use:    {frames:[7,8], next:"stand", frequency:5},
             }
         },
@@ -672,7 +672,7 @@ var assets = (function() {
                 step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
                 step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
                 jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
-                fly:    {frames:[6], next:false, frequency:3},
+                fly:    {frames:[6,6,6,5,4], next:"still", frequency:2},
                 use:    {frames:[7,8], next:"stand", frequency:5},
             }
         },
@@ -1011,7 +1011,7 @@ var player = (function() {
             this.jump(1);
 		},
 		actionFlight: function() {
-            this.jump(2);
+            this.jump(3.5);
 		},
 		actionSuperforward: function() {
 			this.impulse(-1, 2, 5);
