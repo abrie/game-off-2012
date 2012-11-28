@@ -544,7 +544,7 @@ var audio = (function () {
 	}
 }());
 
-var input = (function () {
+var actionInput = (function () {
 	"use strict";
 
     var ActionNode = function(key, action, timing) {
@@ -588,16 +588,11 @@ var input = (function () {
         return thisAction.looped ? thisAction.looped : thisAction;
     }
 
-    var isInputOn = {};
 	function inputOn(id) {
         if (actionTime.recovery > 0) {
             return;
         }
-		if (isInputOn[id] ) {
-            return;
-        }
 
-        isInputOn[id] = true;
         thisAction = thisAction.get(id);
         if (thisAction) {
             thisAction = notifyThenNext();
@@ -609,6 +604,64 @@ var input = (function () {
 	}
 
 	function inputOff(id) {
+        // nothing here except a comment.
+	}
+
+	var actionDelegate;
+	return {
+		initialize: function () {
+            this.reset();
+		},
+        getRootAction: function() {
+            return rootAction;
+        },
+        setActionDelegate: function (delegate) {
+            actionDelegate = delegate;
+        },
+        reset: function() {
+            thisAction = rootAction;
+            thisAction.getTiming(actionTime);
+        },
+        inputOn: function(input) {
+            inputOn(input);
+        },
+        inputOff: function(input) {
+            inputOff(input);
+        },
+		advance: function () {
+            if( actionTime.recovery > 0) {
+                actionTime.recovery--;
+            }
+            else {
+                if( actionTime.expiration > 0 ) {
+                    if( --actionTime.expiration === 0) {
+                        actionDelegate("EXPIRED");
+                        thisAction = rootAction;
+                        thisAction.getTiming(actionTime);
+                    }
+                }
+            }
+		}
+	};
+}());
+
+var input = (function () {
+	"use strict";
+
+    var isInputOn = {};
+	function inputOn(id) {
+		if (isInputOn[id] ) {
+            return;
+        }
+
+        isInputOn[id] = true;
+        actionInput.inputOn(id);
+	}
+
+	function inputOff(id) {
+        if( isInputOn[id] ) {
+            actionInput.inputOff(id);
+        }
         isInputOn[id] = false;
 	}
 
@@ -623,14 +676,12 @@ var input = (function () {
             return;
         }
 
-		var mapped = playKey[keyCode];
-		if(mapped) {
-			inputOn(mapped);
-			return false;
-		}
-        else {
-            console.log("unmapped key down:", keyCode);
+		if(playKey[keyCode]) {
+            inputOn(playKey[keyCode]);
+            return false;
         }
+
+        console.log("unmapped key down:", keyCode);
 	}
 
 	function onKeyUp(keyCode) {
@@ -646,11 +697,10 @@ var input = (function () {
             return;
         }
 
-		var mapped = playKey[keyCode];
-		if (mapped) {
-			inputOff(mapped);
-			return false;
-		}
+		if(playKey[keyCode]) {
+            inputOff(playKey[keyCode]);
+            return false;
+        }
 	}
 
 	function handleKeyDown(e) {
@@ -664,41 +714,28 @@ var input = (function () {
 	}
     
     var isEnabled;
-	var actionDelegate;
 	return {
 		initialize: function () {
+            actionInput.initialize();
             this.disable();
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
-        getRootAction: function() {
-            return rootAction;
-        },
         disable: function() {
             isEnabled = false;
         },
         setActionDelegate: function (delegate) {
-            actionDelegate = delegate;
+            actionInput.setActionDelegate(delegate);
+        },
+        getRootAction: function() {
+            return actionInput.getRootAction();
         },
         enable: function() {
-            thisAction = rootAction;
-            thisAction.getTiming(actionTime);
             isEnabled = true;
-            isInputOn = {};
+            actionInput.reset();
         },
 		advance: function () {
-            if( actionTime.recovery > 0) {
-                actionTime.recovery--;
-            }
-            else {
-                if( actionTime.expiration > 0 ) {
-                    if( --actionTime.expiration === 0) {
-                        actionDelegate("EXPIRED");
-                        thisAction = rootAction;
-                        thisAction.getTiming(actionTime);
-                    }
-                }
-            }
+            actionInput.advance();
 		}
 	};
 }());
@@ -1254,7 +1291,6 @@ var main = (function () {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,1, function() { 
-            console.log("announced.");
             objective.encodeActions( input.getRootAction() );
             input.enable();
         });
