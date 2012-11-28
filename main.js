@@ -904,7 +904,7 @@ var playspace = (function() {
             advance: function() {
                 // filter seems fairly inefficient here, garbage collection might
                 // present a problem, reconsider implementation if time allows.
-                markers = _.filter( markers, function(entity) {
+                markers = markers.filter( function(entity) {
                     if( entity.frames-- === 0 ) {
                         this.container.removeChild(entity.skin);
                         physics.removeBody( entity.body );
