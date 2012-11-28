@@ -522,7 +522,6 @@ var audio = (function () {
 		advance: function () {
             oscillators.forEach( function(oscillator, index, array) {
                 if( oscillator.isDead() ) {
-                    console.log("spliced.");
                     array.splice(index,1);
                 }
             });
@@ -677,7 +676,9 @@ var playInput = (function () {
         },
 		advance: function () {
             if( actionTime.recovery > 0) {
-                actionTime.recovery--;
+                if( --actionTime.recovery === 0) {
+                    actionDelegate("RECOVERED");
+                }
             }
             else {
                 if( actionTime.expiration > 0 ) {
@@ -1291,6 +1292,9 @@ var main = (function () {
                 player.gotoAndPlay("use");
                 break;
             case "EXPIRED":
+                player.gotoAndPlay("land");
+                break;
+            case "RECOVERED":
                 player.gotoAndPlay("land");
                 break;
 			default:
