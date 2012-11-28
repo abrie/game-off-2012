@@ -1221,13 +1221,13 @@ var main = (function () {
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.gotoAndPlay("step2");
-                playSpace.addTrail(player.body, ".");
+                playspace.addTrail(player.body, ".");
 				break;
 			case "FWD_STEP3": 
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.gotoAndPlay("step3");
-                playSpace.addTrail(player.body, ".");
+                playspace.addTrail(player.body, ".");
 				break;
 			case "BWD_STEP1": 
                 audio.soundOn(3);
@@ -1250,7 +1250,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionForward();
                 player.gotoAndPlay("jump");
-                playSpace.addTrail(player.body, "boing!");
+                playspace.addTrail(player.body, "boing!");
                 break;
             case "FLIGHT":
                 audio.soundOn(3);
@@ -1258,7 +1258,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionFlight();
                 player.gotoAndPlay("fly");
-                playSpace.addTrail(player.body, "super!");
+                playspace.addTrail(player.body, "super!");
                 break;
             case "STAND":
                 audio.soundOn(4);
