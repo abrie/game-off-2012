@@ -907,6 +907,23 @@ var playspace = (function() {
         }
     }());
 
+    function generateFloorSprite(width,height, fill,depth) {
+        var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
+        var margins = blurFilter.getBounds();
+
+        var g = new createjs.Graphics();
+        g.setStrokeStyle(1);
+        g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+        g.beginFill(fill);
+        g.rect(0,0,width,height);
+        var displayObject = new createjs.Shape(g);
+        displayObject.regX = width/2;
+        displayObject.regY = height/2;
+        displayObject.filters = [blurFilter];
+        displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
+        return displayObject;
+    }
+
     return {
         layers: {},
         markers: [],
@@ -914,6 +931,19 @@ var playspace = (function() {
         container: new Container,
         initialize: function() {
             trails.setContainer(this.container);
+            this.setScene();
+        },
+        setScene: function() {
+            var floorBody = physics.createStaticBody(0,500,100000,10,255);
+            var floorSkin = generateFloorSprite(10000,10,Graphics.getRGB(255,255,255),10);
+            this.addStaticBody( floorBody, floorSkin, 255 );
+
+            for(var index=-3; index<6; index++) {
+                var body = physics.createStaticBody(index*600,500-250/2,600,250,2);
+                var skin = assets.getAnimation("background").clone();
+                skin.gotoAndPlay( "a" );
+                this.addStaticBody( body, skin, index+4 );
+            }
         },
         addPlayer: function(entity) {
             this.player = entity;
@@ -1275,44 +1305,7 @@ var main = (function () {
         stage.autoClear = true;
     }
 
-    function generateFloorSprite(width,height, fill,depth) {
-        var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
-        var margins = blurFilter.getBounds();
 
-        var g = new createjs.Graphics();
-        g.setStrokeStyle(1);
-        g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-        g.beginFill(fill);
-        g.rect(0,0,width,height);
-        var displayObject = new createjs.Shape(g);
-        displayObject.regX = width/2;
-        displayObject.regY = height/2;
-        displayObject.filters = [blurFilter];
-        displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
-        return displayObject;
-    }
-
-    function populatePlayspace() {
-        var blurs = [0, 4, 16, 64].reverse();
-        var categories = [1, 2, 4, 8].reverse();
-        var parallax = [1.5, 1.7, 3, 2.2, 5].reverse();
-        var colors = [
-            Graphics.getRGB(255,255,255),
-            Graphics.getRGB(0,128,0),
-            Graphics.getRGB(0,0,128),
-            Graphics.getRGB(0,128,128)]; 
-            
-        var floorBody = physics.createStaticBody(0,500,100000,10,255);
-        var floorSkin = generateFloorSprite(10000,10,colors[0],10);
-        playspace.addStaticBody( floorBody, floorSkin, 255 );
-
-        for(var index=-3; index<6; index++) {
-            var body = physics.createStaticBody(index*600,500-250/2,600,250,2);
-            var skin = assets.getAnimation("background").clone();
-            skin.gotoAndPlay( "a" );
-            playspace.addStaticBody( body, skin, index+4 );
-        }
-    }
 
     var handleCompleteObjective = function(objective) {
         playInput.disable();
@@ -1359,7 +1352,6 @@ var main = (function () {
             ball.initialize();
 
             playspace.initialize();
-            populatePlayspace();
             playspace.bindCamera(camera);
             playspace.bindParallax(camera);
             playspace.addPlayer( player );
