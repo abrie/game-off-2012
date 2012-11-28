@@ -502,7 +502,7 @@ var input = (function () {
 
     var isInputOn = {};
 	function inputOn(id) {
-        if( !active ) {
+        if( !isEnabled ) {
             return;
         }
         if (actionTime.recovery > 0) {
@@ -557,28 +557,28 @@ var input = (function () {
 		return onKeyUp(e.keyCode);
 	}
     
-    var active;
+    var isEnabled;
 	var actionDelegate;
 	return {
 		initialize: function () {
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
-            this.setActive(false);
+            this.enable();
 		},
         getRootAction: function() {
             return rootAction;
         },
-        setActive: function(state) {
-            active = state;
+        disable: function() {
+            isEnabled = false;
         },
         setActionDelegate: function (delegate) {
             actionDelegate = delegate;
         },
-        reset: function() {
+        enable: function() {
             thisAction = rootAction;
             actionTime.recovery = 0, actionTime.expiration = 0;
-            this.setActive(false);
-            this.inputOn = {};
+            isEnabled = true;
+            isInputOn = {};
         },
 		advance: function () {
             if( actionTime.recovery > 0) {
@@ -957,7 +957,7 @@ var player = (function() {
             this.jump(1);
 		},
 		actionFlight: function() {
-            this.jump(1);
+            this.jump(2);
 		},
 		actionSuperforward: function() {
 			this.impulse(-1, 2, 5);
@@ -1035,6 +1035,7 @@ var main = (function () {
 				break;
             case "FORWARD":
                 actionTime.expiration = 15;
+                actionTime.recovery = 15;
                 audio.soundOn(3);
                 audio.soundOn(2);
                 audio.soundOn(1);
@@ -1146,8 +1147,8 @@ var main = (function () {
     }
 
     var handleCompleteObjective = function(objective) {
+        input.disable();
         player.reset();
-        input.reset();
         ball.reset();
         manager.nextObjective(objective);
     };
@@ -1158,7 +1159,7 @@ var main = (function () {
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,2,function() { 
             objective.isInitiated = true;
-            input.setActive(true);
+            input.enable();
         });
     };
 
