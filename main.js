@@ -144,6 +144,7 @@ var manager = (function(){
             }
             if( !current.isInitiated ) {
                 this.onInitiateObjective(current);
+                current.isInitiated = true;
                 return;
             }
             if( current.isCompleted( this.ball.getLinearVelocity().x ) ) {
@@ -179,31 +180,34 @@ var hud = (function() {
         var list = [];
 
         var Announcement = function(message, frames, whenDone) {
+            console.log("announcement creation");
             var count = 0;
             var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
             sprite.regX = sprite.getMeasuredWidth()/2;
             sprite.regY = sprite.getMeasuredHeight()/2;
             sprite.x = container.canvas.width/2;
-            sprite.y = container.canvas.height/2;
+            sprite.y = container.canvas.height/2 - sprite.getMeasuredHeight();
             
             return {
+                whenDone: whenDone,
+                frames: frames,
                 show: function() {
                     container.addChild(sprite);
                     return this;
                 },
                 remove: function() {
-                    if( whenDone ) {
-                        whenDone();
+                    if( this.whenDone ) {
+                        this.whenDone();
                     }
                     container.removeChild(sprite);
                 },
                 advance: function() {
-                    if( count === frames ) {
+                    if( count == this.frames ) {
                         this.remove();
                         return false;
                     }
                     else {
-                        sprite.alpha = ++count > frames - frames/4 ? sprite.alpha-0.025 : sprite.alpha;
+                        sprite.alpha = ++count > this.frames - this.frames/4 ? sprite.alpha-0.025 : sprite.alpha;
                         return true;
                     }
                 }
@@ -212,12 +216,12 @@ var hud = (function() {
 
         return {
             add: function(message, seconds, whenDone) {
-                var announcement = new Announcement(message, FPS*seconds, whenDone)
+                var announcement = new Announcement(message, seconds*FPS, whenDone)
                 list.push( announcement.show() );
             },
             update: function() {
-                list = _.filter(list, function(announcement) {
-                    return announcement.advance();
+                list = list.filter( function(announcement) {
+                    return announcement.advance.apply(announcement);
                 });
             }
         };
@@ -502,9 +506,6 @@ var input = (function () {
 
     var isInputOn = {};
 	function inputOn(id) {
-        if( !isEnabled ) {
-            return;
-        }
         if (actionTime.recovery > 0) {
             return;
         }
@@ -529,6 +530,9 @@ var input = (function () {
 
 	var keyMap = {76:1, 75:2, 74:3, 72:4, 32:5};
 	function onKeyDown(keyCode) {
+        if( !isEnabled ) {
+            return;
+        }
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOn(mapped);
@@ -540,6 +544,9 @@ var input = (function () {
 	}
 
 	function onKeyUp(keyCode) {
+        if( !isEnabled ) {
+            return;
+        }
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOff(mapped);
@@ -561,9 +568,9 @@ var input = (function () {
 	var actionDelegate;
 	return {
 		initialize: function () {
+            this.disable();
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
-            this.enable();
 		},
         getRootAction: function() {
             return rootAction;
@@ -576,7 +583,7 @@ var input = (function () {
         },
         enable: function() {
             thisAction = rootAction;
-            actionTime.recovery = 0, actionTime.expiration = 0;
+            actionTime.recovery = 0, actionTime.expiration = 15;
             isEnabled = true;
             isInputOn = {};
         },
@@ -1154,11 +1161,12 @@ var main = (function () {
     };
 
     var handleInitiateObjective = function(objective) {
-        objective.encodeActions( input.getRootAction() );
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title,2,function() { 
-            objective.isInitiated = true;
+        console.log("handleInitiateObjective");
+        hud.announce(objective.title,1, function() { 
+            console.log("announce complete.");
+            objective.encodeActions( input.getRootAction() );
             input.enable();
         });
     };
