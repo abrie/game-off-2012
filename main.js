@@ -139,6 +139,7 @@ var manager = (function(){
     return {
         onInitiateObjective: undefined,
         onCompleteObjective: undefined,
+        onRestartObjective: undefined,
         advance: function() {
             if( !current ) {
                 return;
@@ -152,12 +153,20 @@ var manager = (function(){
                 this.onCompleteObjective(current);
                 return;
             }
+            if( current.shouldRestart ) {
+                current.shouldRestart = false;
+                current.isInitiated = false;
+                this.onRestartObjective(current);
+            }
         },
         setPlayer: function(player) {
             this.player = player;
         },
         setBall: function(ball) {
             this.ball = ball;
+        },
+        restartObjective: function() {
+            current.shouldRestart = true;
         },
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
@@ -547,6 +556,10 @@ var input = (function () {
         if( !isEnabled ) {
             return;
         }
+        if (keyCode === 27) {
+            manager.restartObjective();
+            return false;
+        }
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOff(mapped);
@@ -877,6 +890,7 @@ var ball = (function() {
             var velocity = this.body.GetLinearVelocity();
             velocity.x = 0, velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
+            this.body.SetAwake(true);
 
             this.skin.gotoAndPlay("ready");
         },
@@ -949,7 +963,7 @@ var player = (function() {
             var velocity = this.body.GetLinearVelocity();
             velocity.x = 0, velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
-
+            this.body.SetAwake(true);
             this.gotoAndPlay("still");
         },
         getLinearVelocity: function() {
@@ -1167,6 +1181,12 @@ var main = (function () {
         manager.nextObjective(objective);
     };
 
+    var handleRestartObjective = function(objective) {
+        input.disable();
+        player.reset();
+        ball.reset();
+    };
+
     var handleInitiateObjective = function(objective) {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
@@ -1187,6 +1207,8 @@ var main = (function () {
             manager.initialize();
             manager.onCompleteObjective = handleCompleteObjective;
             manager.onInitiateObjective = handleInitiateObjective;
+            manager.onRestartObjective = handleRestartObjective;
+
             initializeAudio();
             initializeCanvas();
             input.initialize();
