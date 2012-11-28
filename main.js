@@ -26,7 +26,7 @@ var manager = (function(){
         this.targetVelocity = targetVelocity;
         this.encodeActions = encodeActions;
         this.isInitiated = false;
-        this.isCompleted = function(measuredVelocity) {
+        this.areConditionsComplete = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
     }
@@ -149,14 +149,15 @@ var manager = (function(){
                 current.isInitiated = true;
                 return;
             }
-            if( current.isCompleted( this.ball.getLinearVelocity().x ) ) {
+            if( current.isCompleted || current.areConditionsComplete( this.ball.getLinearVelocity().x ) ) {
                 this.onCompleteObjective(current);
+                current.isCompleted = false;
                 return;
             }
             if( current.shouldRestart ) {
-                current.shouldRestart = false;
-                current.isInitiated = false;
                 this.onRestartObjective(current);
+                this.shouldRestart = false;
+                return;
             }
         },
         setPlayer: function(player) {
@@ -168,6 +169,9 @@ var manager = (function(){
         restartObjective: function() {
             current.shouldRestart = true;
         },
+        completeObjective: function() {
+            current.isCompleted = true;
+        },
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
@@ -177,7 +181,11 @@ var manager = (function(){
         },
         setObjective: function(newObjective) {
             current = newObjective;
-        },
+            current.isInitiated = false;
+            current.isCompleted = false;
+            current.shouldRestart = false;
+        }
+        ,
         initialize: function() {
         }
     }
@@ -274,11 +282,35 @@ var hud = (function() {
     }
     
     var debugText = undefined;
+    var nextObjectiveText = undefined;
     var initializeDebugText = function() {
         debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
         debugText.x = 10;
         debugText.y = 10;
         stage.addChild(debugText);
+
+        stage.addChild(nextObjectiveText);
+    }
+
+    var menuContainer = undefined;
+    var toggleMenu = function() {
+        if(!menuContainer) {
+            menuContainer = new Container;
+            menuContainer.x = 0;
+            menuContainer.y = 0;
+            var item = new createjs.Text("force complete","bold 16px Arial","#F00");
+            item.regX = item.getMeasuredWidth()/2;
+            item.regY = item.getMeasuredHeight()/2;
+            item.x = stage.canvas.width/2;
+            item.y = stage.canvas.height/2;
+            item.onClick = function(mouseEvent) { manager.completeObjective(); };
+            menuContainer.addChild(item);
+            stage.addChild(menuContainer);
+        }
+        else {
+            stage.removeChild(menuContainer);
+            menuContainer = undefined;
+        }
     }
 
     var stage = undefined;
@@ -297,6 +329,9 @@ var hud = (function() {
         },
         announce: function(message, seconds, whenDone) {
             announcements.add(message, seconds, whenDone);
+        },
+        toggleMenu: function() {
+            toggleMenu();
         },
         update: function() {
             var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
@@ -561,7 +596,7 @@ var input = (function () {
         isInputOn[id] = false;
 	}
 
-	var keyMap = {76:1, 75:2, 74:3, 72:4, 32:5};
+	var keyMap = {76:1, 75:2, 74:3, 72:4};
 	function onKeyDown(keyCode) {
         if( !isEnabled ) {
             return;
@@ -577,13 +612,15 @@ var input = (function () {
 	}
 
 	function onKeyUp(keyCode) {
+        if (keyCode === 27) {
+            actionDelegate("MENU");
+            return false;
+        }
+
         if( !isEnabled ) {
             return;
         }
-        if (keyCode === 27) {
-            manager.restartObjective();
-            return false;
-        }
+
 		var mapped = keyMap[keyCode];
 		if (mapped) {
 			inputOff(mapped);
@@ -1048,6 +1085,9 @@ var main = (function () {
 
 	function fireAction(action) {
 		switch(action) {
+            case "MENU":
+                hud.toggleMenu();
+                break;
 			case "FWD_STEP1": 
                 audio.soundOn(1);
                 player.actionStep(-1,1);
