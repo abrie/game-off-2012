@@ -879,7 +879,6 @@ var playspace = (function() {
 	"use strict";
 
     var trails = (function (){
-        "use strict";
         var markers = [];
 
         return {
@@ -887,18 +886,20 @@ var playspace = (function() {
             setContainer: function(container) {
                 this.container = container;
             },
-            addMessage: function(body,message) {
-                var bodyCenter = body.GetWorldCenter();
-                var fixture = physics.createMarkerFixture( bodyCenter.x, bodyCenter.y, 0.5, 0.5, 0 );
-                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), bodyCenter );
-                var sprite = new createjs.Text(0,"bold 32px Arial","#FFF");
-                sprite.text = message;
-                this.addMarker(fixture, sprite);
-            },
-            addMarker: function(fixture, skin) {
-                var entity = {frames:30,fixture:fixture, body:fixture.GetBody(), skin:skin};
-                markers.push(entity);
-                this.container.addChild(skin);
+            addMessage: function(body, message) {
+                var origin = body.GetWorldCenter();
+                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+                var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
+                this.container.addChild(sprite);
+
+                markers.push( {
+                    body:fixture.GetBody(),
+                    skin:sprite,
+                    frames:30,
+                    fixture:fixture
+                });
+
             },
             advance: function() {
                 // filter seems fairly inefficient here, garbage collection might
