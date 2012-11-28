@@ -927,7 +927,7 @@ var player = (function() {
         container: undefined,
 		skin: undefined,
         body: undefined,
-        maximumRotation: Math.PI*2/360*30,
+        maximumRotation: Math.PI*2/360*15,
         impulse: function(direction, rate, max) {
             var velocity = this.body.GetLinearVelocity().x;
             var targetVelocity = direction < 0 ?
