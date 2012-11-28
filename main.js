@@ -256,7 +256,7 @@ var hud = (function() {
         context.stroke();
     };
 
-    var drawIndicator = function(radius, stroke, width, level) {
+    var drawNeedle = function(radius, stroke, width, level) {
         context.save();
         context.translate(100,100);
         context.rotate(Math.PI-0.25+level*(Math.PI+0.5));
@@ -291,34 +291,39 @@ var hud = (function() {
         stage.addChild(nextObjectiveText);
     }
 
-    var menuContainer = undefined;
+    var menu = undefined;
     var toggleMenu = function() {
-        if(!menuContainer) {
-            menuContainer = new Container;
-            menuContainer.x = 0;
-            menuContainer.y = 0;
+        if(!menu) {
+            menu = new Container;
+            menu.regX = stage.canvas.width/2;
+            menu.regY = stage.canvas.height/2;
+            menu.x = stage.canvas.width/2, menu.y = stage.canvas.height/2;
 
-            var item = new createjs.Text("force complete","bold 16px Arial","#F00");
-            item.regX = item.getMeasuredWidth()/2;
-            item.regY = item.getMeasuredHeight()/2;
-            item.x = stage.canvas.width/2;
-            item.y = stage.canvas.height/2;
-            item.onClick = function(mouseEvent) { manager.completeObjective(); };
-            menuContainer.addChild(item);
+            var items = [
+                {
+                    title: "force complete",
+                    action: function() { manager.completeObjective(); } 
+                },
+                {
+                    title: "restart objective",
+                    action: function() { manager.restartObjective(); } },
+            ];
 
-            item = new createjs.Text("restart objective","bold 16px Arial","#F00");
-            item.regX = item.getMeasuredWidth()/2;
-            item.regY = item.getMeasuredHeight()/2;
-            item.x = stage.canvas.width/2;
-            item.y = stage.canvas.height/2+item.getMeasuredHeight();
-            item.onClick = function(mouseEvent) { manager.restartObjective(); };
-            menuContainer.addChild(item);
+            items.forEach( function(item, index) {
+                var text = new createjs.Text(item.title,"bold 16px Arial","#F00");
+                text.regX = text.getMeasuredWidth()/2;
+                text.regY = text.getMeasuredHeight()/2;
+                text.x = stage.canvas.width/2;
+                text.y = stage.canvas.height/2 + index*text.getMeasuredHeight();
+                text.onClick = item.action;
+                menu.addChild(text);
+            });
 
-            stage.addChild(menuContainer);
+            stage.addChild(menu);
         }
         else {
-            stage.removeChild(menuContainer);
-            menuContainer = undefined;
+            stage.removeChild(menu);
+            menu = undefined;
         }
     }
 
@@ -348,12 +353,14 @@ var hud = (function() {
             var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
             var normalizedPlayerVelocity = normalize( playerVelocity, this.maximumVelocity);
             var normalizedTargetVelocity = normalize( this.targetVelocity, this.maximumVelocity);
+
             drawMeter( 40, "#555", 30, 1 );
             drawMeter( 30, gradient, 10, normalizedBallVelocity );
             drawMeter( 40,"#B7FA00", 10, normalizedPlayerVelocity );
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
-            drawIndicator( 60, "#FFF", 3, normalizedBallVelocity );
+            drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
             drawDebug("b:"+ballVelocity.toFixed(3)+"p:"+playerVelocity.toFixed(3));
+
             announcements.update();
             stage.update();
         },
@@ -1059,8 +1066,8 @@ var player = (function() {
             this.jump(3.5);
 		},
 		actionSuperforward: function() {
-			this.impulse(-1, 2, 5);
-            this.jump(1.5);
+			this.impulse(-1, 3, 5);
+            this.jump(1);
 		},
 		actionBackward: function() {
 			this.impulse(1, 1, 5);
@@ -1069,7 +1076,6 @@ var player = (function() {
 		},
 		actionBrake: function() {
             this.brake();
-            console.log("brake!");
 		},
 	}
 }());
