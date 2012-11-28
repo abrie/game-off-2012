@@ -612,13 +612,19 @@ var input = (function () {
         isInputOn[id] = false;
 	}
 
-	var keyMap = {76:1, 75:2, 74:3, 72:4};
+    var menuKey = {27:1};
+	var playKey = {76:1, 75:2, 74:3, 72:4};
 	function onKeyDown(keyCode) {
+        if(menuKey[keyCode]) {
+            return false;
+        }
+
         if( !isEnabled ) {
             return;
         }
-		var mapped = keyMap[keyCode];
-		if (mapped) {
+
+		var mapped = playKey[keyCode];
+		if(mapped) {
 			inputOn(mapped);
 			return false;
 		}
@@ -628,8 +634,11 @@ var input = (function () {
 	}
 
 	function onKeyUp(keyCode) {
-        if (keyCode === 27) {
-            actionDelegate("MENU");
+        if(menuKey[keyCode]) {
+            switch(menuKey[keyCode]) {
+                case 1: actionDelegate("MENU");
+                        break;
+            }
             return false;
         }
 
@@ -637,7 +646,7 @@ var input = (function () {
             return;
         }
 
-		var mapped = keyMap[keyCode];
+		var mapped = playKey[keyCode];
 		if (mapped) {
 			inputOff(mapped);
 			return false;
