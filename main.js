@@ -472,53 +472,37 @@ var physics = (function() {
 
 var audio = (function () {
 	"use strict";
+    var Oscillator = function(audioContext) {
+        var context = audioContext;
+        var envelope = context.createGainNode();
+        envelope.connect( context.destination );
+        var oscillator = context.createOscillator();
+        oscillator.connect( envelope );
 
-	function newOscillator( id, frequency ) {
-		var result = {
-			id: id,
-			frequency: frequency,
-			envelope: audioContext.createGainNode(),
-			oscillator : undefined,
-			createOscillator : function() {
-				this.oscillator = audioContext.createOscillator();
-				this.oscillator.frequency.value = frequency;
-				this.oscillator.connect(this.envelope);
-			},
-			initialize : function() {
-				this.envelope.connect(audioContext.destination);
-				this.createOscillator();
-			},
-			active : false,
-			start : function() {
-                if( this.oscillator.playbackState != this.oscillator.UNSCHEDULED_STATE ) {
-                    return;
-                }
-                else {
-                    var now = audioContext.currentTime;
-                    this.envelope.gain.linearRampToValueAtTime(0, now);
-                    this.envelope.gain.linearRampToValueAtTime(0.90, now+1/FPS);
-                    this.envelope.gain.linearRampToValueAtTime(0, now+2/FPS);
-                    this.oscillator.noteOn(now);
-                    this.oscillator.noteOff(now+2/FPS);
-                }
-			},
-			reset : function() {
-				this.oscillator.disconnect();
-				this.oscillator = undefined;
-				this.createOscillator();
-			},
-			advance : function() {
-				if (this.oscillator.playbackState === this.oscillator.FINISHED_STATE) {
-					this.reset();
-				}
-			},
-		}
-		result.initialize();
-		return result;
-	}
+        return {
+            play: function(frequency) {
+                var now = context.currentTime;
+                envelope.gain.linearRampToValueAtTime(0, now);
+                envelope.gain.linearRampToValueAtTime(0.90, now+1/FPS);
+                envelope.gain.linearRampToValueAtTime(0, now+2/FPS);
+                oscillator.frequency.value = frequency;
+                oscillator.noteOn(now);
+                oscillator.noteOff(now+2/FPS);
+            },
+            isDead: function() {
+                return oscillator.playbackState === oscillator.FINISHED_STATE;
+            }
+        }
+    }
 
-	var oscillators = {}
+	var oscillators = [];
 	var audioContext = undefined;
+    var frequency = {};
+    frequency[1]= 261.63; 
+    frequency[2]= 329.63; 
+    frequency[3]= 392.00; 
+    frequency[4]= 400.00; 
+
 	return {
 		initialize: function() {
 			try {
@@ -530,16 +514,18 @@ var audio = (function () {
                 this.advance = function() {};
 			}
 		},
-		addSound: function( id, frequency ) {
-			oscillators[id] = newOscillator(id, frequency);
-		},
 		soundOn: function (which) {
-			oscillators[which].start();
+            var newOscillator = new Oscillator(audioContext);
+            oscillators.push( newOscillator );
+            newOscillator.play( frequency[which] );
 		},
 		advance: function () {
-			_.each(oscillators, function(v,k) {
-				v.advance();
-			});
+            oscillators.forEach( function(oscillator, index, array) {
+                if( oscillator.isDead() ) {
+                    console.log("spliced.");
+                    array.splice(index,1);
+                }
+            });
 		}
 	}
 }());
@@ -1280,13 +1266,6 @@ var main = (function () {
 		}
 	}
 
-    function initializeAudio() {
-        audio.initialize();
-        audio.addSound(1, 261.63); 
-        audio.addSound(2, 329.63); 
-        audio.addSound(3, 392.00); 
-        audio.addSound(4, 400.00); 
-    }
 
     var canvas, context, stage = undefined;
     function initializeCanvas() {
@@ -1365,9 +1344,8 @@ var main = (function () {
             assets.initialize();
         },
 		start: function () {
-
-            initializeAudio();
             initializeCanvas();
+            audio.initialize();
             input.initialize();
             playInput.setActionDelegate(firePlayAction);
             menuInput.setActionDelegate(fireMenuAction);
