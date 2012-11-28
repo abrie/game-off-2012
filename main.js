@@ -26,7 +26,7 @@ var manager = (function(){
         this.targetVelocity = targetVelocity;
         this.encodeActions = encodeActions;
         this.isInitiated = false;
-        this.areConditionsComplete = function(measuredVelocity) {
+        this.canComplete = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
     }
@@ -149,14 +149,13 @@ var manager = (function(){
                 current.isInitiated = true;
                 return;
             }
-            if( current.isCompleted || current.areConditionsComplete( this.ball.getLinearVelocity().x ) ) {
+            if( this.induceComplete || current.canComplete( this.ball.getLinearVelocity().x ) ) {
                 this.onCompleteObjective(current);
-                current.isCompleted = false;
                 return;
             }
-            if( current.shouldRestart ) {
+            if( this.induceRestart ) {
                 this.onRestartObjective(current);
-                this.shouldRestart = false;
+                this.setObjective(current);
                 return;
             }
         },
@@ -167,10 +166,10 @@ var manager = (function(){
             this.ball = ball;
         },
         restartObjective: function() {
-            current.shouldRestart = true;
+            this.induceRestart = true;
         },
         completeObjective: function() {
-            current.isCompleted = true;
+            this.induceComplete = true;
         },
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
@@ -182,8 +181,8 @@ var manager = (function(){
         setObjective: function(newObjective) {
             current = newObjective;
             current.isInitiated = false;
-            current.isCompleted = false;
-            current.shouldRestart = false;
+            this.induceRestart = false;
+            this.induceComplete = false;
         }
         ,
         initialize: function() {
@@ -298,6 +297,7 @@ var hud = (function() {
             menuContainer = new Container;
             menuContainer.x = 0;
             menuContainer.y = 0;
+
             var item = new createjs.Text("force complete","bold 16px Arial","#F00");
             item.regX = item.getMeasuredWidth()/2;
             item.regY = item.getMeasuredHeight()/2;
@@ -305,6 +305,15 @@ var hud = (function() {
             item.y = stage.canvas.height/2;
             item.onClick = function(mouseEvent) { manager.completeObjective(); };
             menuContainer.addChild(item);
+
+            item = new createjs.Text("restart objective","bold 16px Arial","#F00");
+            item.regX = item.getMeasuredWidth()/2;
+            item.regY = item.getMeasuredHeight()/2;
+            item.x = stage.canvas.width/2;
+            item.y = stage.canvas.height/2+item.getMeasuredHeight();
+            item.onClick = function(mouseEvent) { manager.restartObjective(); };
+            menuContainer.addChild(item);
+
             stage.addChild(menuContainer);
         }
         else {
@@ -1004,6 +1013,7 @@ var player = (function() {
             this.gotoAndPlay("still");
 		},
         giveArticle: function(name) {
+            // need a mechanisim to check if item already exists
             var article = assets.getAnimation(name); 
             this.articles.push( article );
             this.container.addChild(article);
@@ -1230,9 +1240,7 @@ var main = (function () {
     var handleInitiateObjective = function(objective) {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
-        console.log("handleInitiateObjective");
         hud.announce(objective.title,1, function() { 
-            console.log("announce complete.");
             objective.encodeActions( input.getRootAction() );
             input.enable();
         });
