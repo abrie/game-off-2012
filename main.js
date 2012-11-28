@@ -673,7 +673,7 @@ var input = (function () {
         },
         enable: function() {
             thisAction = rootAction;
-            actionTime.recovery = 0, actionTime.expiration = 15;
+            thisAction.getTiming(actionTime);
             isEnabled = true;
             isInputOn = {};
         },
