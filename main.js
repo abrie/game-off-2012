@@ -891,20 +891,19 @@ var playspace = (function() {
 
             },
             advance: function() {
-                // filter seems fairly inefficient here, garbage collection might
-                // present a problem, reconsider implementation if time allows.
-                markers = markers.filter( function(entity) {
+                markers.forEach( function(entity, index, array) {
                     if( entity.frames-- === 0 ) {
                         this.container.removeChild(entity.skin);
                         physics.removeBody( entity.body );
-                        return false;
+                        array.splice(index, 1);
                     }
-                    var center = entity.body.GetWorldCenter();
-                    entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
-                    entity.skin.x = center.x * PPM;
-                    entity.skin.y = center.y * PPM;
-                    entity.skin.alpha -= 0.05;
-                    return true;
+                    else {
+                        var center = entity.body.GetWorldCenter();
+                        entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
+                        entity.skin.x = center.x * PPM;
+                        entity.skin.y = center.y * PPM;
+                        entity.skin.alpha -= 0.05;
+                    }
                 }, this);
             }
         }
