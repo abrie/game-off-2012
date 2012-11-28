@@ -154,7 +154,7 @@ var manager = (function(){
                 return;
             }
             if( this.induceRestart ) {
-                this.onRestartObjective(current);
+                this.onConcludeObjective(current);
                 this.setObjective(current);
                 return;
             }
@@ -893,7 +893,6 @@ var camera = (function() {
 	"use strict";
     return {
         zoomFactorTarget: 1.0,
-        subjectOfInterest: undefined,
         onCamera: function(x,y) { console.log("override onCamera"); },
         onParallax: function(d) { console.log("override onParallax"); },
         requiredTranslation: {x:0, y:0},
@@ -903,19 +902,18 @@ var camera = (function() {
             this.setZoom(0.01);
             this.updateRequiredTranslation();
         },
-        updateRequiredTranslation: function() {
-            this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
-            this.requiredTranslation.y = this.offset.y - this.target.y*PPM;
-            this.onCamera(this.requiredTranslation);
-            this.onParallax(this.requiredTranslation.x/PPM);
-        },
         setZoom: function(factor) {
             this.zoomFactor = factor;
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
             this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+100)/factor};
-            this.lookAt(this.target);
             if(DEBUG) { physics.debugDraw.SetDrawScale(PPM*factor); }
+        },
+        updateRequiredTranslation: function() {
+            this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
+            this.requiredTranslation.y = this.offset.y - this.target.y*PPM;
+            this.onCamera(this.requiredTranslation);
+            this.onParallax(this.requiredTranslation.x/PPM);
         },
         lookAt: function(point) {
             this.target.x = point.x;
@@ -1229,18 +1227,19 @@ var main = (function () {
         manager.nextObjective(objective);
     };
 
-    var handleRestartObjective = function(objective) {
-        camera.zoomFactorTarget = 1.0;
-        camera.setZoom(0.75);
+    var handleConcludeObjective = function(objective) {
         input.disable();
         player.reset();
         ball.reset();
+        camera.zoomFactorTarget = 1.0;
+        camera.setZoom(0.75);
     };
 
     var handleInitiateObjective = function(objective) {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         hud.announce(objective.title,1, function() { 
+            console.log("announced.");
             objective.encodeActions( input.getRootAction() );
             input.enable();
         });
@@ -1255,7 +1254,7 @@ var main = (function () {
             manager.initialize();
             manager.onCompleteObjective = handleCompleteObjective;
             manager.onInitiateObjective = handleInitiateObjective;
-            manager.onRestartObjective = handleRestartObjective;
+            manager.onConcludeObjective = handleConcludeObjective;
 
             initializeAudio();
             initializeCanvas();
