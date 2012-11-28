@@ -846,7 +846,7 @@ var assets = (function() {
         onReady: undefined,
         animations: {},
         initialize: function() {
-            _.each( spriteSheetDescriptions, function(description) {
+            spriteSheetDescriptions.forEach( function(description) {
                 this.load(description);
             }, this);
 
