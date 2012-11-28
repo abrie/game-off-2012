@@ -1041,7 +1041,6 @@ var camera = (function() {
             this.stage = stage;
             this.target = {x:0, y:0};
             this.setZoom(0.01);
-            this.updateRequiredTranslation();
         },
         setZoom: function(factor) {
             this.zoomFactor = factor;
