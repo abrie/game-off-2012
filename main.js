@@ -648,6 +648,14 @@ var assets = (function() {
                 ready: {frames:[0,1], next:"ready", frequency:2},
             }
         },
+        {
+            name: "background",
+            images: ["assets/trees.png"],
+            frames: {count:1, width:1206, height:500,regX:1206/2,regY:0},
+            animations: {
+                a: {frames:[0], next:false, frequency:1},
+            }
+         }
     ];
 
     return {
@@ -806,6 +814,7 @@ var camera = (function() {
             this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
             this.requiredTranslation.y = this.offset.y - this.target.y*PPM;
             this.onCamera(this.requiredTranslation);
+            this.onParallax(this.requiredTranslation.x/PPM);
         },
         setZoom: function(factor) {
             this.zoomFactor = factor;
@@ -1110,19 +1119,27 @@ var main = (function () {
         var floorBody = physics.createStaticBody(0,500,100000,10,255);
         var floorSkin = generateFloorSprite(10000,10,colors[0],10);
         playspace.addStaticBody( floorBody, floorSkin, 255 );
-        var buildingNames = ["a","b","c","d"]
-        for( var count=0; count<100; count+=1 ) {
-            var buildingBody = physics.createStaticBody(5000-count*125,300-380/2,110,380,2);
-            var buildingSkin = assets.getAnimation("building").clone();
-            buildingSkin.gotoAndPlay( buildingNames[Math.floor( Math.random() * 4 )] );
-            playspace.addStaticBody( buildingBody, buildingSkin, 1000 );
-        }
-        for( var count=0; count<100; count+=1 ) {
-            var buildingBody = physics.createStaticBody(5000-count*125,500-380/2,110,380,2);
-            var buildingSkin = assets.getAnimation("building").clone();
-            buildingSkin.gotoAndPlay( buildingNames[Math.floor( Math.random() * 4 )] );
-            playspace.addStaticBody( buildingBody, buildingSkin, 3 );
-        }
+
+        var backgroundBody1 = physics.createStaticBody(0,-60,1206,500,2);
+        var backgroundSkin1 = assets.getAnimation("background").clone();
+        backgroundSkin1.gotoAndPlay( "a" );
+        playspace.addStaticBody( backgroundBody1, backgroundSkin1, 30 );
+
+        var backgroundBody2 = physics.createStaticBody(-1206/2,-30,1206,500,2);
+        var backgroundSkin2 = assets.getAnimation("background").clone();
+        backgroundSkin2.gotoAndPlay( "a" );
+        playspace.addStaticBody( backgroundBody2, backgroundSkin2, 10 );
+
+        var backgroundBody3 = physics.createStaticBody(-1206,0,1206,500,2);
+        var backgroundSkin3 = assets.getAnimation("background").clone();
+        backgroundSkin3.gotoAndPlay( "a" );
+        playspace.addStaticBody( backgroundBody3, backgroundSkin3, 1 );
+
+        var backgroundBody4 = physics.createStaticBody(1206/2,0,1206,500,2);
+        var backgroundSkin4 = assets.getAnimation("background").clone();
+        backgroundSkin4.gotoAndPlay( "a" );
+        playspace.addStaticBody( backgroundBody4, backgroundSkin4, 60 );
+
 
     }
 
