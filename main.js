@@ -673,7 +673,7 @@ var assets = (function() {
         {
             name: "background",
             images: ["assets/trees.png"],
-            frames: {count:1, width:600, height:250,regX:600/2,regY:-250},
+            frames: {count:1, width:600, height:250,regX:600/2,regY:250/2},
             animations: {
                 a: {frames:[0], next:false, frequency:1},
             }
@@ -1151,31 +1151,15 @@ var main = (function () {
         var floorSkin = generateFloorSprite(10000,10,colors[0],10);
         playspace.addStaticBody( floorBody, floorSkin, 255 );
 
-        var backgroundBody1 = physics.createStaticBody(0,-60,600,250,2);
-        var backgroundSkin1 = assets.getAnimation("background").clone();
-        backgroundSkin1.gotoAndPlay( "a" );
-        playspace.addStaticBody( backgroundBody1, backgroundSkin1, 30 );
-
-        var backgroundBody2 = physics.createStaticBody(-600/2,-30,600,250,2);
-        var backgroundSkin2 = assets.getAnimation("background").clone();
-        backgroundSkin2.gotoAndPlay( "a" );
-        playspace.addStaticBody( backgroundBody2, backgroundSkin2, 10 );
-
-        var backgroundBody3 = physics.createStaticBody(-600,0,600,250,2);
-        var backgroundSkin3 = assets.getAnimation("background").clone();
-        backgroundSkin3.gotoAndPlay( "a" );
-        playspace.addStaticBody( backgroundBody3, backgroundSkin3, 1 );
-
-        var backgroundBody4 = physics.createStaticBody(600/2,0,600,250,2);
-        var backgroundSkin4 = assets.getAnimation("background").clone();
-        backgroundSkin4.gotoAndPlay( "a" );
-        playspace.addStaticBody( backgroundBody4, backgroundSkin4, 60 );
-
-
+        for(var index=-3; index<6; index++) {
+            var body = physics.createStaticBody(index*600,500-250/2,600,250,2);
+            var skin = assets.getAnimation("background").clone();
+            skin.gotoAndPlay( "a" );
+            playspace.addStaticBody( body, skin, index+4 );
+        }
     }
 
     var handleCompleteObjective = function(objective) {
-        camera.zoomFactorTarget = 0.5;
         input.disable();
         player.reset();
         ball.reset();
@@ -1184,7 +1168,7 @@ var main = (function () {
 
     var handleRestartObjective = function(objective) {
         camera.zoomFactorTarget = 1.0;
-        camera.setZoom(0.5);
+        camera.setZoom(0.75);
         input.disable();
         player.reset();
         ball.reset();
@@ -1194,8 +1178,6 @@ var main = (function () {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         console.log("handleInitiateObjective");
-        camera.zoomFactorTarget = 1.0;
-        camera.setZoom(0.5);
         hud.announce(objective.title,1, function() { 
             console.log("announce complete.");
             objective.encodeActions( input.getRootAction() );
