@@ -877,12 +877,57 @@ var assets = (function() {
 
 var playspace = (function() {
 	"use strict";
+
+    var trails = (function (){
+        "use strict";
+        var markers = [];
+
+        return {
+            container: undefined,
+            setContainer: function(container) {
+                this.container = container;
+            },
+            addMessage: function(body,message) {
+                var bodyCenter = body.GetWorldCenter();
+                var fixture = physics.createMarkerFixture( bodyCenter.x, bodyCenter.y, 0.5, 0.5, 0 );
+                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), bodyCenter );
+                var sprite = new createjs.Text(0,"bold 32px Arial","#FFF");
+                sprite.text = message;
+                this.addMarker(fixture, sprite);
+            },
+            addMarker: function(fixture, skin) {
+                var entity = {frames:30,fixture:fixture, body:fixture.GetBody(), skin:skin};
+                markers.push(entity);
+                this.container.addChild(skin);
+            },
+            advance: function() {
+                // filter seems fairly inefficient here, garbage collection might
+                // present a problem, reconsider implementation if time allows.
+                markers = _.filter( markers, function(entity) {
+                    if( entity.frames-- === 0 ) {
+                        this.container.removeChild(entity.skin);
+                        physics.removeBody( entity.body );
+                        return false;
+                    }
+                    var center = entity.body.GetWorldCenter();
+                    entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
+                    entity.skin.x = center.x * PPM;
+                    entity.skin.y = center.y * PPM;
+                    entity.skin.alpha -= 0.05;
+                    return true;
+                }, this);
+            }
+        }
+    }());
+
     return {
         layers: {},
         markers: [],
         playerArticles: [],
         container: new Container,
-        initialize: function() {},
+        initialize: function() {
+            trails.setContainer(this.container);
+        },
         addPlayer: function(entity) {
             this.player = entity;
             this.container.addChild(this.player.container);
@@ -891,10 +936,8 @@ var playspace = (function() {
             this.ball = entity;
             this.container.addChild(this.ball.skin);
         },
-        addMarker: function(fixture, skin) {
-            var entity = {frames:30,fixture:fixture, body:fixture.GetBody(), skin:skin};
-            this.markers.push(entity);
-            this.container.addChild(skin);
+        addTrail: function(body, message) {
+            trails.addMessage(body, message);
         },
         addStaticBody: function(body,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
@@ -939,21 +982,7 @@ var playspace = (function() {
                     piece.skin.y = piece.body.GetWorldCenter().y * PPM;
                 });
             }, this);
-            // filter seems fairly inefficient here, garbage collection might
-            // present a problem, reconsider implementation if time allows.
-            this.markers = _.filter( this.markers, function(entity) {
-                if( entity.frames-- === 0 ) {
-                    this.container.removeChild(entity.skin);
-                    physics.removeBody( entity.body );
-                    return false;
-                }
-                var center = entity.body.GetWorldCenter();
-                entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
-                entity.skin.x = center.x * PPM;
-                entity.skin.y = center.y * PPM;
-                entity.skin.alpha -= 0.05;
-                return true;
-            },this);
+            trails.advance();
         },
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
@@ -1164,19 +1193,6 @@ var player = (function() {
 	}
 }());
 
-var trails = (function (){
-	"use strict";
-    return {
-        addMessage: function(body,message) {
-            var bodyCenter = body.GetWorldCenter();
-            var fixture = physics.createMarkerFixture( bodyCenter.x, bodyCenter.y, 0.5, 0.5, 0 );
-            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), bodyCenter );
-            var sprite = new createjs.Text(0,"bold 32px Arial","#FFF");
-            sprite.text = message;
-            playspace.addMarker(fixture, sprite);
-        }
-    }
-}());
 
 var main = (function () {
 	"use strict";
@@ -1198,19 +1214,19 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.gotoAndPlay("step1");
-                trails.addMessage(player.body, ".");
+                playspace.addTrail( player.body, ".");
 				break;
 			case "FWD_STEP2": 
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.gotoAndPlay("step2");
-                trails.addMessage(player.body, ".");
+                playSpace.addTrail(player.body, ".");
 				break;
 			case "FWD_STEP3": 
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.gotoAndPlay("step3");
-                trails.addMessage(player.body, ".");
+                playSpace.addTrail(player.body, ".");
 				break;
 			case "BWD_STEP1": 
                 audio.soundOn(3);
@@ -1233,7 +1249,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionForward();
                 player.gotoAndPlay("jump");
-                trails.addMessage(player.body, "boing!");
+                playSpace.addTrail(player.body, "boing!");
                 break;
             case "FLIGHT":
                 audio.soundOn(3);
@@ -1241,7 +1257,7 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionFlight();
                 player.gotoAndPlay("fly");
-                trails.addMessage(player.body, "super!");
+                playSpace.addTrail(player.body, "super!");
                 break;
             case "STAND":
                 audio.soundOn(4);
