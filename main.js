@@ -544,6 +544,54 @@ var audio = (function () {
 	}
 }());
 
+var menuInput = (function () {
+	"use strict";
+
+	function inputOn(id) {
+        if (!isEnabled) {
+            return;
+        }
+
+        switch(id) {
+            case 1: actionDelegate("TOGGLE");
+                    break;
+        }
+	}
+
+	function inputOff(id) {
+        // nothing here except a comment.
+	}
+
+    var isEnabled = false;
+	var actionDelegate = undefined;
+	return {
+		initialize: function () {
+            this.reset();
+            isEnabled = false;
+		},
+        setActionDelegate: function (delegate) {
+            actionDelegate = delegate;
+        },
+        enable: function() {
+            isEnabled = true;
+            this.reset();
+        },
+        disable: function() {
+            isEnabled = false;
+        },
+        reset: function() {
+        },
+        inputOn: function(input) {
+            inputOn(input);
+        },
+        inputOff: function(input) {
+            inputOff(input);
+        },
+		advance: function () {
+		}
+	};
+}());
+
 var actionInput = (function () {
 	"use strict";
 
@@ -662,18 +710,18 @@ var input = (function () {
 	"use strict";
 
     var isInputOn = {};
-	function inputOn(id) {
+	function inputOn(id, destination) {
 		if (isInputOn[id] ) {
             return;
         }
 
         isInputOn[id] = true;
-        actionInput.inputOn(id);
+        destination.inputOn(id);
 	}
 
-	function inputOff(id) {
+	function inputOff(id, destination) {
         if( isInputOn[id] ) {
-            actionInput.inputOff(id);
+            destination.inputOff(id);
         }
         isInputOn[id] = false;
 	}
@@ -682,11 +730,12 @@ var input = (function () {
 	var playKey = {76:1, 75:2, 74:3, 72:4};
 	function onKeyDown(keyCode) {
         if(menuKey[keyCode]) {
+            inputOn(menuKey[keyCode], menuInput);
             return false;
         }
 
 		if(playKey[keyCode]) {
-            inputOn(playKey[keyCode]);
+            inputOn(playKey[keyCode], actionInput);
             return false;
         }
 
@@ -695,15 +744,12 @@ var input = (function () {
 
 	function onKeyUp(keyCode) {
         if(menuKey[keyCode]) {
-            switch(menuKey[keyCode]) {
-                case 1: actionDelegate("MENU");
-                        break;
-            }
+            inputOff(menuKey[keyCode], menuInput);
             return false;
         }
 
 		if(playKey[keyCode]) {
-            inputOff(playKey[keyCode]);
+            inputOff(playKey[keyCode], actionInput);
             return false;
         }
 	}
@@ -721,11 +767,13 @@ var input = (function () {
 	return {
 		initialize: function () {
             actionInput.initialize();
+            menuInput.initialize();
 			document.onkeydown = handleKeyDown;
 			document.onkeyup = handleKeyUp;
 		},
 		advance: function () {
             actionInput.advance();
+            menuInput.advance();
 		}
 	};
 }());
@@ -1133,11 +1181,19 @@ var trails = (function (){
 var main = (function () {
 	"use strict";
 
-	function fireAction(action) {
-		switch(action) {
-            case "MENU":
+    function fireMenuAction(action) {
+        switch(action) {
+            case "TOGGLE":
                 hud.toggleMenu();
                 break;
+            default:
+                console.log("unknown menu action");
+                break;
+        }
+    }
+    
+	function fireAction(action) {
+		switch(action) {
 			case "FWD_STEP1": 
                 audio.soundOn(1);
                 player.actionStep(-1,1);
@@ -1270,7 +1326,7 @@ var main = (function () {
     };
 
     var handleConcludeObjective = function(objective) {
-        input.disable();
+        actionInput.disable();
         player.reset();
         ball.reset();
         camera.zoomFactorTarget = 1.0;
@@ -1328,6 +1384,8 @@ var main = (function () {
             Ticker.useRAF = true;
             Ticker.addListener(this);
             actionInput.setActionDelegate(fireAction);
+            menuInput.setActionDelegate(fireMenuAction);
+            menuInput.enable();
             hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
 		},
         debugClear: function() {
