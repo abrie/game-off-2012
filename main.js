@@ -121,7 +121,8 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, ".ORWARD");
+                .add(3, "FORWARD")
+                .add(3, "FLIGHT")
             root.add(3, "BWD_STEP1")
                 .add(2, "BWD_STEP2")
                 .add(1, "BWD_STEP3");
