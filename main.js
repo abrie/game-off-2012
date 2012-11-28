@@ -1175,6 +1175,7 @@ var main = (function () {
     }
 
     var handleCompleteObjective = function(objective) {
+        camera.zoomFactorTarget = 0.5;
         input.disable();
         player.reset();
         ball.reset();
@@ -1182,6 +1183,8 @@ var main = (function () {
     };
 
     var handleRestartObjective = function(objective) {
+        camera.zoomFactorTarget = 1.0;
+        camera.setZoom(0.5);
         input.disable();
         player.reset();
         ball.reset();
@@ -1191,6 +1194,8 @@ var main = (function () {
         if( objective.article ) { player.giveArticle(objective.article); }
         hud.setTargetVelocity( objective.targetVelocity );
         console.log("handleInitiateObjective");
+        camera.zoomFactorTarget = 1.0;
+        camera.setZoom(0.5);
         hud.announce(objective.title,1, function() { 
             console.log("announce complete.");
             objective.encodeActions( input.getRootAction() );
