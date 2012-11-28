@@ -907,22 +907,25 @@ var playspace = (function() {
         }
     }());
 
-    function generateFloorSprite(width,height, fill,depth) {
-        var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
-        var margins = blurFilter.getBounds();
-
-        var g = new createjs.Graphics();
-        g.setStrokeStyle(1);
-        g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-        g.beginFill(fill);
-        g.rect(0,0,width,height);
-        var displayObject = new createjs.Shape(g);
-        displayObject.regX = width/2;
-        displayObject.regY = height/2;
-        displayObject.filters = [blurFilter];
-        displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
-        return displayObject;
-    }
+    var utility = (function (){
+        return {
+            generateFloorSprite: function( width, height, fill, depth ) {
+                var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
+                var margins = blurFilter.getBounds();
+                var g = new createjs.Graphics();
+                g.setStrokeStyle(1);
+                g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+                g.beginFill(fill);
+                g.rect(0,0,width,height);
+                var displayObject = new createjs.Shape(g);
+                displayObject.regX = width/2;
+                displayObject.regY = height/2;
+                displayObject.filters = [blurFilter];
+                displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
+                return displayObject;
+            }
+        }
+    }());
 
     return {
         layers: {},
@@ -935,7 +938,7 @@ var playspace = (function() {
         },
         setScene: function() {
             var floorBody = physics.createStaticBody(0,500,100000,10,255);
-            var floorSkin = generateFloorSprite(10000,10,Graphics.getRGB(255,255,255),10);
+            var floorSkin = utility.generateFloorSprite(10000,10,Graphics.getRGB(255,255,255),10);
             this.addStaticBody( floorBody, floorSkin, 255 );
 
             for(var index=-3; index<6; index++) {
