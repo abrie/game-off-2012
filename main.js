@@ -1304,15 +1304,25 @@ var main = (function () {
 	}
 
 
-    var canvas, context, stage = undefined;
-    function initializeCanvas() {
-        canvas = document.getElementById("testCanvas");
-        context = canvas.getContext("2d");
-        stage = new Stage(canvas);
-        stage.autoClear = true;
+    var video = (function(){
+        return {
+            canvas: undefined,
+            context: undefined,
+            stage:undefined,
+            initialize: function() {
+                this.canvas = document.getElementById("testCanvas");
+                this.context = this.canvas.getContext("2d");
+                this.stage = new Stage(this.canvas);
+                this.stage.autoClear = true;
+            },
+            update: function() {
+                this.stage.update();
+            }
+        }
+    }());
+
+    function initializeVideo() {
     }
-
-
 
     var handleCompleteObjective = function(objective) {
         playInput.disable();
@@ -1344,7 +1354,7 @@ var main = (function () {
             assets.initialize();
         },
 		start: function () {
-            initializeCanvas();
+            video.initialize();
             audio.initialize();
             input.initialize();
             playInput.setActionDelegate(firePlayAction);
@@ -1352,8 +1362,8 @@ var main = (function () {
             menuInput.enable();
 
             physics.initialize();
-            physics.setDebugDraw(canvas);
-            camera.initialize(stage);
+            physics.setDebugDraw(video.canvas);
+            camera.initialize(video.stage);
 
             player.initialize();
             ball.initialize();
@@ -1363,11 +1373,11 @@ var main = (function () {
             playspace.bindParallax(camera);
             playspace.addPlayer( player );
             playspace.addBall( ball );
-            stage.addChild(playspace.container);
+            video.stage.addChild(playspace.container);
 
             camera.watch( player );
 
-            hud.initialize(canvas);
+            hud.initialize(video.canvas);
             hud.setPlayer(player);
             hud.setBall(ball);
 
@@ -1409,7 +1419,7 @@ var main = (function () {
             camera.advance();
             playspace.advance();
             manager.advance();
-			stage.update();
+			video.update();
             hud.update();
         },
 		tick: function (elapsedTime) {
