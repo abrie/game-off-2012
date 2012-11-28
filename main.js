@@ -496,19 +496,25 @@ var audio = (function () {
 var input = (function () {
 	"use strict";
 
-    var ActionNode = function(key, action) {
+    var ActionNode = function(key, action, timing) {
         this.action = action;
+        this.timing = timing ? timing : {expiration:15, recovery:0};
         this.looped = undefined;
         this.branch = {};
         this.clear = function() {
             this.looped = false;
             this.branch = {};
         }
+        this.getTiming = function(into) {
+            into.expiration = this.timing.expiration;
+            into.recovery = this.timing.recovery;
+            return into;
+        }
         this.get = function( key ) {
             return this.branch[key];
         }
-        this.add = function( key, action ) {
-            var newNode = new ActionNode(key, action);
+        this.add = function( key, action, timing ) {
+            var newNode = new ActionNode(key, action, timing);
             this.branch[key] = newNode;
             return newNode;
         }
@@ -523,10 +529,11 @@ var input = (function () {
 
     var rootAction = new ActionNode();
     var thisAction = rootAction;
-    var actionTime = {recovery:0,expiration:15};
+    var actionTime = rootAction.getTiming({});
 
     function notifyThenNext() {
-        actionDelegate(thisAction.action, actionTime);
+        thisAction.getTiming(actionTime);
+        actionDelegate(thisAction.action);
         return thisAction.looped ? thisAction.looped : thisAction;
     }
 
@@ -624,8 +631,9 @@ var input = (function () {
             else {
                 if( actionTime.expiration > 0 ) {
                     if( --actionTime.expiration === 0) {
-                        actionDelegate("EXPIRED", actionTime);
+                        actionDelegate("EXPIRED");
                         thisAction = rootAction;
+                        thisAction.getTiming(actionTime);
                     }
                 }
             }
@@ -1038,49 +1046,42 @@ var trails = (function (){
 var main = (function () {
 	"use strict";
 
-	function fireAction(action, actionTime) {
+	function fireAction(action) {
 		switch(action) {
 			case "FWD_STEP1": 
-                actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.gotoAndPlay("step1");
                 trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP2": 
-                actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.gotoAndPlay("step2");
                 trails.addMessage(player.body, ".");
 				break;
 			case "FWD_STEP3": 
-                actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.gotoAndPlay("step3");
                 trails.addMessage(player.body, ".");
 				break;
 			case "BWD_STEP1": 
-                actionTime.expiration = 15;
                 audio.soundOn(3);
                 player.actionStep(1,1);
                 player.gotoAndPlay("step1");
 				break;
 			case "BWD_STEP2": 
-                actionTime.expiration = 15;
                 audio.soundOn(2);
                 player.actionStep(1,1);
                 player.gotoAndPlay("step2");
 				break;
 			case "BWD_STEP3": 
-                actionTime.expiration = 15;
                 audio.soundOn(1);
                 player.actionStep(1,1);
                 player.gotoAndPlay("step3");
 				break;
             case "FORWARD":
-                actionTime.expiration = 15;
                 audio.soundOn(3);
                 audio.soundOn(2);
                 audio.soundOn(1);
@@ -1089,7 +1090,6 @@ var main = (function () {
                 trails.addMessage(player.body, "boing!");
                 break;
             case "FLIGHT":
-                actionTime.expiration = 15;
                 audio.soundOn(3);
                 audio.soundOn(2);
                 audio.soundOn(1);
@@ -1098,18 +1098,14 @@ var main = (function () {
                 trails.addMessage(player.body, "super!");
                 break;
             case "STAND":
-                actionTime.expiration = 15;
                 audio.soundOn(4);
                 player.gotoAndPlay("stand");
                 break;
             case "LAND":
-                actionTime.expiration = 15;
                 player.gotoAndPlay("land");
                 break;
             case "USE":
-                actionTime.expiration = 0;
                 console.log("use item");
-                actionTime.recovery = 15;
                 player.gotoAndPlay("use");
                 break;
             case "EXPIRED":
