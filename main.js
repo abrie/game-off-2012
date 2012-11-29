@@ -158,6 +158,10 @@ var manager = (function(){
                 this.setObjective(current);
                 return;
             }
+            if( this.induceRollback ) {
+                this.onConcludeObjective(current);
+                this.previousObjective(current);
+            }
         },
         setPlayer: function(player) {
             this.player = player;
@@ -171,8 +175,15 @@ var manager = (function(){
         completeObjective: function() {
             this.induceComplete = true;
         },
+        rollbackObjective: function() {
+            this.induceRollback = true;
+        },
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
+        },
+        previousObjective: function( objective ) {
+            var previous = objectives[ objectives.indexOf(objective)-1 ];
+            previous ? this.setObjective(previous) : console.log("no more objectives");
         },
         nextObjective: function( objective ) {
             var next = objectives[ objectives.indexOf(objective)+1 ];
@@ -183,6 +194,7 @@ var manager = (function(){
             current.isInitiated = false;
             this.induceRestart = false;
             this.induceComplete = false;
+            this.induceRollback = false;
         }
         ,
         initialize: function() {
@@ -283,14 +295,11 @@ var hud = (function() {
     }
     
     var debugText = undefined;
-    var nextObjectiveText = undefined;
     var initializeDebugText = function() {
         debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
         debugText.x = 10;
         debugText.y = 10;
         stage.addChild(debugText);
-
-        stage.addChild(nextObjectiveText);
     }
 
     var menu = undefined;
@@ -303,7 +312,11 @@ var hud = (function() {
 
             var items = [
                 {
-                    title: "force complete",
+                    title: "previous objective",
+                    action: function() { manager.rollbackObjective(); } 
+                },
+                {
+                    title: "next objective",
                     action: function() { manager.completeObjective(); } 
                 },
                 {
