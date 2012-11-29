@@ -1120,7 +1120,13 @@ var camera = (function() {
 
 }());
 
-// this is a workaround.
+/* This constructor is stub object, used as a functional placeholder
+** for the ball and player objects until they are added to the Box2d
+** world. Both ball and player implement a makePhysical method which
+** replaces the DeadBody instances with a real fixture once ball and   
+** player are added to the playspace object. This remains until some
+** better engineer decouples the hud/manager and player/ball objects.
+*/
 var DeadBody = function() {
     this.GetWorldCenter = function() { return {x:0,y:0}; }
     this.GetLinearVelocity = function() { return {x:0,y:0} };
