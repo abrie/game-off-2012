@@ -943,7 +943,7 @@ var playspace = (function() {
     }());
 
     return {
-        layers: {},
+        layers: [],
         markers: [],
         playerArticles: [],
         container: new Container,
@@ -954,13 +954,15 @@ var playspace = (function() {
         setScene: function() {
             var floorBody = physics.createStaticBody(0,500,100000,10,255);
             var floorSkin = utility.generateFloorSprite(10000,10,Graphics.getRGB(255,255,255),10);
-            this.addStaticBody( floorBody, floorSkin, 255 );
+            this.addStaticBody( floorBody, floorSkin, 1 );
 
-            for(var index=-3; index<6; index++) {
-                var body = physics.createStaticBody(index*600,500-250/2,600,250,2);
-                var skin = assets.getAnimation("background").clone();
-                skin.gotoAndPlay( "a" );
-                this.addStaticBody( body, skin, index+4 );
+            for(var parallax = 3; parallax > 0; parallax-=1) {
+                for(var index=-3; index<3; index++) {
+                    var body = physics.createStaticBody(index*650,500-250/2,600,250,2);
+                    var skin = assets.getAnimation("background").clone();
+                    skin.gotoAndPlay( "a" );
+                    this.addStaticBody( body, skin, 1/parallax);
+                }
             }
         },
         addPlayer: function(entity) {
@@ -974,10 +976,14 @@ var playspace = (function() {
         addTrail: function(body, message) {
             trails.addMessage(body, message);
         },
-        addStaticBody: function(body,skin,layerNumber) {
-            var layer = this.getLayer(layerNumber);
+        addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
-            layer.push( {body:body,skin:skin, origin:{x:origin.x, y:origin.y}} );
+            this.layers.push( {
+                body:body,
+                skin:skin,
+                origin:{x:origin.x, y:origin.y},
+                parallax:parallax
+            });
             this.container.addChild(skin);
         },
         addItem: function(item,skin,layerNumber) {
@@ -1007,16 +1013,15 @@ var playspace = (function() {
             this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
             this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
         },
+        updateLayer: function(layer) {
+            layer.skin.rotation = layer.body.GetAngle() * (180 / Math.PI);
+            layer.skin.x = layer.body.GetWorldCenter().x * PPM;
+            layer.skin.y = layer.body.GetWorldCenter().y * PPM;
+        },
         advance: function() {
             this.updatePlayer();
             this.updateBall();
-            _.each( this.layers, function(layer, key) {
-                _.each( layer, function(piece) {
-                    piece.skin.rotation = piece.body.GetAngle() * (180 / Math.PI);
-                    piece.skin.x = piece.body.GetWorldCenter().x * PPM;
-                    piece.skin.y = piece.body.GetWorldCenter().y * PPM;
-                });
-            }, this);
+            this.layers.forEach( this.updateLayer, this); 
             trails.advance();
         },
         bindCamera: function(camera) {
@@ -1030,15 +1035,12 @@ var playspace = (function() {
             this.container.y = translation.y;
         },
         updateParallax: function(amount) {
-            _.each( this.layers, function(layer, key) {
-                if(key==1) {
-                    return;
+            this.layers.forEach( function(layer, index, array) {
+                if( layer.parallax !== 1 ) {
+                    var position = layer.body.GetWorldCenter();
+                    position.x = layer.origin.x-amount*layer.parallax;
+                    layer.body.SetPosition(position);
                 }
-                _.each( layer, function(piece) {
-                    var position = piece.body.GetWorldCenter();
-                    position.x = piece.origin.x-amount/key;
-                    piece.body.SetPosition(position);
-                });
             }, this);
         }
     }
