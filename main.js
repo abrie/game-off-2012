@@ -224,19 +224,19 @@ var teacher = (function(){
             this.frames = 1;
         },
         advance: function() {
-            if( this.currentStep ) {
-                if( this.frames > 0 ) {
-                    if( --this.frames === 0 ) {
-                        playInput.inputOn(this.currentStep.action);
-                        hud.flashTeachInput(this.currentStep.action);
-                        this.currentStep = this.currentSequence.shift();
-                        if( this.currentStep ) {
-                            this.frames = this.currentStep.frames;
-                        } else {
-                        }
-                    }
+            if( !this.currentStep ) {
+                return;
+            }
+            if( this.frames > 0 ) {
+                if( --this.frames === 0 ) {
+                    playInput.inputOn(this.currentStep.action);
+                    hud.flashTeachInput(this.currentStep.action);
+                    this.currentStep = this.currentSequence.shift();
+                    if( this.currentStep ) {
+                        this.frames = this.currentStep.frames;
+                    } 
                 }
-            } 
+            }
         }
     }
 }());
