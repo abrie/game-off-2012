@@ -566,22 +566,22 @@ var physics = (function() {
 
 var audio = (function () {
 	"use strict";
-    var Oscillator = function(audioContext) {
+    var Oscillator = function(audioContext, destination) {
         var context = audioContext;
         var envelope = context.createGainNode();
-        envelope.connect( context.destination );
+        envelope.connect( destination );
         var oscillator = context.createOscillator();
         oscillator.connect( envelope );
 
         return {
             play: function(frequency) {
                 var now = context.currentTime;
-                envelope.gain.linearRampToValueAtTime(0, now);
-                envelope.gain.linearRampToValueAtTime(0.1, now+1/FPS);
-                envelope.gain.linearRampToValueAtTime(0, now+2/FPS);
+                envelope.gain.value = 0.05;
+                envelope.gain.linearRampToValueAtTime(0.3, now+0.5/FPS);
+                envelope.gain.linearRampToValueAtTime(0, now+1.5/FPS);
                 oscillator.frequency.value = frequency;
                 oscillator.noteOn(now);
-                oscillator.noteOff(now+2/FPS);
+                oscillator.noteOff(now+1.6/FPS);
             },
             isDead: function() {
                 return oscillator.playbackState === oscillator.FINISHED_STATE;
@@ -591,11 +591,13 @@ var audio = (function () {
 
 	var oscillators = [];
 	var audioContext = undefined;
+    var masterGain = undefined;
     var frequency = {};
     frequency[1]= 261.63; 
     frequency[2]= 329.63; 
     frequency[3]= 392.00; 
-    frequency[4]= 400.00; 
+    frequency[4]= 440.00; 
+    frequency[5]= 349.23; 
 
 	return {
 		initialize: function() {
@@ -606,10 +608,14 @@ var audio = (function () {
                 this.addSound = function() {};
                 this.soundOn = function() {};
                 this.advance = function() {};
+                return;
 			}
+            masterGain = audioContext.createGainNode();
+            masterGain.connect( audioContext.destination );
+            masterGain.gain.value = 2.5;
 		},
 		soundOn: function (which) {
-            var newOscillator = new Oscillator(audioContext);
+            var newOscillator = new Oscillator( audioContext, masterGain );
             oscillators.push( newOscillator );
             newOscillator.play( frequency[which] );
 		},
@@ -1373,19 +1379,17 @@ var main = (function () {
                 audio.soundOn(1);
                 player.actionStep(-1,1);
                 player.gotoAndPlay("step1");
-                playspace.addTrail( player.body, ".");
 				break;
 			case "FWD_STEP2": 
                 audio.soundOn(2);
                 player.actionStep(-1,1.2);
                 player.gotoAndPlay("step2");
-                playspace.addTrail(player.body, ".");
 				break;
 			case "FWD_STEP3": 
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.gotoAndPlay("step3");
-                playspace.addTrail(player.body, ".");
+                playspace.addTrail(player.body, "nice");
 				break;
 			case "BWD_STEP1": 
                 audio.soundOn(3);
@@ -1403,17 +1407,13 @@ var main = (function () {
                 player.gotoAndPlay("step3");
 				break;
             case "FORWARD":
-                audio.soundOn(3);
-                audio.soundOn(2);
-                audio.soundOn(1);
+                audio.soundOn(4);
                 player.actionForward();
                 player.gotoAndPlay("jump");
                 playspace.addTrail(player.body, "boing!");
                 break;
             case "FLIGHT":
-                audio.soundOn(3);
-                audio.soundOn(2);
-                audio.soundOn(1);
+                audio.soundOn(5);
                 player.actionFlight();
                 player.gotoAndPlay("fly");
                 playspace.addTrail(player.body, "super!");
