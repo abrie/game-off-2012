@@ -1028,9 +1028,18 @@ var playspace = (function() {
             this.setScene();
         },
         setScene: function() {
-            var floorBody = physics.createStaticBody(0,500,100000,10,255);
-            var floorSkin = utility.generateFloorSprite(10000,10,Graphics.getRGB(255,255,255),10);
+            var world = {width:20000, height:1000};
+            var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
+            var floorSkin = utility.generateFloorSprite(world.width,10,Graphics.getRGB(255,255,255),10);
             this.addStaticBody( floorBody, floorSkin, 1 );
+
+            var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
+            var leftWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
+            this.addStaticBody( leftWallBody, leftWallSkin, 1 );
+
+            var rightWallBody = physics.createStaticBody(world.width/2,0,10,world.height,255);
+            var rightWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
+            this.addStaticBody( rightWallBody, rightWallSkin, 1 );
 
             for(var parallax = 3; parallax > 0; parallax-=1) {
                 for(var index=-3; index<3; index++) {
