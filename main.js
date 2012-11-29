@@ -816,17 +816,6 @@ var assets = (function() {
             }
         },
         {
-            name: "building",
-            images: ["assets/building.png"],
-            frames: {count:4, width:110, height:380,regX:55,regY:190},
-            animations: {
-                a: {frames:[0], next:false, frequency:1},
-                b: {frames:[1], next:false, frequency:1},
-                c: {frames:[2], next:false, frequency:1},
-                d: {frames:[3], next:false, frequency:1},
-            }
-        },
-        {
             name: "ball",
             images: ["assets/ball.png"],
             frames: {count:2, width:50, height:50,regX:25,regY:25},
