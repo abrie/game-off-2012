@@ -1056,7 +1056,7 @@ var camera = (function() {
 		initialize: function( stage ) {
             this.stage = stage;
             this.target = {x:0, y:0};
-            this.setZoom(0.01);
+            this.setZoomMotion(0.01, 1.0);
         },
         setZoom: function(factor) {
             this.zoomFactor = factor;
@@ -1064,6 +1064,10 @@ var camera = (function() {
             this.stage.scaleY = factor;
             this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+100)/factor};
             if(DEBUG) { physics.debugDraw.SetDrawScale(PPM*factor); }
+        },
+        setZoomMotion: function(fromFactor, toFactor) {
+            this.zoomFactorTargert = toFactor;
+            this.setZoom(fromFactor);
         },
         updateRequiredTranslation: function() {
             this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
