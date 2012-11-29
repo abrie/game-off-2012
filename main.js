@@ -1070,7 +1070,6 @@ var camera = (function() {
         lookAt: function(point) {
             this.target.x = point.x;
             this.target.y = point.y;
-            this.updateRequiredTranslation();
         },
         watch: function(entity) {
             this.entityOfInterest = entity;
@@ -1084,7 +1083,10 @@ var camera = (function() {
                     this.setZoom( Math.max(this.zoomFactor-0.01, this.zoomFactorTarget) );
                 }
             }
-            this.lookAt(this.entityOfInterest.body.GetWorldCenter());
+            if( this.entityOfInterest ) {
+                this.lookAt(this.entityOfInterest.body.GetWorldCenter());
+            }
+            this.updateRequiredTranslation();
         }
     }
 
