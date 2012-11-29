@@ -1043,7 +1043,7 @@ var playspace = (function() {
 
             for(var parallax = 3; parallax > 0; parallax-=1) {
                 for(var index=-3; index<3; index++) {
-                    var body = physics.createStaticBody(index*650,500-250/2,600,250,2);
+                    var body = physics.createStaticBody(index*650,500-250/2-(parallax-1)*3,600,250,2);
                     var skin = assets.getAnimation("background").clone();
                     skin.gotoAndPlay( "a" );
                     this.addStaticBody( body, skin, 1/parallax);
