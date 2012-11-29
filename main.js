@@ -1048,6 +1048,19 @@ var playspace = (function() {
 
 var camera = (function() {
 	"use strict";
+
+    var tween = function(target, current, delta) {
+        if( target !== current ) {
+            if( target > current ) {
+                return Math.min(current+delta, target);
+            }
+            else {
+                return Math.max(current-delta, target);
+            }
+        }
+        return target;
+    }
+
     return {
         zoomFactorTarget: 1.0,
         onCamera: function(x,y) { console.log("override onCamera"); },
@@ -1062,11 +1075,15 @@ var camera = (function() {
             this.zoomFactor = factor;
             this.stage.scaleX = factor;
             this.stage.scaleY = factor;
-            this.offset = {x:this.stage.canvas.width/2/factor, y:(this.stage.canvas.height/2+100)/factor};
-            if(DEBUG) { physics.debugDraw.SetDrawScale(PPM*factor); }
+            this.offset = {
+                x:this.stage.canvas.width/2/factor,
+                y:(this.stage.canvas.height/2+100)/factor};
+            if(DEBUG) { 
+                physics.debugDraw.SetDrawScale(PPM*factor); 
+            }
         },
         setZoomMotion: function(fromFactor, toFactor) {
-            this.zoomFactorTargert = toFactor;
+            this.zoomFactorTarget = toFactor;
             this.setZoom(fromFactor);
         },
         updateRequiredTranslation: function() {
@@ -1083,14 +1100,8 @@ var camera = (function() {
             this.entityOfInterest = entity;
         },
         advance: function() {
-            if( this.zoomFactorTarget != this.zoomFactor ) {
-                if( this.zoomFactorTarget > this.zoomFactor ) {
-                    this.setZoom( Math.min(this.zoomFactor+0.01, this.zoomFactorTarget) );
-                }
-                else {
-                    this.setZoom( Math.max(this.zoomFactor-0.01, this.zoomFactorTarget) );
-                }
-            }
+            var factor = tween( this.zoomFactorTarget, this.zoomFactor, 0.01 );
+            this.setZoom( factor );
             if( this.entityOfInterest ) {
                 this.lookAt(this.entityOfInterest.body.GetWorldCenter());
             }
