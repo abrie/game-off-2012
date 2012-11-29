@@ -110,7 +110,7 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         },"cape"),
-        new Objective("use", 1.3, function(root) {
+        new Objective("want of wings", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -121,8 +121,9 @@ var manager = (function(){
                 .add(3, "FWD_STEP3")
                 .add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
-                .add(3, "FORWARD")
-                .add(3, "FLIGHT")
+                .add(3, "FORWARD", {expiration:30, recovery:5})
+                .add(3, "FLIGHT", {expiration:25, recovery:5})
+                .add(3, "DASH", {expiration:5, recovery:5});
             root.add(3, "BWD_STEP1")
                 .add(2, "BWD_STEP2")
                 .add(1, "BWD_STEP3");
@@ -1426,6 +1427,12 @@ var main = (function () {
                 player.actionFlight();
                 player.gotoAndPlay("fly");
                 playspace.addTrail(player.body, "super!");
+                break;
+            case "DASH":
+                audio.soundOn(5);
+                player.actionSuperforward();
+                player.gotoAndPlay("fly");
+                playspace.addTrail(player.body, "duper!");
                 break;
             case "STAND":
                 audio.soundOn(4);
