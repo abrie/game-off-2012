@@ -376,7 +376,12 @@ var hud = (function() {
             drawMeter( 40,"#B7FA00", 10, normalizedPlayerVelocity );
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
             drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
-            drawDebug("b:"+ballVelocity.toFixed(3)+"p:"+playerVelocity.toFixed(3));
+
+            var playerPosition = this.player.body.GetWorldCenter();
+            var ballPosition = this.ball.body.GetWorldCenter();
+            drawDebug(  "bv:"+ballVelocity.toFixed(3)+
+                        "pv:"+playerVelocity.toFixed(3)+
+                        "p:("+playerPosition.x.toFixed(3)+","+playerPosition.y.toFixed(3)+")");
 
             announcements.update();
             stage.update();
