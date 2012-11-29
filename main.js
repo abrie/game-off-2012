@@ -1096,10 +1096,18 @@ var playspace = (function() {
             layer.skin.x = layer.body.GetWorldCenter().x * PPM;
             layer.skin.y = layer.body.GetWorldCenter().y * PPM;
         },
+        updateLayers: function() {
+            this.layers.forEach( this.updateLayer, this); 
+        },
+        reset: function() {
+            this.updatePlayer();
+            this.updateBall();
+            this.updateLayers();
+        },
         advance: function() {
             this.updatePlayer();
             this.updateBall();
-            this.layers.forEach( this.updateLayer, this); 
+            this.updateLayers();
             trails.advance();
         },
         bindCamera: function(camera) {
@@ -1477,6 +1485,7 @@ var main = (function () {
     var handleInitiateObjective = function(objective) {
         player.reset();
         ball.reset();
+        playspace.reset();
 
         if( objective.article ) {
             player.giveArticle(objective.article);
