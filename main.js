@@ -967,6 +967,7 @@ var playspace = (function() {
                 var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
                 fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
                 var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
+                sprite.alpha = 0;
                 this.container.addChild(sprite);
 
                 list.push( {
@@ -989,7 +990,7 @@ var playspace = (function() {
                         entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
                         entity.skin.x = center.x * PPM;
                         entity.skin.y = center.y * PPM;
-                        entity.skin.alpha -= 0.05;
+                        entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
                     }
                 }, this);
             }
