@@ -962,11 +962,11 @@ var playspace = (function() {
             }
         },
         addPlayer: function(entity) {
-            this.player = entity;
+            this.player = entity.makePhysical();
             this.container.addChild(this.player.container);
         },
         addBall: function(entity) {
-            this.ball = entity;
+            this.ball = entity.makePhysical();
             this.container.addChild(this.ball.skin);
         },
         addTrail: function(body, message) {
@@ -1000,14 +1000,18 @@ var playspace = (function() {
             }
         },
         updatePlayer: function() {
-            this.player.container.rotation = this.player.body.GetAngle() * (180 / Math.PI);
-            this.player.container.x = this.player.body.GetWorldCenter().x * PPM;
-            this.player.container.y = this.player.body.GetWorldCenter().y * PPM;
+            if( this.player ) {
+                this.player.container.rotation = this.player.body.GetAngle() * (180 / Math.PI);
+                this.player.container.x = this.player.body.GetWorldCenter().x * PPM;
+                this.player.container.y = this.player.body.GetWorldCenter().y * PPM;
+            }
         },
         updateBall: function() {
-            this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
-            this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
-            this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
+            if( this.ball ) {
+                this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
+                this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
+                this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
+            }
         },
         updateLayer: function(layer) {
             layer.skin.rotation = layer.body.GetAngle() * (180 / Math.PI);
@@ -1092,14 +1096,24 @@ var camera = (function() {
 
 }());
 
+// this is a workaround.
+var DeadBody = function() {
+    this.GetWorldCenter = function() { return {x:0,y:0}; }
+    this.GetLinearVelocity = function() { return {x:0,y:0} };
+    this.GetAngle = function() { return 0; };
+}
+
 var ball = (function() {
 	"use strict";
     return {
         skin: undefined,
-        body: undefined,
-		initialize: function() {
+        body: new DeadBody,
+        makePhysical: function() {
             this.fixture = physics.createBallFixture(-1.5,1,25,1);
             this.body = this.fixture.GetBody();
+            return this;
+        },
+		initialize: function() {
             this.skin = assets.getAnimation("ball");
             this.skin.gotoAndPlay("ready");
 		},
@@ -1132,7 +1146,7 @@ var player = (function() {
         articles: [],
         container: undefined,
 		skin: undefined,
-        body: undefined,
+        body: new DeadBody,
         maximumRotation: Math.PI*2/360*15,
         impulse: function(direction, rate, max) {
             var velocity = this.body.GetLinearVelocity().x;
@@ -1155,9 +1169,12 @@ var player = (function() {
             velocity.y = -0.75*magnitude;
             this.body.SetLinearVelocity(velocity);
         },
-		initialize: function() {
+        makePhysical: function() {
             this.fixture = physics.createPlayerFixture(0,0,75,75,1);
             this.body = this.fixture.GetBody();
+            return this;
+        },
+		initialize: function() {
             this.container = new Container;
             this.container.regX = 75, this.container.regY = 110;
             this.skin = assets.getAnimation("player");
@@ -1336,6 +1353,12 @@ var main = (function () {
             },
             update: function() {
                 this.stage.update();
+            },
+            clear: function() {
+                this.context.save();
+                this.context.setTransform(1, 0, 0, 1, 0, 0);
+                this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                this.context.restore();
             }
         }
     }());
@@ -1390,11 +1413,9 @@ var main = (function () {
             playspace.initialize();
             playspace.bindCamera(camera);
             playspace.bindParallax(camera);
-            playspace.addPlayer( player );
-            playspace.addBall( ball );
             video.stage.addChild(playspace.container);
 
-            camera.watch( player );
+            camera.lookAt( {x:0,y:3.0} );
 
             hud.initialize(video.canvas);
             hud.setPlayer(player);
@@ -1410,19 +1431,20 @@ var main = (function () {
             Ticker.setFPS(FPS);
             Ticker.useRAF = true;
             Ticker.addListener(this);
-            hud.announce("Push, Chinchilla!",5, function() { manager.firstObjective(); });
+            hud.announce("Push, Chinchilla!",5, function() {
+                playspace.addPlayer( player );
+                playspace.addBall( ball );
+                manager.firstObjective();
+            });
 		},
         debugClear: function() {
-            context.save();
-            context.setTransform(1, 0, 0, 1, 0, 0);
-            context.clearRect(0, 0, canvas.width, canvas.height);
-            context.restore();
+            video.clear();
         },
         drawDebug: function() {
-            context.save();
-            context.translate(camera.requiredTranslation.x*camera.zoomFactor,camera.requiredTranslation.y*camera.zoomFactor);
+            video.context.save();
+            video.context.translate(camera.requiredTranslation.x*camera.zoomFactor,camera.requiredTranslation.y*camera.zoomFactor);
             physics.drawDebug();
-            context.restore();
+            video.context.restore();
         },
         debugUpdate: function(elapsedTime) {
             this.debugClear();
