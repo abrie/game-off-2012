@@ -1050,7 +1050,7 @@ var camera = (function() {
 	"use strict";
 
     var tween = function(target, current, delta) {
-        if( target !== current ) {
+        if( target != current ) {
             if( target > current ) {
                 return Math.min(current+delta, target);
             }
@@ -1069,6 +1069,7 @@ var camera = (function() {
 		initialize: function( stage ) {
             this.stage = stage;
             this.target = {x:0, y:0};
+            this.current = {x:0, y:0};
             this.setZoomMotion(0.01, 1.0);
         },
         setZoom: function(factor) {
@@ -1087,10 +1088,14 @@ var camera = (function() {
             this.setZoom(fromFactor);
         },
         updateRequiredTranslation: function() {
-            this.requiredTranslation.x = this.offset.x - this.target.x*PPM;
-            this.requiredTranslation.y = this.offset.y - this.target.y*PPM;
+            this.requiredTranslation.x = this.offset.x - this.current.x*PPM;
+            this.requiredTranslation.y = this.offset.y - this.current.y*PPM;
             this.onCamera(this.requiredTranslation);
             this.onParallax(this.requiredTranslation.x/PPM);
+        },
+        fix: function(point) {
+            this.entityOfInterest = false;
+            this.lookAt(point);
         },
         lookAt: function(point) {
             this.target.x = point.x;
@@ -1102,9 +1107,13 @@ var camera = (function() {
         advance: function() {
             var factor = tween( this.zoomFactorTarget, this.zoomFactor, 0.01 );
             this.setZoom( factor );
+
             if( this.entityOfInterest ) {
                 this.lookAt(this.entityOfInterest.body.GetWorldCenter());
             }
+            
+            this.current.x = tween( this.target.x, this.current.x, 0.1 );
+            this.current.y = tween( this.target.y, this.current.y, 0.1 );
             this.updateRequiredTranslation();
         }
     }
@@ -1384,8 +1393,7 @@ var main = (function () {
 
     var handleConcludeObjective = function(objective) {
         playInput.disable();
-        camera.zoomFactorTarget = 1.0;
-        camera.setZoom(0.75);
+        camera.fix( {x:0,y:3.042} );
     };
 
     var handleInitiateObjective = function(objective) {
@@ -1397,6 +1405,7 @@ var main = (function () {
         }
 
         var runObjective = function() { 
+            camera.watch( player );
             objective.encodeActions( playInput.getRootAction() );
             playInput.enable();
         }
@@ -1430,7 +1439,7 @@ var main = (function () {
             playspace.bindParallax(camera);
             video.stage.addChild(playspace.container);
 
-            camera.lookAt( {x:0,y:3.0} );
+            camera.fix( {x:0,y:3.042} );
 
             hud.initialize(video.canvas);
             hud.setPlayer(player);
