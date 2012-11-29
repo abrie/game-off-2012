@@ -207,34 +207,32 @@ var manager = (function(){
 var teacher = (function(){
 	"use strict";
     var sequence = [
-        {action:1, frames:2},
-        {action:2, frames:2},
-        {action:3, frames:2},
-        {action:1, frames:2},
-        {action:2, frames:2},
-        {action:3, frames:2},
-        {action:1, frames:2},
-        {action:2, frames:2},
-        {action:3, frames:2},
+        {action:1, frames:5},
+        {action:2, frames:5},
+        {action:3, frames:5},
+        {action:1, frames:5},
+        {action:2, frames:5},
+        {action:3, frames:5},
+        {action:1, frames:5},
+        {action:2, frames:5},
+        {action:3, frames:5},
     ]
     return {
         test: function() {
             this.currentSequence = sequence.slice(0);
             this.currentStep = this.currentSequence.shift();
             this.frames = 1;
-            console.log("begin:",this.currentStep);
         },
         advance: function() {
             if( this.currentStep ) {
                 if( this.frames > 0 ) {
                     if( --this.frames === 0 ) {
                         playInput.inputOn(this.currentStep.action);
+                        hud.flashTeachInput(this.currentStep.action);
                         this.currentStep = this.currentSequence.shift();
                         if( this.currentStep ) {
-                            console.log("next:",this.currentStep);
                             this.frames = this.currentStep.frames;
                         } else {
-                            console.log("end of sequence.");
                         }
                     }
                 }
@@ -333,6 +331,32 @@ var hud = (function() {
         gradient.addColorStop(0.5, '#B7FA00');
         gradient.addColorStop(1, '#FA9600');
     }
+
+    var teachImages = [
+        {text:new createjs.Text("L","bold 32px Arial","FFF"), alpha:1},
+        {text:new createjs.Text("K","bold 32px Arial","FFF"), alpha:1},
+        {text:new createjs.Text("J","bold 32px Arial","FFF"), alpha:1},
+        {text:new createjs.Text("H","bold 32px Arial","FFF"), alpha:1}
+    ]
+
+    var initializeTeachImages = function() {
+        teachImages.forEach( function(image,index) {
+            image.text.regX = image.text.getMeasuredWidth()/2;
+            image.text.regY = image.text.getMeasuredWidth()/2;
+            image.text.y = stage.canvas.height-image.text.getMeasuredHeight();
+            image.text.x = stage.canvas.width-(index+1)*32;
+            image.text.alpha = 0;
+            stage.addChild(image.text);
+        });
+    }
+
+    var advanceTeachImages = function() {
+        teachImages.forEach( function(image,index) {
+            if(image.text.alpha > 0) {
+                image.text.alpha -= 0.1;
+            }
+        });
+    }
     
     var debugText = undefined;
     var initializeDebugText = function() {
@@ -407,6 +431,9 @@ var hud = (function() {
         toggleMenu: function() {
             toggleMenu();
         },
+        flashTeachInput: function(index) {
+            teachImages[index-1].text.alpha = 1.0;
+        },
         update: function() {
             var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
             var normalizedBallVelocity = normalize( ballVelocity, this.maximumVelocity);
@@ -427,6 +454,7 @@ var hud = (function() {
                         "p:("+playerPosition.x.toFixed(3)+","+playerPosition.y.toFixed(3)+")");
 
             announcements.update();
+            advanceTeachImages();
             stage.update();
         },
         initialize : function(canvas) {
@@ -436,6 +464,7 @@ var hud = (function() {
             context = canvas.getContext("2d");
             initializeGradients();
             initializeDebugText();
+            initializeTeachImages();
         }
     };
 }());
