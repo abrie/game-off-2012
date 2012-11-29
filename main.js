@@ -204,6 +204,44 @@ var manager = (function(){
     }
 }());
 
+var teacher = (function(){
+	"use strict";
+    var sequence = [
+        {action:1, frames:2},
+        {action:2, frames:2},
+        {action:3, frames:2},
+        {action:1, frames:2},
+        {action:2, frames:2},
+        {action:3, frames:2},
+        {action:1, frames:2},
+        {action:2, frames:2},
+        {action:3, frames:2},
+    ]
+    return {
+        test: function() {
+            this.currentSequence = sequence.slice(0);
+            this.currentStep = this.currentSequence.shift();
+            this.frames = 1;
+            console.log("begin:",this.currentStep);
+        },
+        advance: function() {
+            if( this.currentStep ) {
+                if( this.frames > 0 ) {
+                    if( --this.frames === 0 ) {
+                        playInput.inputOn(this.currentStep.action);
+                        this.currentStep = this.currentSequence.shift();
+                        if( this.currentStep ) {
+                            console.log("next:",this.currentStep);
+                            this.frames = this.currentStep.frames;
+                        } else {
+                            console.log("end of sequence.");
+                        }
+                    }
+                }
+            } 
+        }
+    }
+}());
 
 var hud = (function() {
 	"use strict";
@@ -323,7 +361,12 @@ var hud = (function() {
                 },
                 {
                     title: "restart objective",
-                    action: function() { manager.restartObjective(); } },
+                    action: function() { manager.restartObjective(); }
+                },
+                {
+                    title: "teach",
+                    action: function() { teacher.test(); } 
+                },
             ];
 
             items.forEach( function(item, index) {
@@ -1492,6 +1535,7 @@ var main = (function () {
             manager.advance();
 			video.update();
             hud.update();
+            teacher.advance();
         },
 		tick: function (elapsedTime) {
             if(DEBUG) {
