@@ -150,7 +150,9 @@ var manager = (function(){
                 return;
             }
             if( this.induceComplete || current.canComplete( this.ball.getLinearVelocity().x ) ) {
+                this.onConcludeObjective(current);
                 this.onCompleteObjective(current);
+                this.nextObjective(current);
                 return;
             }
             if( this.induceRestart ) {
@@ -1332,27 +1334,30 @@ var main = (function () {
     }());
 
     var handleCompleteObjective = function(objective) {
-        playInput.disable();
-        player.reset();
-        ball.reset();
-        manager.nextObjective(objective);
+        // winner statement here
     };
 
     var handleConcludeObjective = function(objective) {
         playInput.disable();
-        player.reset();
-        ball.reset();
         camera.zoomFactorTarget = 1.0;
         camera.setZoom(0.75);
     };
 
     var handleInitiateObjective = function(objective) {
-        if( objective.article ) { player.giveArticle(objective.article); }
-        hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title,1, function() { 
+        player.reset();
+        ball.reset();
+
+        if( objective.article ) {
+            player.giveArticle(objective.article);
+        }
+
+        var runObjective = function() { 
             objective.encodeActions( playInput.getRootAction() );
             playInput.enable();
-        });
+        }
+
+        hud.setTargetVelocity( objective.targetVelocity );
+        hud.announce(objective.title,1, runObjective );
     };
 
 	return {
