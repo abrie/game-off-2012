@@ -1151,17 +1151,23 @@ var player = (function() {
             this.container.addChild(this.skin);
             this.gotoAndPlay("still");
 		},
+        hasArticle: function(name) {
+            return this.articles.some( function(article) {
+                return article.name === name;
+            });
+        },
         giveArticle: function(name) {
-            // need a mechanisim to check if item already exists
-            var article = assets.getAnimation(name); 
-            this.articles.push( article );
-            this.container.addChild(article);
-            this.gotoAndPlay("still"); // maybe celebrate?
+            if( !this.hasArticle(name) ) {
+                var animation = assets.getAnimation(name); 
+                this.articles.push( {name:name, animation:animation} );
+                this.container.addChild(animation);
+                this.gotoAndPlay("still"); // maybe celebrate?
+            }
         },
         gotoAndPlay: function(frame) {
             this.skin.gotoAndPlay(frame);
-            this.articles.forEach(function(skin) {
-                skin.gotoAndPlay(frame);
+            this.articles.forEach(function(article) {
+                article.animation.gotoAndPlay(frame);
             },this);
         },
         reset: function() {
