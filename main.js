@@ -954,8 +954,8 @@ var assets = (function() {
 var playspace = (function() {
 	"use strict";
 
-    var trails = (function (){
-        var markers = [];
+    var blings = (function (){
+        var list = [];
 
         return {
             container: undefined,
@@ -969,7 +969,7 @@ var playspace = (function() {
                 var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
                 this.container.addChild(sprite);
 
-                markers.push( {
+                list.push( {
                     body:fixture.GetBody(),
                     skin:sprite,
                     frames:30,
@@ -978,7 +978,7 @@ var playspace = (function() {
 
             },
             advance: function() {
-                markers.forEach( function(entity, index, array) {
+                list.forEach( function(entity, index, array) {
                     if( entity.frames-- === 0 ) {
                         this.container.removeChild(entity.skin);
                         physics.removeBody( entity.body );
@@ -1022,7 +1022,7 @@ var playspace = (function() {
         playerArticles: [],
         container: new Container,
         initialize: function() {
-            trails.setContainer(this.container);
+            blings.setContainer(this.container);
             this.setScene();
         },
         setScene: function() {
@@ -1048,7 +1048,7 @@ var playspace = (function() {
             this.container.addChild(this.ball.skin);
         },
         addTrail: function(body, message) {
-            trails.addMessage(body, message);
+            blings.addMessage(body, message);
         },
         addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
@@ -1108,7 +1108,7 @@ var playspace = (function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
-            trails.advance();
+            blings.advance();
         },
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
