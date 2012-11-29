@@ -505,7 +505,7 @@ var audio = (function () {
             play: function(frequency) {
                 var now = context.currentTime;
                 envelope.gain.linearRampToValueAtTime(0, now);
-                envelope.gain.linearRampToValueAtTime(0.90, now+1/FPS);
+                envelope.gain.linearRampToValueAtTime(0.1, now+1/FPS);
                 envelope.gain.linearRampToValueAtTime(0, now+2/FPS);
                 oscillator.frequency.value = frequency;
                 oscillator.noteOn(now);
