@@ -146,12 +146,12 @@ var manager = (function(){
             if( current.isConcluded ) {
                 return;
             }
-            if( current.isSuccess( this.ball.getLinearVelocity().x ) ) {
+            if( this.ball.isInPlay && current.isSuccess( this.ball.getLinearVelocity().x ) ) {
                 this.concludeObjective(current);
                 this.onPassedObjective(current);
                 return;
             }           
-            if( current.isFailure( this.ball.getPosition().x ) ) {
+            if( this.ball.isInPlay && current.isFailure( this.ball.getPosition().x ) ) {
                 this.concludeObjective(current);
                 this.onFailedObjective(current);
                 return;
@@ -433,8 +433,11 @@ var hud = (function() {
         var onComplete = undefined;
         var masterChin = undefined;
         var text = undefined;
+        var continueText = undefined;
         var isTeaching = false;
         var lessonTime = 5 * FPS;
+        var paneHeight = 300;
+        var paneWidth = stage.canvas.width;
         container = new createjs.Container;
         container.regX = 0;
         container.regY = 0;
@@ -443,10 +446,14 @@ var hud = (function() {
         masterChin = assets.getAnimation("masterchin");
         masterChin.gotoAndPlay("ready");
         container.addChild(masterChin);
-        text = new createjs.Text("nothing to teach","bold 24px Arial","#FFF");
+        text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
         text.x = 350;
-        text.y = 200;
+        text.y = 225;
         container.addChild(text);
+        continueText = new createjs.Text("press spacebar when ready...", "10px Arial", "#FFF");
+        continueText.x = paneWidth-continueText.getMeasuredWidth()-20;
+        continueText.y = paneHeight-continueText.getMeasuredHeight()-5;
+        container.addChild(continueText);
         stage.addChild(container);
 
         return {
@@ -465,21 +472,18 @@ var hud = (function() {
                 }
                 isTeaching = false;
             },
+            toggle: function() {
+                if( isTeaching ) {
+                    this.close();
+                }
+            },
             advance: function() {
                 if(isTeaching) {
-                    if( container.y >  stage.canvas.height-300 ) {
+                    if( container.y >  stage.canvas.height-paneHeight ) {
                         container.y -= 5;
                     }
-                    else {
-                        if(lessonTime-- === 0) {
-                            this.close();
-                        }
-                    }
-                }
-                else {
-                    if( container.y < stage.canvas.height ) {
+                } else if( container.y < stage.canvas.height ) {
                         container.y += 5;
-                    }
                 }
             },
         }
@@ -505,6 +509,9 @@ var hud = (function() {
         },
         toggleMenu: function() {
             toggleMenu();
+        },
+        toggleTeacher: function() {
+            teacher.toggle();
         },
         flashTeachInput: function(index) {
             teachImages[index-1].text.alpha = 1.0;
@@ -808,6 +815,8 @@ var menuInput = (function () {
         switch(id) {
             case 1: actionDelegate("TOGGLE");
                     break;
+            case 2: actionDelegate("LESSON");
+                    break;
         }
 	}
 
@@ -981,7 +990,7 @@ var input = (function () {
         isInputOn[id] = false;
 	}
 
-    var menuKey = {27:1};
+    var menuKey = {27:1, 32:2};
 	var playKey = {76:1, 75:2, 74:3, 72:4};
 	function onKeyDown(keyCode) {
         if(menuKey[keyCode]) {
@@ -1265,10 +1274,14 @@ var playspace = (function() {
         addPlayer: function(entity) {
             this.player = entity.makePhysical();
             this.container.addChild(this.player.container);
+            this.playerPresent = true;
         },
         addBall: function(entity) {
             this.ball = entity.makePhysical();
             this.container.addChild(this.ball.skin);
+            this.ballPresent = true;
+        },
+        removeBall: function(entity) {
         },
         addBlingMessage: function(body, message) {
             blings.addMessage(body, message);
@@ -1317,14 +1330,14 @@ var playspace = (function() {
             }
         },
         updatePlayer: function() {
-            if( this.player ) {
+            if( this.playerPresent ) {
                 this.player.container.rotation = this.player.body.GetAngle() * (180 / Math.PI);
                 this.player.container.x = this.player.body.GetWorldCenter().x * PPM;
                 this.player.container.y = this.player.body.GetWorldCenter().y * PPM;
             }
         },
         updateBall: function() {
-            if( this.ball ) {
+            if( this.ballPresent ) {
                 this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
                 this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
                 this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
@@ -1463,6 +1476,7 @@ var ball = (function() {
     return {
         skin: undefined,
         body: new DeadBody,
+        isInPlay: false,
         makePhysical: function() {
             this.fixture = physics.createBallFixture(-1.5,1,25,1);
             this.body = this.fixture.GetBody();
@@ -1476,10 +1490,15 @@ var ball = (function() {
         handleBeginContact: function( entity ) {
             if (entity === player) {
                 audio.soundOn(6);
-                playspace.addBlingStar(ball.body);
+                if( this.isInPlay ) {
+                    playspace.addBlingStar(ball.body);
+                }
             }
         },
         handleEndContact: function( entity ) {
+        },
+        setInPlay: function(state) {
+            this.isInPlay = state;
         },
         reset: function() {
             this.body.SetAngularVelocity(0);
@@ -1633,6 +1652,9 @@ var main = (function () {
             case "TOGGLE":
                 hud.toggleMenu();
                 break;
+            case "LESSON":
+                hud.toggleTeacher();
+                break;
             default:
                 console.log("unknown menu action:", action);
                 break;
@@ -1739,7 +1761,7 @@ var main = (function () {
     var handlePassedObjective = function(objective) {
         var gotoNext = function() {
             manager.nextObjective(objective);
-            camera.fix( {x:0,y:3.042} );
+            //camera.fix( {x:0,y:3.042} );
         }
         hud.announce("winner", 2.5, function() {
             if( objective.article ) {
@@ -1755,41 +1777,47 @@ var main = (function () {
     var handleFailedObjective = function(objective) {
         hud.announce("failure", 3.5, function() {
             manager.setObjective(objective);
-            camera.fix( {x:0,y:3.042} );
         });
     }
 
     var handleConcludeObjective = function(objective) {
-        playInput.disable();
+        ball.setInPlay(false);
     };
 
+    var firstLoad = true;
     var handleInitiateObjective = function(objective) {
-        player.reset();
-        ball.reset();
-        playspace.reset();
-        playspace.setFinishLine(objective.finishLine);
-
         var runObjective = function() { 
+            if( firstLoad ) {
+                playspace.addBall(ball);
+                firstLoad = false;
+            }
+            else {
+                ball.reset();
+            }
+            ball.setInPlay(true);
             camera.watch( player );
-            objective.encodeActions( playInput.getRootAction() );
             playInput.enable();
         }
 
         var introduceObjective = function() {
+            camera.fix( {x:0,y:3.042} );
+            playInput.disable();
             player.reset();
-            ball.reset();
             playspace.reset();
             playspace.setFinishLine(objective.finishLine);
             hud.setTargetVelocity( objective.targetVelocity );
-            hud.announce(objective.title, 1, runObjective );
+            hud.announce(objective.title, 2.5, runObjective );
         }
 
         var teachLesson = function() {
+            objective.encodeActions( playInput.getRootAction() );
+            playInput.enable();
             hud.showTeacher(objective.lesson, function() {
                 introduceObjective();
             });
         }
 
+        camera.watch( player );
         teachLesson();
     };
 
@@ -1847,8 +1875,9 @@ var main = (function () {
             createjs.Ticker.addListener(this);
             hud.announce("Push, Chinchilla!",5, function() {
                 playspace.addPlayer( player );
-                playspace.addBall( ball );
-                manager.firstObjective();
+                hud.announce("", 2, function() {
+                    manager.firstObjective();
+                });
             });
 		},
         debugClear: function() {
