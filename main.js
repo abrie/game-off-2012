@@ -1047,10 +1047,33 @@ var playspace = (function() {
     var blings = (function (){
         var list = [];
 
+        var g = new Graphics();
+        g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
+        var starShape = new Shape(g);
+        starShape.regX = 0;
+        starShape.regY = 0;
+
         return {
             container: undefined,
             setContainer: function(container) {
                 this.container = container;
+            },
+            addStar: function(body) {
+                console.log("add star");
+                var origin = body.GetWorldCenter();
+                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+                var sprite = starShape.clone();
+                sprite.alpha = 0;
+                this.container.addChild(sprite);
+
+                list.push( {
+                    body:fixture.GetBody(),
+                    skin:sprite,
+                    frames:30,
+                    fixture:fixture
+                });
+
             },
             addMessage: function(body, message) {
                 var origin = body.GetWorldCenter();
@@ -1157,6 +1180,9 @@ var playspace = (function() {
         },
         addBlingMessage: function(body, message) {
             blings.addMessage(body, message);
+        },
+        addBlingStar: function(body, message) {
+            blings.addStar(body, message);
         },
         addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
@@ -1358,7 +1384,7 @@ var ball = (function() {
         handleBeginContact: function( entity ) {
             if (entity === player) {
                 audio.soundOn(6);
-                playspace.addBlingMessage(ball.body, "push");
+                playspace.addBlingStar(ball.body);
             }
         },
         handleEndContact: function( entity ) {
