@@ -1155,7 +1155,7 @@ var playspace = (function() {
             this.ball = entity.makePhysical();
             this.container.addChild(this.ball.skin);
         },
-        addTrail: function(body, message) {
+        addBlingMessage: function(body, message) {
             blings.addMessage(body, message);
         },
         addStaticBody: function(body,skin,parallax) {
@@ -1358,7 +1358,7 @@ var ball = (function() {
         handleBeginContact: function( entity ) {
             if (entity === player) {
                 audio.soundOn(6);
-                playspace.addTrail(ball.body, "push");
+                playspace.addBlingMessage(ball.body, "push");
             }
         },
         handleEndContact: function( entity ) {
@@ -1557,19 +1557,19 @@ var main = (function () {
                 audio.soundOn(4);
                 player.actionForward();
                 player.gotoAndPlay("jump");
-                playspace.addTrail(player.body, "boing!");
+                playspace.addBlingMessage(player.body, "boing!");
                 break;
             case "FLIGHT":
                 audio.soundOn(5);
                 player.actionFlight();
                 player.gotoAndPlay("fly");
-                playspace.addTrail(player.body, "super!");
+                playspace.addBlingMessage(player.body, "super!");
                 break;
             case "DASH":
                 audio.soundOn(5);
                 player.actionSuperforward();
                 player.gotoAndPlay("fly");
-                playspace.addTrail(player.body, "duper!");
+                playspace.addBlingMessage(player.body, "duper!");
                 break;
             case "STAND":
                 audio.soundOn(4);
