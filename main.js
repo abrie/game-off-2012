@@ -1065,13 +1065,16 @@ var playspace = (function() {
                 fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
                 var sprite = starShape.clone();
                 sprite.alpha = 0;
+                sprite.rotation = body.GetAngle() * (180 / Math.PI);
                 this.container.addChild(sprite);
 
                 list.push( {
                     body:fixture.GetBody(),
                     skin:sprite,
                     frames:30,
-                    fixture:fixture
+                    fixture:fixture,
+                    rotate:true,
+                    velocity:body.GetLinearVelocity().x
                 });
 
             },
@@ -1087,7 +1090,8 @@ var playspace = (function() {
                     body:fixture.GetBody(),
                     skin:sprite,
                     frames:30,
-                    fixture:fixture
+                    fixture:fixture,
+                    rotate:false
                 });
 
             },
@@ -1100,7 +1104,10 @@ var playspace = (function() {
                     }
                     else {
                         var center = entity.body.GetWorldCenter();
-                        entity.skin.rotation = entity.body.GetAngle() * (180 / Math.PI);
+                        if( entity.rotate ) {
+                            entity.skin.skewX += 4*entity.velocity;
+                            entity.skin.rotation += 30-entity.frames;
+                        }
                         entity.skin.x = center.x * PPM;
                         entity.skin.y = center.y * PPM;
                         entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
