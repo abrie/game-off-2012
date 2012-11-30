@@ -22,12 +22,18 @@ var manager = (function(){
 	"use strict";
     var Objective = function(title, targetVelocity, encodeActions, article) {
         this.title = title;
+        this.finishLine = 10;
         this.article = article;
-        this.targetVelocity = targetVelocity;
-        this.encodeActions = encodeActions;
         this.isInitiated = false;
-        this.canComplete = function(measuredVelocity) {
+        this.encodeActions = encodeActions;
+        this.targetVelocity = targetVelocity;
+
+        this.isSuccess = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
+        }
+
+        this.isFailure = function(measuredPosition) {
+            return this.finishLine <= Math.abs(measuredPosition);
         }
     }
 
@@ -150,12 +156,23 @@ var manager = (function(){
                 current.isInitiated = true;
                 return;
             }
-            if( this.induceComplete || current.canComplete( this.ball.getLinearVelocity().x ) ) {
+            if( current.isSuccess( this.ball.getLinearVelocity().x ) ) {
                 this.onConcludeObjective(current);
-                this.onCompleteObjective(current);
+                this.onPassedObjective(current);
                 this.nextObjective(current);
                 return;
+            }           
+            if( current.isFailure( this.ball.getPosition().x ) ) {
+                this.onConcludeObjective(current);
+                this.onFailedObjective(current);
+                this.setObjective(current);
+                return;
             }
+            if( this.induceComplete ) {
+                this.onConcludeObjective(current);
+                this.nextObjective(current);
+                return;
+            }           
             if( this.induceRestart ) {
                 this.onConcludeObjective(current);
                 this.setObjective(current);
@@ -164,6 +181,7 @@ var manager = (function(){
             if( this.induceRollback ) {
                 this.onConcludeObjective(current);
                 this.previousObjective(current);
+                return;
             }
         },
         setPlayer: function(player) {
@@ -1021,6 +1039,8 @@ var playspace = (function() {
     return {
         layers: [],
         markers: [],
+        leftLine: undefined,
+        rightLine: undefined,
         playerArticles: [],
         container: new Container,
         initialize: function() {
@@ -1037,9 +1057,15 @@ var playspace = (function() {
             var leftWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
             this.addStaticBody( leftWallBody, leftWallSkin, 1 );
 
-            var rightWallBody = physics.createStaticBody(world.width/2,0,10,world.height,255);
-            var rightWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
-            this.addStaticBody( rightWallBody, rightWallSkin, 1 );
+            this.leftLine = {};
+            this.leftLine.body = physics.createStaticBody(-world.width/2,0,10,world.height,2);
+            this.leftLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.addStaticBody( this.leftLine.body, this.leftLine.skin, 1 );
+
+            this.rightLine = {};
+            this.rightLine.body = physics.createStaticBody(world.width/2,0,10,world.height,2);
+            this.rightLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
 
             for(var parallax = 3; parallax > 0; parallax-=1) {
                 for(var index=-3; index<3; index++) {
@@ -1070,6 +1096,19 @@ var playspace = (function() {
                 parallax:parallax
             });
             this.container.addChild(skin);
+        },
+        setFinishLine: function(x) {
+            var position = this.leftLine.body.GetWorldCenter();
+            position.x = -x;
+            this.leftLine.body.SetPosition(position);
+            this.leftLine.skin.x = this.leftLine.body.GetWorldCenter().x * PPM;
+            this.leftLine.skin.y = this.leftLine.body.GetWorldCenter().y * PPM;
+
+            position = this.rightLine.body.GetWorldCenter();
+            position.x = -x;
+            this.rightLine.body.SetPosition(position);
+            this.rightLine.skin.x = this.rightLine.body.GetWorldCenter().x * PPM;
+            this.rightLine.skin.y = this.rightLine.body.GetWorldCenter().y * PPM;
         },
         addItem: function(item,skin,layerNumber) {
             var layer = this.getLayer(layerNumber);
@@ -1260,6 +1299,9 @@ var ball = (function() {
         },
         getLinearVelocity: function() {
             return this.body.GetLinearVelocity();
+        },
+        getPosition: function() {
+            return this.body.GetWorldCenter();
         },
         advance: function() {
         }
@@ -1490,9 +1532,13 @@ var main = (function () {
         }
     }());
 
-    var handleCompleteObjective = function(objective) {
-        // winner statement here
+    var handlePassedObjective = function(objective) {
+        console.log("PASSED!");
     };
+
+    var handleFailedObjective = function(objective) {
+        console.log("FAILED");
+    }
 
     var handleConcludeObjective = function(objective) {
         playInput.disable();
@@ -1503,6 +1549,7 @@ var main = (function () {
         player.reset();
         ball.reset();
         playspace.reset();
+        playspace.setFinishLine(objective.finishLine);
 
         if( objective.article ) {
             player.giveArticle(objective.article);
@@ -1550,7 +1597,8 @@ var main = (function () {
             hud.setBall(ball);
 
             manager.initialize();
-            manager.onCompleteObjective = handleCompleteObjective;
+            manager.onPassedObjective = handlePassedObjective;
+            manager.onFailedObjective = handleFailedObjective;
             manager.onInitiateObjective = handleInitiateObjective;
             manager.onConcludeObjective = handleConcludeObjective;
             manager.setPlayer( player );
