@@ -495,11 +495,26 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2                        //
 var physics = (function() {
 	"use strict";
 	var world = undefined;
-    var contactListeners = [];
+    var beginContactEvents = [];
+    var endContactEvents = [];
+    var publishContactEvents = function(queue) {
+        var count = queue.length;
+        for( var index = 0; index < count; index+=2 ) {
+            var a = queue.shift();
+            var b = queue.shift();
+            a.handleBeginContact(b);
+            b.handleBeginContact(a);
+        }
+    }
 	return {
 		advance: function() {
 			world.ClearForces();
 			world.Step(1 / FPS, 10, 10);
+            // world.CreateBody() fails if made in a contact callback 
+            // function, thus contact events are queued and processed
+            // here. More research required when time permits it.....
+            publishContactEvents( beginContactEvents );
+            publishContactEvents( endContactEvents );
 		},
 		initialize: function() {
             var listener = new b2ContactListener;
@@ -513,16 +528,16 @@ var physics = (function() {
             var a = contact.GetFixtureA().GetBody().GetUserData();
             var b = contact.GetFixtureB().GetBody().GetUserData();
             if( a != undefined && b != undefined ) {
-                a.handleBeginContact(b);
-                b.handleBeginContact(a);
+                beginContactEvents.push(a);
+                beginContactEvents.push(b);
             }
         },
         notifyEndContact: function(contact) {
             var a = contact.GetFixtureA().GetBody().GetUserData();
             var b = contact.GetFixtureB().GetBody().GetUserData();
             if( a != undefined && b != undefined ) {
-                a.handleEndContact(b);
-                b.handleEndContact(a);
+                endContactEvents.push(a);
+                endContactEvents.push(b);
             }
         },
         removeBody: function(body) {
@@ -1312,7 +1327,7 @@ var ball = (function() {
 		},
         handleBeginContact: function( entity ) {
             if (entity === player) {
-                console.log("ball touched by player.");
+                playspace.addTrail(ball.body, "push");
             }
         },
         handleEndContact: function( entity ) {
