@@ -385,7 +385,7 @@ var hud = (function() {
     var menu = undefined;
     var toggleMenu = function() {
         if(!menu) {
-            menu = new Container;
+            menu = new createjs.Container;
             menu.regX = stage.canvas.width/2;
             menu.regY = stage.canvas.height/2;
             menu.x = stage.canvas.width/2, menu.y = stage.canvas.height/2;
@@ -435,7 +435,7 @@ var hud = (function() {
         var text = undefined;
         var isTeaching = false;
         var lessonTime = 5 * FPS;
-        container = new Container;
+        container = new createjs.Container;
         container.regX = 0;
         container.regY = 0;
         container.x = 0;
@@ -540,7 +540,7 @@ var hud = (function() {
             stage.update();
         },
         initialize : function(canvas) {
-            stage = new Stage(canvas);
+            stage = new createjs.Stage(canvas);
             stage.autoClear = false;
             announcements = new Announcements(stage);
             teacher = new Teacher(stage);
@@ -1133,9 +1133,9 @@ var playspace = (function() {
     var blings = (function (){
         var list = [];
 
-        var g = new Graphics();
+        var g = new createjs.Graphics();
         g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
-        var starShape = new Shape(g);
+        var starShape = new createjs.Shape(g);
         starShape.regX = 0;
         starShape.regY = 0;
 
@@ -1228,7 +1228,7 @@ var playspace = (function() {
         leftLine: undefined,
         rightLine: undefined,
         playerArticles: [],
-        container: new Container,
+        container: new createjs.Container,
         initialize: function() {
             blings.setContainer(this.container);
             this.setScene();
@@ -1236,21 +1236,21 @@ var playspace = (function() {
         setScene: function() {
             var world = {width:20000, height:1000};
             var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
-            var floorSkin = utility.generateFloorSprite(world.width,10,Graphics.getRGB(255,255,255),10);
+            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),10);
             this.addStaticBody( floorBody, floorSkin, 1 );
 
             var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
-            var leftWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
+            var leftWallSkin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(255,255,255),10);
             this.addStaticBody( leftWallBody, leftWallSkin, 1 );
 
             this.leftLine = {};
             this.leftLine.body = physics.createStaticBody(-world.width/2,0,10,world.height,2);
-            this.leftLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.leftLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
             this.addStaticBody( this.leftLine.body, this.leftLine.skin, 1 );
 
             this.rightLine = {};
             this.rightLine.body = physics.createStaticBody(world.width/2,0,10,world.height,2);
-            this.rightLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.rightLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
             this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
 
             for(var parallax = 3; parallax > 0; parallax-=1) {
@@ -1543,7 +1543,7 @@ var player = (function() {
             return this;
         },
 		initialize: function() {
-            this.container = new Container;
+            this.container = new createjs.Container;
             this.container.regX = 75, this.container.regY = 110;
             this.skin = assets.getAnimation("player");
             this.container.addChild(this.skin);
@@ -1721,7 +1721,7 @@ var main = (function () {
             initialize: function() {
                 this.canvas = document.getElementById("testCanvas");
                 this.context = this.canvas.getContext("2d");
-                this.stage = new Stage(this.canvas);
+                this.stage = new createjs.Stage(this.canvas);
                 this.stage.autoClear = true;
             },
             update: function() {
@@ -1842,9 +1842,9 @@ var main = (function () {
             manager.setPlayer( player );
             manager.setBall( ball );
 
-            Ticker.setFPS(FPS);
-            Ticker.useRAF = true;
-            Ticker.addListener(this);
+            createjs.Ticker.setFPS(FPS);
+            createjs.Ticker.useRAF = true;
+            createjs.Ticker.addListener(this);
             hud.announce("Push, Chinchilla!",5, function() {
                 playspace.addPlayer( player );
                 playspace.addBall( ball );
