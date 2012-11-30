@@ -1,0 +1,39 @@
+BODY, HTML {
+	margin: 			0;
+	padding: 			0;
+	font-family: 		Arial, Verdana, sans-serif;
+	font-size: 			24pt;
+	font-weight:		normal;
+	color: 				black;
+    background: black;
+}
+
+BODY {}
+
+#header {
+	padding:			20px;
+	background-color:	#222;
+}
+
+#screen{
+    width:1000px;
+    border-radius: 5px;
+    background:#ccc;
+    padding:10px;
+    height:500px;
+    position:absolute;
+    margin-top:-250px;
+    margin-left:-500px;
+    top:50%;
+    left:50%;
+    background: rgb(200,200,200);
+}
+
+#play {
+    display: none;
+}
+
+canvas {
+	border: 1px solid white;
+    background: black;
+}
