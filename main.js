@@ -194,10 +194,6 @@ var manager = (function(){
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
-        concludeObjective: function(objective) {
-            objective.isConcluded = true;
-            this.onConcludeObjective(objective);
-        },
         previousObjective: function( objective ) {
             var previous = objectives[ objectives.indexOf(objective)-1 ];
             previous ? this.setObjective(previous) : console.log("no more objectives");
