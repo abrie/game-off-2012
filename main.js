@@ -178,6 +178,10 @@ var manager = (function(){
         setBall: function(ball) {
             this.ball = ball;
         },
+        concludeObjective: function(objective) {
+            objective.isConcluded = true;
+            this.onConcludeObjective(objective);
+        },
         restartObjective: function() {
             this.induceRestart = true;
         },
