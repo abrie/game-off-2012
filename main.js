@@ -1,4 +1,3 @@
-
 var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
@@ -216,7 +215,7 @@ var manager = (function(){
     }
 }());
 
-var teacher = (function(){
+var lesson = (function(){
 	"use strict";
     var sequence = [
         {action:1, frames:5},
@@ -406,7 +405,7 @@ var hud = (function() {
                 },
                 {
                     title: "teach",
-                    action: function() { teacher.test(); } 
+                    action: function() { lesson.test(); } 
                 },
             ];
 
@@ -432,38 +431,54 @@ var hud = (function() {
         var stage = stage;
         var container = undefined;
         var onComplete = undefined;
-        var direction = -1;
+        var masterChin = undefined;
+        var text = undefined;
+        var isTeaching = false;
+        var lessonTime = 5 * FPS;
+        container = new Container;
+        container.regX = 0;
+        container.regY = 0;
+        container.x = 0;
+        container.y = stage.canvas.height;
+        masterChin = assets.getAnimation("masterchin");
+        masterChin.gotoAndPlay("ready");
+        container.addChild(masterChin);
+        text = new createjs.Text("nothing to teach","bold 24px Arial","#FFF");
+        text.x = 350;
+        text.y = 200;
+        container.addChild(text);
+        stage.addChild(container);
+
         return {
             open: function(message, whenComplete) {
-                if(container) {
-                    return;
-                }
-                container = new Container;
-                container.regX = 0;
-                container.regY = 0;
                 container.x = 0;
                 container.y = stage.canvas.height;
                 onComplete = whenComplete;
-                var text = new createjs.Text(message,"bold 16px Arial","#FFF");
-                text.x = 0;
-                text.y = 0;
-                container.addChild(text);
-                stage.addChild(container);
+                masterChin.gotoAndPlay("ready");
+                text.text = message;
+                isTeaching = true;
+                lessonTime = 5 * FPS;
             },
             close: function() {
                 if( onComplete ) {
                     onComplete();
                 }
-                stage.removeChild(container);
-                container = false;
+                isTeaching = false;
             },
             advance: function() {
-                if(container) {
-                    if( container.y >  stage.canvas.height-200 ) {
+                if(isTeaching) {
+                    if( container.y >  stage.canvas.height-300 ) {
                         container.y -= 5;
                     }
                     else {
-                        this.close();
+                        if(lessonTime-- === 0) {
+                            this.close();
+                        }
+                    }
+                }
+                else {
+                    if( container.y < stage.canvas.height ) {
+                        container.y += 5;
                     }
                 }
             },
@@ -1059,6 +1074,14 @@ var assets = (function() {
             frames: {count:2, width:50, height:50,regX:25,regY:25},
             animations: {
                 ready: {frames:[0,1], next:"ready", frequency:2},
+            }
+        },
+        {
+            name: "masterchin",
+            images: ["assets/masterchin.png"],
+            frames: {count:1, width:300, height:300,regX:0,regY:0},
+            animations: {
+                ready: {frames:[0], next:"ready", frequency:1},
             }
         },
         {
@@ -1761,9 +1784,13 @@ var main = (function () {
             hud.announce(objective.title, 1, runObjective );
         }
 
-        teacher.beginLesson(objective.lesson, function() {
-            introduceObjective();
-        });
+        var teachLesson = function() {
+            hud.showTeacher(objective.lesson, function() {
+                introduceObjective();
+            });
+        }
+
+        teachLesson();
     };
 
 	return {
@@ -1849,7 +1876,6 @@ var main = (function () {
             manager.advance();
 			video.update();
             hud.update();
-            teacher.advance();
         },
 		tick: function (elapsedTime) {
             if(DEBUG) {
