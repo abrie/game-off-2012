@@ -1,17 +1,3 @@
-var b2Vec2 = Box2D.Common.Math.b2Vec2
-,   b2AABB = Box2D.Collision.b2AABB
-,	b2BodyDef = Box2D.Dynamics.b2BodyDef
-,	b2Body = Box2D.Dynamics.b2Body
-,	b2FixtureDef = Box2D.Dynamics.b2FixtureDef
-,	b2Fixture = Box2D.Dynamics.b2Fixture
-,	b2World = Box2D.Dynamics.b2World
-,	b2MassData = Box2D.Collision.Shapes.b2MassData
-,	b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
-,	b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
-,	b2DebugDraw = Box2D.Dynamics.b2DebugDraw
-,   b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
-,	b2Math = Box2D.Common.Math.b2Math
-;
 
 var DEBUG = false;
 var FPS = 30;
@@ -488,17 +474,57 @@ var hud = (function() {
     };
 }());
 
+/************************************/
+var b2Vec2 = Box2D.Common.Math.b2Vec2
+,   b2AABB = Box2D.Collision.b2AABB
+,   b2ContactListener = Box2D.Dynamics.b2ContactListener
+,	b2BodyDef = Box2D.Dynamics.b2BodyDef
+,	b2Body = Box2D.Dynamics.b2Body
+,	b2FixtureDef = Box2D.Dynamics.b2FixtureDef
+,	b2Fixture = Box2D.Dynamics.b2Fixture
+,	b2World = Box2D.Dynamics.b2World
+,	b2MassData = Box2D.Collision.Shapes.b2MassData
+,	b2PolygonShape = Box2D.Collision.Shapes.b2PolygonShape
+,	b2CircleShape = Box2D.Collision.Shapes.b2CircleShape
+,	b2DebugDraw = Box2D.Dynamics.b2DebugDraw
+,   b2MouseJointDef =  Box2D.Dynamics.Joints.b2MouseJointDef
+,	b2Math = Box2D.Common.Math.b2Math
+;
+/***********************************/
+
 var physics = (function() {
 	"use strict";
 	var world = undefined;
+    var contactListeners = [];
 	return {
 		advance: function() {
 			world.ClearForces();
 			world.Step(1 / FPS, 10, 10);
 		},
 		initialize: function() {
+            var listener = new b2ContactListener;
+            listener.BeginContact = this.notifyBeginContact;
+            listener.EndContact = this.notifyEndContact;
+
 			world = new b2World( new b2Vec2(0, 10),  true );
+            world.SetContactListener(listener);
 		},
+        notifyBeginContact: function(contact) {
+            var a = contact.GetFixtureA().GetBody().GetUserData();
+            var b = contact.GetFixtureB().GetBody().GetUserData();
+            if( a != undefined && b != undefined ) {
+                a.handleBeginContact(b);
+                b.handleBeginContact(a);
+            }
+        },
+        notifyEndContact: function(contact) {
+            var a = contact.GetFixtureA().GetBody().GetUserData();
+            var b = contact.GetFixtureB().GetBody().GetUserData();
+            if( a != undefined && b != undefined ) {
+                a.handleEndContact(b);
+                b.handleEndContact(a);
+            }
+        },
         removeBody: function(body) {
             world.DestroyBody(body);
         },
@@ -1277,12 +1303,23 @@ var ball = (function() {
         makePhysical: function() {
             this.fixture = physics.createBallFixture(-1.5,1,25,1);
             this.body = this.fixture.GetBody();
+            this.body.SetUserData(this);
             return this;
         },
 		initialize: function() {
             this.skin = assets.getAnimation("ball");
             this.skin.gotoAndPlay("ready");
 		},
+        handleBeginContact: function( entity ) {
+            if (entity === player) {
+                console.log("ball touched by player.");
+            }
+        },
+        handleEndContact: function( entity ) {
+            if( entity === player) {
+                console.log("ball no longer touched by player.");
+            }
+        },
         reset: function() {
             this.body.SetAngularVelocity(0);
 
@@ -1341,6 +1378,7 @@ var player = (function() {
         makePhysical: function() {
             this.fixture = physics.createPlayerFixture(0,0,75,75,1);
             this.body = this.fixture.GetBody();
+            this.body.SetUserData(this);
             return this;
         },
 		initialize: function() {
@@ -1350,6 +1388,12 @@ var player = (function() {
             this.container.addChild(this.skin);
             this.gotoAndPlay("still");
 		},
+        handleBeginContact: function( entity ) {
+            // nothing happens
+        },
+        handleEndContact: function( entity ) {
+            // nothing happens
+        },
         hasArticle: function(name) {
             return this.articles.some( function(article) {
                 return article.name === name;
