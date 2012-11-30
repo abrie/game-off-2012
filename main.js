@@ -687,6 +687,7 @@ var audio = (function () {
     frequency[3]= 392.00; 
     frequency[4]= 440.00; 
     frequency[5]= 349.23; 
+    frequency[6]= 223.08
 
 	return {
 		initialize: function() {
@@ -1356,6 +1357,7 @@ var ball = (function() {
 		},
         handleBeginContact: function( entity ) {
             if (entity === player) {
+                audio.soundOn(6);
                 playspace.addTrail(ball.body, "push");
             }
         },
