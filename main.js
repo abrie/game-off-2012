@@ -284,7 +284,9 @@ var hud = (function() {
                         return false;
                     }
                     else {
-                        sprite.alpha = ++count > this.frames - this.frames/4 ? sprite.alpha-0.025 : sprite.alpha;
+                        if(++count > this.frames - this.frames/4) {
+                            sprite.alpha -= 0.025;
+                        }
                         return true;
                     }
                 }
