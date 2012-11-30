@@ -11,6 +11,7 @@ var manager = (function(){
         this.finishLine = 10;
         this.article = article;
         this.isInitiated = false;
+        this.isConcluded = false;
         this.encodeActions = encodeActions;
         this.targetVelocity = targetVelocity;
 
@@ -142,25 +143,26 @@ var manager = (function(){
                 current.isInitiated = true;
                 return;
             }
+            if( current.isConcluded ) {
+                return;
+            }
             if( current.isSuccess( this.ball.getLinearVelocity().x ) ) {
-                this.onConcludeObjective(current);
+                this.concludeObjective(current);
                 this.onPassedObjective(current);
-                this.nextObjective(current);
                 return;
             }           
             if( current.isFailure( this.ball.getPosition().x ) ) {
-                this.onConcludeObjective(current);
+                this.concludeObjective(current);
                 this.onFailedObjective(current);
-                this.setObjective(current);
                 return;
             }
             if( this.induceComplete ) {
-                this.onConcludeObjective(current);
+                this.concludeObjective(current);
                 this.nextObjective(current);
                 return;
             }           
             if( this.induceRestart ) {
-                this.onConcludeObjective(current);
+                this.concludeObjective(current);
                 this.setObjective(current);
                 return;
             }
@@ -188,6 +190,10 @@ var manager = (function(){
         firstObjective: function() {
             this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
+        concludeObjective: function(objective) {
+            objective.isConcluded = true;
+            this.onConcludeObjective(objective);
+        },
         previousObjective: function( objective ) {
             var previous = objectives[ objectives.indexOf(objective)-1 ];
             previous ? this.setObjective(previous) : console.log("no more objectives");
@@ -199,11 +205,11 @@ var manager = (function(){
         setObjective: function(newObjective) {
             current = newObjective;
             current.isInitiated = false;
+            current.isConcluded = false;
             this.induceRestart = false;
             this.induceComplete = false;
             this.induceRollback = false;
-        }
-        ,
+        },
         initialize: function() {
         }
     }
@@ -1059,7 +1065,6 @@ var playspace = (function() {
                 this.container = container;
             },
             addStar: function(body) {
-                console.log("add star");
                 var origin = body.GetWorldCenter();
                 var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
                 fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
@@ -1652,16 +1657,21 @@ var main = (function () {
     }());
 
     var handlePassedObjective = function(objective) {
-        console.log("PASSED!");
+        hud.announce("winner", 3.5, function() {
+            manager.nextObjective(objective);
+            camera.fix( {x:0,y:3.042} );
+        });
     };
 
     var handleFailedObjective = function(objective) {
-        console.log("FAILED");
+        hud.announce("failure", 3.5, function() {
+            manager.setObjective(objective);
+            camera.fix( {x:0,y:3.042} );
+        });
     }
 
     var handleConcludeObjective = function(objective) {
         playInput.disable();
-        camera.fix( {x:0,y:3.042} );
     };
 
     var handleInitiateObjective = function(objective) {
