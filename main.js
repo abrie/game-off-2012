@@ -462,7 +462,7 @@ var hud = (function() {
 
             drawMeter( 40, "#555", 30, 1 );
             drawMeter( 30, gradient, 10, normalizedBallVelocity );
-            drawMeter( 40,"#B7FA00", 10, normalizedPlayerVelocity );
+            drawMeter( 40, "#B7FA00", 10, normalizedPlayerVelocity );
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
             drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
 
