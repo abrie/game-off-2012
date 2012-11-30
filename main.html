@@ -5,6 +5,7 @@
 	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
 	<link href="styles.css" rel="stylesheet" type="text/css" />
 	<script> var createjs = window; </script>
+    <script type="text/javascript" src="lib/jquery-1.8.3.min.js"></script>
 	<script type="text/javascript" src="lib/easeljs-0.5.0.min.js"></script>
 	<script type="text/javascript" src="lib/BoxBlurFilter.js"></script>
 	<script type="text/javascript" src="lib/Box2dWeb-2.1.a.3.min.js"></script>
@@ -12,12 +13,16 @@
 </head>
 	
 <body onload="main.preload();">
-	<header id="header">
-		just playin'
-	</header>
-
-	<div id="canvasHolder">
-		<canvas id="testCanvas" width="1000" height="500"></canvas>
+	<div id="screen">
+        You are a lowly rodent: a three legged chinchilla. Cruel Fate has robbed
+        you of your quadrapedal mobility. And Nature has denied you the memory
+        of how it came to be forsaken. Nonetheless, you maintain an unquenchable 
+        thirst for fame and fortune by any means. And that means you must become 
+        an expert at Velocity Ball. The object is to push the ball, and push the
+        ball. Get it up to speed before it rolls out of bounds. If you succeed then
+        you'll progress to the next level. Maybe you'll learn a thing or two along
+        the way. So --- push, Chinchilla! Push until you've pulled yourself up!
+        <button id="play">play</button>
 	</div>
 </body>
 </html>

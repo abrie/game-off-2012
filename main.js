@@ -80,7 +80,7 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
-        }),
+        },"cape"),
         new Objective("haz a cape", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -102,7 +102,7 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
-        },"cape"),
+        }),
         new Objective("want of wings", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -1659,9 +1659,18 @@ var main = (function () {
     }());
 
     var handlePassedObjective = function(objective) {
-        hud.announce("winner", 3.5, function() {
+        var gotoNext = function() {
             manager.nextObjective(objective);
             camera.fix( {x:0,y:3.042} );
+        }
+
+        hud.announce("winner", 2.5, function() {
+            if( objective.article ) {
+                player.giveArticle(objective.article);
+                hud.announce("awarded: "+objective.article, 3.5, gotoNext);
+            } else {
+                gotoNext();
+            }
         });
     };
 
@@ -1682,10 +1691,6 @@ var main = (function () {
         playspace.reset();
         playspace.setFinishLine(objective.finishLine);
 
-        if( objective.article ) {
-            player.giveArticle(objective.article);
-        }
-
         var runObjective = function() { 
             camera.watch( player );
             objective.encodeActions( playInput.getRootAction() );
@@ -1698,10 +1703,20 @@ var main = (function () {
 
 	return {
         preload: function() {
-            assets.onReady = this.start.bind(this);
+            assets.onReady = this.preloaded.bind(this);
             assets.initialize();
         },
+        preloaded: function () {
+            var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
+            var onClick = function() {
+                $("#screen").html(canvasHTML);
+                this.start();
+            };
+            $("#play").click($.proxy( onClick, this ));
+            $("button#play").show();
+        },
 		start: function () {
+            $("#intro").hide();
             video.initialize();
             audio.initialize();
             input.initialize();
