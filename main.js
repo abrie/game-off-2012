@@ -495,51 +495,80 @@ var b2Vec2 = Box2D.Common.Math.b2Vec2                        //
 var physics = (function() {
 	"use strict";
 	var world = undefined;
-    var beginContactEvents = [];
-    var endContactEvents = [];
-    var publishContactEvents = function(queue) {
-        var count = queue.length;
-        for( var index = 0; index < count; index+=2 ) {
-            var a = queue.shift();
-            var b = queue.shift();
-            a.handleBeginContact(b);
-            b.handleBeginContact(a);
-        }
-    }
-	return {
-		advance: function() {
-			world.ClearForces();
-			world.Step(1 / FPS, 10, 10);
-            // world.CreateBody() fails if made in a contact callback 
-            // function, thus contact events are queued and processed
-            // here. More research required when time permits it.....
-            publishContactEvents( beginContactEvents );
-            publishContactEvents( endContactEvents );
-		},
-		initialize: function() {
-            var listener = new b2ContactListener;
-            listener.BeginContact = this.notifyBeginContact;
-            listener.EndContact = this.notifyEndContact;
 
-			world = new b2World( new b2Vec2(0, 10),  true );
-            world.SetContactListener(listener);
-		},
-        notifyBeginContact: function(contact) {
+    // world.CreateBody() fails if made in a contact callback 
+    // function, thus contact events are queued and processed
+    // here. More research required when time permits it.....
+    var contactEventQueue = (function(){
+        var beginContactEvents = [];
+        var dequeueBeginContactEvents = function() {
+            var count = beginContactEvents.length;
+            for( var index = 0; index < count; index+=2 ) {
+                var a = beginContactEvents.shift();
+                var b = beginContactEvents.shift();
+                a.handleBeginContact(b);
+                b.handleBeginContact(a);
+            }
+        }
+
+        var endContactEvents = [];
+        var dequeueEndContactEvents = function() {
+            var count = endContactEvents.length;
+            for( var index = 0; index < count; index+=2 ) {
+                var a = endContactEvents.shift();
+                var b = endContactEvents.shift();
+                a.handleEndContact(b);
+                b.handleEndContact(a);
+            }
+        }
+
+        var dequeueContactEvents = function() {
+            dequeueBeginContactEvents();
+            dequeueEndContactEvents();
+        }
+
+        var enqueueBeginContact = function(contact) {
             var a = contact.GetFixtureA().GetBody().GetUserData();
             var b = contact.GetFixtureB().GetBody().GetUserData();
             if( a != undefined && b != undefined ) {
                 beginContactEvents.push(a);
                 beginContactEvents.push(b);
             }
-        },
-        notifyEndContact: function(contact) {
+        }
+
+        var enqueueEndContact = function(contact) {
             var a = contact.GetFixtureA().GetBody().GetUserData();
             var b = contact.GetFixtureB().GetBody().GetUserData();
             if( a != undefined && b != undefined ) {
                 endContactEvents.push(a);
                 endContactEvents.push(b);
             }
-        },
+        }
+
+        var listener = new b2ContactListener;
+        listener.BeginContact = enqueueBeginContact;
+        listener.EndContact = enqueueEndContact;
+
+        return {
+            listener: listener,
+            onBeginContact: enqueueBeginContact,
+            onEndContact: enqueueEndContact,
+            dequeue: dequeueContactEvents,
+        }
+
+    }());
+
+	return {
+		advance: function() {
+			world.ClearForces();
+			world.Step(1 / FPS, 10, 10);
+            contactEventQueue.dequeue();
+		},
+		initialize: function() {
+
+			world = new b2World( new b2Vec2(0, 10),  true );
+            world.SetContactListener(contactEventQueue.listener);
+		},
         removeBody: function(body) {
             world.DestroyBody(body);
         },
@@ -1331,9 +1360,6 @@ var ball = (function() {
             }
         },
         handleEndContact: function( entity ) {
-            if( entity === player) {
-                console.log("ball no longer touched by player.");
-            }
         },
         reset: function() {
             this.body.SetAngularVelocity(0);
@@ -1620,7 +1646,7 @@ var main = (function () {
         }
 
         hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title,1, runObjective );
+        hud.announce(objective.title, 1, runObjective );
     };
 
 	return {
