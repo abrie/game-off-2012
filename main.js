@@ -1450,7 +1450,6 @@ var main = (function () {
                 audio.soundOn(3);
                 player.actionStep(-1,1.5);
                 player.gotoAndPlay("step3");
-                playspace.addTrail(player.body, "nice");
 				break;
 			case "BWD_STEP1": 
                 audio.soundOn(3);
