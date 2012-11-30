@@ -6,8 +6,9 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, targetVelocity, encodeActions, article) {
+    var Objective = function(title, lesson,targetVelocity, encodeActions, article) {
         this.title = title;
+        this.lesson = lesson;
         this.finishLine = 10;
         this.article = article;
         this.isInitiated = false;
@@ -25,19 +26,19 @@ var manager = (function(){
     }
 
     var objectives = [
-        new Objective("baby step", 0.2, function(root) {
+        new Objective("baby step", "Press L to take a step.", 0.2, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("little steps", 0.40, function(root) {
+        new Objective("little steps", "L then K to take two steps",  0.40, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("all three legs", 0.80, function(root) {
+        new Objective("all three legs", "L-K-J for a little run", 0.80, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -45,7 +46,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("boing!", 1.0, function(root) {
+        new Objective("boing!", "L-K-J x 3 gives 1 BOING!", 1.0, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -60,7 +61,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("reverse", 1.3, function(root) {
+        new Objective("reverse", "J-K-L backtracks a bit", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -81,7 +82,7 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         },"cape"),
-        new Objective("haz a cape", 1.3, function(root) {
+        new Objective("haz a cape", "L-K-J x 3 + J gives the BOING some oomph", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -103,7 +104,7 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("want of wings", 1.3, function(root) {
+        new Objective("want of wings", "L-K-J x 3 + J x 2 gives a CAPE DASH", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -233,6 +234,9 @@ var teacher = (function(){
             this.currentSequence = sequence.slice(0);
             this.currentStep = this.currentSequence.shift();
             this.frames = 1;
+        },
+        beginLesson: function(message, onComplete) {
+            hud.showTeacher(message, onComplete);
         },
         advance: function() {
             if( !this.currentStep ) {
@@ -424,8 +428,51 @@ var hud = (function() {
         }
     }
 
+    var Teacher = function(stage) {
+        var stage = stage;
+        var container = undefined;
+        var onComplete = undefined;
+        var direction = -1;
+        return {
+            open: function(message, whenComplete) {
+                if(container) {
+                    return;
+                }
+                container = new Container;
+                container.regX = 0;
+                container.regY = 0;
+                container.x = 0;
+                container.y = stage.canvas.height;
+                onComplete = whenComplete;
+                var text = new createjs.Text(message,"bold 16px Arial","#FFF");
+                text.x = 0;
+                text.y = 0;
+                container.addChild(text);
+                stage.addChild(container);
+            },
+            close: function() {
+                if( onComplete ) {
+                    onComplete();
+                }
+                stage.removeChild(container);
+                container = false;
+            },
+            advance: function() {
+                if(container) {
+                    if( container.y >  stage.canvas.height-200 ) {
+                        container.y -= 5;
+                    }
+                    else {
+                        this.close();
+                    }
+                }
+            },
+        }
+    };
+
     var stage = undefined;
     var announcements = undefined;
+    var teacher = undefined;
     var context = undefined;
     return {
         maximumVelocity: 5.0,
@@ -446,6 +493,12 @@ var hud = (function() {
         },
         flashTeachInput: function(index) {
             teachImages[index-1].text.alpha = 1.0;
+        },
+        showTeacher: function(message, onComplete) {
+            teacher.open( message, onComplete );
+        },
+        hideTeacher: function() {
+            teacher.close();
         },
         update: function() {
             var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
@@ -468,12 +521,14 @@ var hud = (function() {
 
             announcements.update();
             advanceTeachImages();
+            teacher.advance();
             stage.update();
         },
         initialize : function(canvas) {
             stage = new Stage(canvas);
             stage.autoClear = false;
             announcements = new Announcements(stage);
+            teacher = new Teacher(stage);
             context = canvas.getContext("2d");
             initializeGradients();
             initializeDebugText();
@@ -1663,12 +1718,12 @@ var main = (function () {
             manager.nextObjective(objective);
             camera.fix( {x:0,y:3.042} );
         }
-
         hud.announce("winner", 2.5, function() {
             if( objective.article ) {
                 player.giveArticle(objective.article);
                 hud.announce("awarded: "+objective.article, 3.5, gotoNext);
-            } else {
+            }
+            else {
                 gotoNext();
             }
         });
@@ -1697,8 +1752,18 @@ var main = (function () {
             playInput.enable();
         }
 
-        hud.setTargetVelocity( objective.targetVelocity );
-        hud.announce(objective.title, 1, runObjective );
+        var introduceObjective = function() {
+            player.reset();
+            ball.reset();
+            playspace.reset();
+            playspace.setFinishLine(objective.finishLine);
+            hud.setTargetVelocity( objective.targetVelocity );
+            hud.announce(objective.title, 1, runObjective );
+        }
+
+        teacher.beginLesson(objective.lesson, function() {
+            introduceObjective();
+        });
     };
 
 	return {
