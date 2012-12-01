@@ -37,7 +37,7 @@ var manager = (function(){
                 lesson:"You must learn to walk. Press L to take a few steps.",
                 targetVelocity:0.20,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -51,7 +51,7 @@ var manager = (function(){
                 lesson:"Use two feet, L then K. Watch the velocitometer as you do so.",
                 targetVelocity:0.30,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -65,7 +65,7 @@ var manager = (function(){
                 lesson:"Use three feet by pressing L-K-J.",
                 targetVelocity:0.50,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -81,7 +81,7 @@ var manager = (function(){
                 lesson:"The outer white arc indicates the winning condition.",
                 targetVelocity:0.50,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -97,7 +97,7 @@ var manager = (function(){
                 lesson:"L-K-J x 3 will give you 1 BOING",
                 targetVelocity:1.0,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -121,7 +121,7 @@ var manager = (function(){
                 article: "cape",
                 targetVelocity:1.2,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -150,7 +150,7 @@ var manager = (function(){
                 lesson:"L-K-J x 3 + J will give OOMPH to a BOING",
                 targetVelocity:1.3,
                 initialVelocity:0,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -180,7 +180,7 @@ var manager = (function(){
                 lesson:"L-K-J x 3 then J x 2 gives a CAPE DASH",
                 targetVelocity:1.5,
                 initialVelocity:-0.25,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
@@ -211,7 +211,7 @@ var manager = (function(){
                 lesson:"You are a natural, but challenges grow.",
                 targetVelocity:1.5,
                 initialVelocity:-0.55,
-                restitution:0
+                initialRestitution:0
             },
             function(root) {
             root.clear();
