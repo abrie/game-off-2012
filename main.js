@@ -5,7 +5,7 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, praise, lesson, targetVelocity, encodeActions, article) {
+    var Objective = function(title, praise, lesson, targetVelocity, velocity, restitution, encodeActions, article) {
         this.title = title;
         this.praise = praise;
         this.lesson = lesson;
@@ -16,6 +16,8 @@ var manager = (function(){
         this.hasBeenAttempted = false;
         this.encodeActions = encodeActions;
         this.targetVelocity = targetVelocity;
+        this.initialVelocity = velocity;
+        this.initialRestitution = restitution;
 
         this.isSuccess = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
@@ -27,19 +29,25 @@ var manager = (function(){
     }
 
     var objectives = [
-        new Objective("The One Foot Race", "", "You must learn to walk. Press L to take a step.", 0.2, function(root) {
+        new Objective("The One Foot Race", "", "You must learn to walk. Press L to take a few steps.",
+            0.20, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Two Left Feet", "", "Use two feet. L then K. Watch the velocitometer as you do so.",  0.40, function(root) {
+        new Objective("Two Left Feet", "", "Use two feet, L then K. Watch the velocitometer as you do so.",
+            0.30, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("All Three Legs", "Very good, but you know little.", "Go L-K-J and move a little faster.", 0.80, function(root) {
+        new Objective("All Three Legs", "Very good, but you know little.", "Use three feet by pressing L-K-J.",
+            0.50, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -47,7 +55,19 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Use The Boing", "You are ready for a combo.", "L-K-J x 3 will give you 1 BOING", 1.0, function(root) {
+        new Objective("Velocities and Gauges", "Velocitometer:", "The outer white arc indicates the winning condition.",
+            0.50, 0, 0,
+            function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("Use The Boing", "You are ready for a combo.", "L-K-J x 3 will give you 1 BOING",
+            1.0,0,0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -62,7 +82,9 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Reversing is Useless", "Excellent, but can you move backwards?", "J-K-L goes the other way.", 1.3, function(root) {
+        new Objective("Reversing is Useless", "Excellent, but can you move backwards?", "J-K-L goes the other way.",
+            1.2,0,0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -83,7 +105,9 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         },"cape"),
-        new Objective("haz a cape", "Very stylish, young one.", "L-K-J x 3 + J will give OOMPH to a BOING", 1.3, function(root) {
+        new Objective("haz a cape", "Very stylish, wounded one.", "L-K-J x 3 + J will give OOMPH to a BOING",
+            1.3, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -105,7 +129,9 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("want of wings", "You must use your fashion.", "L-K-J x 3 then J x 2 gives a CAPE DASH", 1.3, function(root) {
+        new Objective("want of wings", "You must use your fashion.", "L-K-J x 3 then J x 2 gives a CAPE DASH",
+            1.5, -0.25, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -1512,16 +1538,20 @@ var ball = (function() {
         setInPlay: function(state) {
             this.isInPlay = state;
         },
-        reset: function() {
+        reset: function(v,r) {
             this.body.SetAngularVelocity(0);
 
             var position = this.body.GetWorldCenter();
-            position.x = -1, position.y = 1;
+            position.x = -1;
+            position.y = 0;
             this.body.SetPositionAndAngle(position,0);
 
             var velocity = this.body.GetLinearVelocity();
-            velocity.x = 0, velocity.y = 0;
+            velocity.x = v;
+            velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
+
+            this.fixture.SetRestitution(r);
             this.body.SetAwake(true);
 
             this.skin.gotoAndPlay("ready");
@@ -1803,7 +1833,7 @@ var main = (function () {
                 firstLoad = false;
             }
             else {
-                ball.reset();
+                ball.reset(objective.initialVelocity, objective.initialRestitution);
             }
             ball.setInPlay(true);
             camera.watch( player );
