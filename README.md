@@ -1,10 +1,10 @@
 ## GitHub Game Off 2012 : Push, Chinchilla!
 
 You are a lowly rodent: a three legged chinchilla. Cruel Fate has robbed
-you of your quadrapedal mobility. Nature has denied you the memory
+you of your quadrupedal mobility. Nature has denied you the memory
 of how the limb came to be forsaken. Nonetheless, you maintain an unquenchable 
 thirst for fame and fortune by any means. And that means you must become 
-an expert at Velocity Ball. The object is to push the ball, and not pass the
+a Master of Velocity Ball. The object is to push the ball, and not pass the
 ball. Get it up to speed before it rolls out of bounds. If you succeed then
 you'll progress to the next level. Maybe you'll learn a thing or two along
 the way. Push, Chinchilla! Push until you've pulled yourself up.
