@@ -33,6 +33,7 @@ var manager = (function(){
     var objectives = [
         new Objective({
                 title:"The One Foot Race",
+                trophy:"the ugly stick",
                 praise:"", 
                 lesson:"You must learn to walk. Press L to take a few steps.",
                 targetVelocity:0.20,
@@ -47,6 +48,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"Two Left Feet",
+                trophy:"a featureless twig",
                 praise:"",
                 lesson:"Use two feet, L then K. Watch the velocitometer as you do so.",
                 targetVelocity:0.30,
@@ -61,6 +63,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"All Three Legs",
+                trophy:"a spring of basil",
                 praise:"Very good, but you know little.",
                 lesson:"Use three feet by pressing L-K-J.",
                 targetVelocity:0.50,
@@ -77,6 +80,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"Velocities and Gauges",
+                trophy:"an apple branch",
                 praise:"Velocitometer:",
                 lesson:"The outer white arc indicates the winning condition.",
                 targetVelocity:0.50,
@@ -93,6 +97,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"Use The Boing",
+                trophy:"a pear branch",
                 praise:"You are ready for a combo.",
                 lesson:"L-K-J x 3 will give you 1 BOING",
                 targetVelocity:1.0,
@@ -116,6 +121,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"Reversing is Useless",
+                trophy:"a branch from blueberry bush",
                 praise:"Excellent, but can you move backwards?",
                 lesson:"J-K-L goes the other way.",
                 article: "cape",
@@ -146,6 +152,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"haz a cape",
+                trophy:"a pomegranate branch",
                 praise:"Very stylish, wounded one.",
                 lesson:"L-K-J x 3 + J will give OOMPH to a BOING",
                 targetVelocity:1.3,
@@ -176,6 +183,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"want of wings",
+                trophy:"a cedar branch",
                 praise:"You must use your fashion.",
                 lesson:"L-K-J x 3 then J x 2 gives a CAPE DASH",
                 targetVelocity:1.5,
@@ -207,6 +215,7 @@ var manager = (function(){
         }),
         new Objective({
                 title:"tough getting going",
+                trophy:"a spruce branch",
                 praise:"",
                 lesson:"You are a natural, but challenges grow.",
                 targetVelocity:1.5,
@@ -1152,9 +1161,11 @@ var assets = (function() {
         {
             name: "background",
             images: ["assets/trees.png"],
-            frames: {count:1, width:600, height:250,regX:600/2,regY:250/2},
+            frames: {count:3, width:600, height:250,regX:600/2,regY:250/2},
             animations: {
                 a: {frames:[0], next:false, frequency:1},
+                b: {frames:[1], next:false, frequency:1},
+                c: {frames:[2], next:false, frequency:1},
             }
          }
     ];
@@ -1270,7 +1281,7 @@ var playspace = (function() {
     var utility = (function (){
         return {
             generateFloorSprite: function( width, height, fill, depth ) {
-                var blurFilter = new createjs.BoxBlurFilter(depth, depth, 1);
+                var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
                 var margins = blurFilter.getBounds();
                 var g = new createjs.Graphics();
                 g.setStrokeStyle(1);
@@ -1299,38 +1310,45 @@ var playspace = (function() {
             this.setScene();
         },
         setScene: function() {
-            var world = {width:20000, height:1000};
-            var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
-            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),10);
-            this.addStaticBody( floorBody, floorSkin, 1 );
-
-            var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
-            var leftWallSkin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(255,255,255),10);
-            this.addStaticBody( leftWallBody, leftWallSkin, 1 );
-
-            this.leftLine = {};
-            this.leftLine.body = physics.createStaticBody(-world.width/2,0,10,world.height,2);
-            this.leftLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
-            this.addStaticBody( this.leftLine.body, this.leftLine.skin, 1 );
-
-            this.rightLine = {};
-            this.rightLine.body = physics.createStaticBody(world.width/2,0,10,world.height,2);
-            this.rightLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
-            this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
-
             var stack = [];
+            var backgroundAnimationNames = ["b","c","a"];
             for(var parallax = 4; parallax > 1; parallax-=1) {
                 for(var index=-3; index<3; index++) {
-                    var body = physics.createStaticBody(index*650,500-250/2-(parallax-1)*3,600,250,2);
+                    var offset = Math.floor( Math.random() * 3 ) * 123;
+                    console.log(offset);
+                    var body = physics.createStaticBody(index*650+offset,475-250/2-25*(4-parallax),600,250,2);
                     var skin = assets.getAnimation("background").clone();
-                    skin.gotoAndPlay( "a" );
-                    stack.push( [body,skin,1/parallax] );
+                    skin.gotoAndPlay( backgroundAnimationNames[parallax-2] );
+                    stack.push( [body,skin,1/(parallax*parallax)] );
                 }
             }
 
             stack.reverse().forEach( function(i) {
                 this.addStaticBody( i[0], i[1], i[2]);
             },this);
+
+            var world = {width:20000, height:1000};
+            var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
+            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),12);
+            this.addStaticBody( floorBody, floorSkin, 1 );
+
+            var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
+            var leftWallSkin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(255,255,255),12);
+            this.addStaticBody( leftWallBody, leftWallSkin, 1 );
+
+            var rightWallBody = physics.createStaticBody(world.width/2,0,10,world.height,255);
+            var rightWallSkin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(255,255,255),12);
+            this.addStaticBody( rightWallBody, rightWallSkin, 1 );
+
+            this.leftLine = {};
+            this.leftLine.body = physics.createStaticBody(-world.width/2,0,10,world.height,2);
+            this.leftLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(240,240,75),10);
+            this.addStaticBody( this.leftLine.body, this.leftLine.skin, 1 );
+
+            this.rightLine = {};
+            this.rightLine.body = physics.createStaticBody(world.width/2,0,10,world.height,2);
+            this.rightLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(240,240,75),10);
+            this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
         },
         addPlayer: function(entity) {
             this.player = entity.makePhysical();
