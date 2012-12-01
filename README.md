@@ -7,7 +7,7 @@ thirst for fame and fortune by any means. And that means you must become
 an expert at Velocity Ball. The object is to push the ball, and not pass the
 ball. Get it up to speed before it rolls out of bounds. If you succeed then
 you'll progress to the next level. Maybe you'll learn a thing or two along
-the way. So --- push, Chinchilla! Push until you've pulled yourself up.
+the way. Push, Chinchilla! Push until you've pulled yourself up.
 
 Player controls are "L,K, and J" pressed in various combinations.
 
@@ -15,4 +15,4 @@ Player controls are "L,K, and J" pressed in various combinations.
 
 Written in Javascript, with [JQuery](http://jquery.com) and [EaselJS](http://www.createjs.com/#!/EaselJS) dependencies. A browser is required to play, preferably one which uses an modern version of Webkit. Safari and Chrome were used for testing.
 
-![](https://github.com/abrie/github-gameoff-2012/raw/master/screenshot.png)
+![](https://raw.github.com/abrie/game-off-2012/master/screenshot.png)
