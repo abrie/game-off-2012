@@ -33,7 +33,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Two Left Feet", "", "Use two feet. L, then K. L, then K...",  0.40, function(root) {
+        new Objective("Two Left Feet", "", "Use two feet. L then K. Watch the velocitometer as you do so.",  0.40, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
@@ -320,17 +320,18 @@ var hud = (function() {
         return Math.min( value/range, 1);
     }          
 
+    var meter = {x:80,y:80};
     var drawMeter = function(radius, stroke, width, level) {
         context.strokeStyle=stroke;
         context.lineWidth=width;
         context.beginPath();
-        context.arc(100,100,radius,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
+        context.arc(meter.x,meter.y,radius,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
         context.stroke();
     };
 
     var drawNeedle = function(radius, stroke, width, level) {
         context.save();
-        context.translate(100,100);
+        context.translate(meter.x,meter.y);
         context.rotate(Math.PI-0.25+level*(Math.PI+0.5));
         context.strokeStyle=stroke;
         context.lineWidth=width;
@@ -341,8 +342,15 @@ var hud = (function() {
         context.restore();
     };
 
-    var drawDebug = function(text) {
-        debugText.text = text;
+    var labelText = undefined;
+    var initializeLabelText = function() {
+        labelText = new createjs.Text("velocitometer", "bold 16px Arial","#AAA");
+        labelText.regX = labelText.getMeasuredWidth()/2;
+        labelText.regY = labelText.getMeasuredHeight()/2;
+        labelText.x = meter.x;
+        labelText.y = meter.y+25;
+        labelText.skewX = 10;
+        stage.addChild(labelText);
     }
 
     var gradient = undefined;
@@ -378,14 +386,6 @@ var hud = (function() {
         });
     }
     
-    var debugText = undefined;
-    var initializeDebugText = function() {
-        debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
-        debugText.x = 10;
-        debugText.y = 10;
-        stage.addChild(debugText);
-    }
-
     var menu = undefined;
     var toggleMenu = function() {
         if(!menu) {
@@ -547,10 +547,12 @@ var hud = (function() {
 
             var playerPosition = this.player.body.GetWorldCenter();
             var ballPosition = this.ball.body.GetWorldCenter();
-            drawDebug(  "bv:"+ballVelocity.toFixed(3)+
-                        "pv:"+playerVelocity.toFixed(3)+
-                        "p:("+playerPosition.x.toFixed(3)+","+playerPosition.y.toFixed(3)+")");
-
+            /*
+            labelText.text = "bv:"+ballVelocity.toFixed(3)+
+                             "pv:"+playerVelocity.toFixed(3)+
+                             "p:("+playerPosition.x.toFixed(3)+",
+                             "+playerPosition.y.toFixed(3)+")");
+            */
             announcements.update();
             advanceTeachImages();
             teacher.advance();
@@ -563,7 +565,7 @@ var hud = (function() {
             teacher = new Teacher(stage);
             context = canvas.getContext("2d");
             initializeGradients();
-            initializeDebugText();
+            initializeLabelText();
             initializeTeachImages();
         }
     };
