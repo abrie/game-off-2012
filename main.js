@@ -5,19 +5,19 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, praise, lesson, targetVelocity, velocity, restitution, encodeActions, article) {
-        this.title = title;
-        this.praise = praise;
-        this.lesson = lesson;
-        this.finishLine = 10;
-        this.article = article;
+    var Objective = function(params, encodeActions) {
+        this.title = params.title ? params.title : "untitled";
+        this.praise = params.praise ? params.praise : "";
+        this.lesson = params.lesson ? params.lesson : "";
+        this.finishLine = params.finishLine ? params.finishLine : 10;
+        this.article = params.article ? params.article : false;
         this.isInitiated = false;
         this.isConcluded = false;
         this.hasBeenAttempted = false;
         this.encodeActions = encodeActions;
-        this.targetVelocity = targetVelocity;
-        this.initialVelocity = velocity;
-        this.initialRestitution = restitution;
+        this.targetVelocity = params.targetVelocity ? params.targetVelocity : 0;
+        this.initialVelocity = params.initialVelocity ? params.initialVelocity : 0;
+        this.initialRestitution = params.restitution ? params.restitution : 0;
 
         this.isSuccess = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
@@ -31,24 +31,42 @@ var manager = (function(){
     }
 
     var objectives = [
-        new Objective("The One Foot Race", "", "You must learn to walk. Press L to take a few steps.",
-            0.20, 0, 0,
+        new Objective({
+                title:"The One Foot Race",
+                praise:"", 
+                lesson:"You must learn to walk. Press L to take a few steps.",
+                targetVelocity:0.20,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Two Left Feet", "", "Use two feet, L then K. Watch the velocitometer as you do so.",
-            0.30, 0, 0,
+        new Objective({
+                title:"Two Left Feet",
+                praise:"",
+                lesson:"Use two feet, L then K. Watch the velocitometer as you do so.",
+                targetVelocity:0.30,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("All Three Legs", "Very good, but you know little.", "Use three feet by pressing L-K-J.",
-            0.50, 0, 0,
+        new Objective({
+                title:"All Three Legs",
+                praise:"Very good, but you know little.",
+                lesson:"Use three feet by pressing L-K-J.",
+                targetVelocity:0.50,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -57,8 +75,14 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Velocities and Gauges", "Velocitometer:", "The outer white arc indicates the winning condition.",
-            0.50, 0, 0,
+        new Objective({
+                title:"Velocities and Gauges",
+                praise:"Velocitometer:",
+                lesson:"The outer white arc indicates the winning condition.",
+                targetVelocity:0.50,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -67,8 +91,14 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Use The Boing", "You are ready for a combo.", "L-K-J x 3 will give you 1 BOING",
-            1.0,0,0,
+        new Objective({
+                title:"Use The Boing",
+                praise:"You are ready for a combo.",
+                lesson:"L-K-J x 3 will give you 1 BOING",
+                targetVelocity:1.0,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -84,8 +114,15 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("Reversing is Useless", "Excellent, but can you move backwards?", "J-K-L goes the other way.",
-            1.2,0,0,
+        new Objective({
+                title:"Reversing is Useless",
+                praise:"Excellent, but can you move backwards?",
+                lesson:"J-K-L goes the other way.",
+                article: "cape",
+                targetVelocity:1.2,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -106,9 +143,15 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
-        },"cape"),
-        new Objective("haz a cape", "Very stylish, wounded one.", "L-K-J x 3 + J will give OOMPH to a BOING",
-            1.3, 0, 0,
+        }),
+        new Objective({
+                title:"haz a cape",
+                praise:"Very stylish, wounded one.",
+                lesson:"L-K-J x 3 + J will give OOMPH to a BOING",
+                targetVelocity:1.3,
+                initialVelocity:0,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -131,8 +174,14 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("want of wings", "You must use your fashion.", "L-K-J x 3 then J x 2 gives a CAPE DASH",
-            1.5, -0.25, 0,
+        new Objective({
+                title:"want of wings",
+                praise:"You must use your fashion.",
+                lesson:"L-K-J x 3 then J x 2 gives a CAPE DASH",
+                targetVelocity:1.5,
+                initialVelocity:-0.25,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -156,8 +205,14 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("tough getting going", "", "You are a natural, but challenges grow.",
-            1.5, -0.55, 0,
+        new Objective({
+                title:"tough getting going",
+                praise:"",
+                lesson:"You are a natural, but challenges grow.",
+                targetVelocity:1.5,
+                initialVelocity:-0.55,
+                restitution:0
+            },
             function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
@@ -235,6 +290,9 @@ var manager = (function(){
         setBall: function(ball) {
             this.ball = ball;
         },
+        gameOver: function() {
+            this.onAllObjectivesComplete();
+        },
         concludeObjective: function(objective) {
             objective.isConcluded = true;
             this.onConcludeObjective(objective);
@@ -257,7 +315,7 @@ var manager = (function(){
         },
         nextObjective: function( objective ) {
             var next = objectives[ objectives.indexOf(objective)+1 ];
-            next ? this.setObjective(next) : console.log("no more objectives");
+            next ? this.setObjective(next) : this.gameOver();
         },
         setObjective: function(newObjective) {
             current = newObjective;
@@ -1830,6 +1888,10 @@ var main = (function () {
         }
     }());
 
+    var handleCompletedAll = function() {
+        hud.showTeacher("That's all for now. Your prize is carpal tunnel syndrome.");
+    };
+
     var handlePassedObjective = function(objective) {
         var gotoNext = function() {
             manager.nextObjective(objective);
@@ -1849,7 +1911,7 @@ var main = (function () {
         var playerPosition = Math.abs(this.player.getPosition().x); 
         var ballPosition = Math.abs(this.ball.getPosition().x);
         var overTaken =  playerPosition > ballPosition;
-        var reason = overTaken ? "foul!" : "fail!";
+        var reason = overTaken ? "foul" : "fail";
         hud.announce(reason, 3.5, function() {
             manager.setObjective(objective);
         });
@@ -1947,6 +2009,7 @@ var main = (function () {
             manager.onFailedObjective = handleFailedObjective;
             manager.onInitiateObjective = handleInitiateObjective;
             manager.onConcludeObjective = handleConcludeObjective;
+            manager.onAllObjectivesComplete = handleCompletedAll;
             manager.setPlayer( player );
             manager.setBall( ball );
 
