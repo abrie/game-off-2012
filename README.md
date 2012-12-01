@@ -16,4 +16,6 @@ Player controls are "L,K, and J" pressed in various combinations.
 
 Written in Javascript, with [JQuery](http://jquery.com) and [EaselJS](http://www.createjs.com/#!/EaselJS) dependencies. A browser is required to play, preferably one which uses an modern version of Webkit. Safari and Chrome were used for testing.
 
+## Screenshot
+
 ![](https://raw.github.com/abrie/game-off-2012/master/screenshot.png)
