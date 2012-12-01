@@ -1911,7 +1911,6 @@ var main = (function () {
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
             var onClick = function() {
-                $("#play").html("starting...");
                 $("#screen").html(canvasHTML);
                 this.start();
             };
