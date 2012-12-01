@@ -1144,9 +1144,9 @@ var assets = (function() {
         {
             name: "masterchin",
             images: ["assets/masterchin.png"],
-            frames: {count:1, width:300, height:300,regX:0,regY:0},
+            frames: {count:4, width:300, height:300,regX:0,regY:0},
             animations: {
-                ready: {frames:[0], next:"ready", frequency:1},
+                ready: {frames:[0,1,2,3], next:true, frequency:1},
             }
         },
         {
