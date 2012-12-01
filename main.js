@@ -5,13 +5,15 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, lesson,targetVelocity, encodeActions, article) {
+    var Objective = function(title, praise, lesson, targetVelocity, encodeActions, article) {
         this.title = title;
+        this.praise = praise;
         this.lesson = lesson;
         this.finishLine = 10;
         this.article = article;
         this.isInitiated = false;
         this.isConcluded = false;
+        this.hasBeenAttempted = false;
         this.encodeActions = encodeActions;
         this.targetVelocity = targetVelocity;
 
@@ -25,19 +27,19 @@ var manager = (function(){
     }
 
     var objectives = [
-        new Objective("baby step", "Press L to take a step.", 0.2, function(root) {
+        new Objective("The One Foot Race", "", "You must learn to walk. Press L to take a step.", 0.2, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("little steps", "L then K to take two steps",  0.40, function(root) {
+        new Objective("Two Left Feet", "", "Use two feet. L, then K. L, then K...",  0.40, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("all three legs", "L-K-J for a little run", 0.80, function(root) {
+        new Objective("All Three Legs", "Very good, but you know little.", "Go L-K-J and move a little faster.", 0.80, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -45,7 +47,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("boing!", "L-K-J x 3 gives 1 BOING!", 1.0, function(root) {
+        new Objective("Use The Boing", "You are ready for a combo.", "L-K-J x 3 will give you 1 BOING", 1.0, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -60,7 +62,7 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("reverse", "J-K-L backtracks a bit", 1.3, function(root) {
+        new Objective("Reversing is Useless", "Excellent, but can you move backwards?", "J-K-L goes the other way.", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -81,7 +83,7 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         },"cape"),
-        new Objective("haz a cape", "L-K-J x 3 + J gives the BOING some oomph", 1.3, function(root) {
+        new Objective("haz a cape", "Very stylish, young one.", "L-K-J x 3 + J will give OOMPH to a BOING", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -103,7 +105,7 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("want of wings", "L-K-J x 3 + J x 2 gives a CAPE DASH", 1.3, function(root) {
+        new Objective("want of wings", "You must use your fashion.", "L-K-J x 3 then J x 2 gives a CAPE DASH", 1.3, function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -149,11 +151,13 @@ var manager = (function(){
             if( this.ball.isInPlay && current.isSuccess( this.ball.getLinearVelocity().x ) ) {
                 this.concludeObjective(current);
                 this.onPassedObjective(current);
+                current.hasBeenAttempted = true;
                 return;
             }           
             if( this.ball.isInPlay && current.isFailure( this.ball.getPosition().x ) ) {
                 this.concludeObjective(current);
                 this.onFailedObjective(current);
+                current.hasBeenAttempted = true;
                 return;
             }
             if( this.induceComplete ) {
@@ -449,7 +453,7 @@ var hud = (function() {
         masterChin.gotoAndPlay("ready");
         container.addChild(masterChin);
         text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
-        text.x = 350;
+        text.x = 0;
         text.y = 225;
         container.addChild(text);
         continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
@@ -467,6 +471,8 @@ var hud = (function() {
                 onComplete = whenComplete;
                 masterChin.gotoAndPlay("ready");
                 text.text = message;
+                text.x = paneWidth - 300 - text.getMeasuredWidth() - 10;
+                text.y = 225;
                 isTeaching = true;
                 lessonTime = 5 * FPS;
             },
@@ -1765,9 +1771,8 @@ var main = (function () {
     var handlePassedObjective = function(objective) {
         var gotoNext = function() {
             manager.nextObjective(objective);
-            //camera.fix( {x:0,y:3.042} );
         }
-        hud.announce("winner", 2.5, function() {
+        hud.announce("success", 2.5, function() {
             if( objective.article ) {
                 player.giveArticle(objective.article);
                 hud.announce("awarded: "+objective.article, 3.5, gotoNext);
@@ -1801,6 +1806,7 @@ var main = (function () {
             ball.setInPlay(true);
             camera.watch( player );
             playInput.enable();
+            hud.announce("GO!", 1);
         }
 
         var introduceObjective = function() {
@@ -1816,7 +1822,11 @@ var main = (function () {
         var teachLesson = function() {
             objective.encodeActions( playInput.getRootAction() );
             playInput.enable();
-            hud.showTeacher(objective.lesson, function() {
+            var message = objective.lesson;
+            if( !objective.hasBeenAttempted ) {
+                message = objective.praise + " " + message;
+            }
+            hud.showTeacher(message, function() {
                 introduceObjective();
             });
         }
