@@ -1911,11 +1911,12 @@ var main = (function () {
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
             var onClick = function() {
+                $("#play").html("starting...");
                 $("#screen").html(canvasHTML);
                 this.start();
             };
             $("#play").click($.proxy( onClick, this ));
-            $("button#play").show();
+            $("#play").addClass("ready").html("click here to play.");
         },
 		start: function () {
             $("#intro").hide();
