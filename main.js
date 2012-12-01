@@ -155,6 +155,31 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
+        }),
+        new Objective("tough getting going", "", "You are a natural, but challenges grow.",
+            1.5, -0.55, 0,
+            function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD", {expiration:30, recovery:5})
+                .add(3, "FLIGHT", {expiration:25, recovery:5})
+                .add(3, "DASH", {expiration:5, recovery:5});
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
         })
     ];
 
