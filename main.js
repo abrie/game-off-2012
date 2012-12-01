@@ -330,46 +330,6 @@ var manager = (function(){
     }
 }());
 
-var lesson = (function(){
-	"use strict";
-    var sequence = [
-        {action:1, frames:5},
-        {action:2, frames:5},
-        {action:3, frames:5},
-        {action:1, frames:5},
-        {action:2, frames:5},
-        {action:3, frames:5},
-        {action:1, frames:5},
-        {action:2, frames:5},
-        {action:3, frames:5},
-    ]
-    return {
-        test: function() {
-            this.currentSequence = sequence.slice(0);
-            this.currentStep = this.currentSequence.shift();
-            this.frames = 1;
-        },
-        beginLesson: function(message, onComplete) {
-            hud.showTeacher(message, onComplete);
-        },
-        advance: function() {
-            if( !this.currentStep ) {
-                return;
-            }
-            if( this.frames > 0 ) {
-                if( --this.frames === 0 ) {
-                    playInput.inputOn(this.currentStep.action);
-                    hud.flashTeachInput(this.currentStep.action);
-                    this.currentStep = this.currentSequence.shift();
-                    if( this.currentStep ) {
-                        this.frames = this.currentStep.frames;
-                    } 
-                }
-            }
-        }
-    }
-}());
-
 var hud = (function() {
 	"use strict";
     var Announcements = function(container) {
@@ -471,32 +431,6 @@ var hud = (function() {
         gradient.addColorStop(1, '#FA9600');
     }
 
-    var teachImages = [
-        {text:new createjs.Text("L","bold 32px Arial","FFF"), alpha:1},
-        {text:new createjs.Text("K","bold 32px Arial","FFF"), alpha:1},
-        {text:new createjs.Text("J","bold 32px Arial","FFF"), alpha:1},
-        {text:new createjs.Text("H","bold 32px Arial","FFF"), alpha:1}
-    ]
-
-    var initializeTeachImages = function() {
-        teachImages.forEach( function(image,index) {
-            image.text.regX = image.text.getMeasuredWidth()/2;
-            image.text.regY = image.text.getMeasuredWidth()/2;
-            image.text.y = stage.canvas.height-image.text.getMeasuredHeight();
-            image.text.x = stage.canvas.width-(index+1)*32;
-            image.text.alpha = 0;
-            stage.addChild(image.text);
-        });
-    }
-
-    var advanceTeachImages = function() {
-        teachImages.forEach( function(image,index) {
-            if(image.text.alpha > 0) {
-                image.text.alpha -= 0.1;
-            }
-        });
-    }
-    
     var menu = undefined;
     var toggleMenu = function() {
         if(!menu) {
@@ -517,10 +451,6 @@ var hud = (function() {
                 {
                     title: "restart objective",
                     action: function() { manager.restartObjective(); }
-                },
-                {
-                    title: "teach",
-                    action: function() { lesson.test(); } 
                 },
             ];
 
@@ -553,27 +483,32 @@ var hud = (function() {
         var lessonTime = 5 * FPS;
         var paneHeight = 300;
         var paneWidth = stage.canvas.width;
-        container = new createjs.Container;
-        container.regX = 0;
-        container.regY = 0;
-        container.x = 0;
-        container.y = stage.canvas.height;
-        masterChin = assets.getAnimation("masterchin");
-        masterChin.regX = 300;
-        masterChin.x = stage.canvas.width;
-        masterChin.gotoAndPlay("ready");
-        container.addChild(masterChin);
-        text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
-        text.x = 0;
-        text.y = 225;
-        container.addChild(text);
-        continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
-        continueText.regX = continueText.getMeasuredWidth()/2;
-        continueText.regY = continueText.getMeasuredHeight()/2;
-        continueText.x = paneWidth/2;
-        continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
-        container.addChild(continueText);
-        stage.addChild(container);
+
+        var initialize = function() {
+            container = new createjs.Container;
+            container.regX = 0;
+            container.regY = 0;
+            container.x = 0;
+            container.y = stage.canvas.height;
+            masterChin = assets.getAnimation("masterchin");
+            masterChin.regX = 300;
+            masterChin.x = stage.canvas.width;
+            masterChin.gotoAndPlay("ready");
+            container.addChild(masterChin);
+            text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
+            text.x = 0;
+            text.y = 225;
+            container.addChild(text);
+            continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
+            continueText.regX = continueText.getMeasuredWidth()/2;
+            continueText.regY = continueText.getMeasuredHeight()/2;
+            continueText.x = paneWidth/2;
+            continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
+            container.addChild(continueText);
+            stage.addChild(container);
+        }
+
+        initialize();
 
         return {
             open: function(message, whenComplete) {
@@ -665,7 +600,6 @@ var hud = (function() {
                              "+playerPosition.y.toFixed(3)+")");
             */
             announcements.update();
-            advanceTeachImages();
             teacher.advance();
             stage.update();
         },
@@ -677,7 +611,6 @@ var hud = (function() {
             context = canvas.getContext("2d");
             initializeGradients();
             initializeLabelText();
-            initializeTeachImages();
         }
     };
 }());
