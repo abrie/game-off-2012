@@ -23,8 +23,10 @@ var manager = (function(){
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
 
-        this.isFailure = function(measuredPosition) {
-            return this.finishLine <= Math.abs(measuredPosition);
+        this.isFailure = function(ball, player) {
+            var overTaken = Math.abs(player) > Math.abs(ball);
+            var boundsOut = this.finishLine <= Math.abs(ball);
+            return overTaken || boundsOut;
         }
     }
 
@@ -180,7 +182,7 @@ var manager = (function(){
                 current.hasBeenAttempted = true;
                 return;
             }           
-            if( this.ball.isInPlay && current.isFailure( this.ball.getPosition().x ) ) {
+            if( this.ball.isInPlay && current.isFailure( this.ball.getPosition().x, this.player.getPosition().x ) ) {
                 this.concludeObjective(current);
                 this.onFailedObjective(current);
                 current.hasBeenAttempted = true;
@@ -571,8 +573,8 @@ var hud = (function() {
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
             drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
 
-            var playerPosition = this.player.body.GetWorldCenter();
-            var ballPosition = this.ball.body.GetWorldCenter();
+            var playerPosition = this.player.getPosition();
+            var ballPosition = this.ball.getPosition();
             /*
             labelText.text = "bv:"+ballVelocity.toFixed(3)+
                              "pv:"+playerVelocity.toFixed(3)+
@@ -1651,6 +1653,9 @@ var player = (function() {
         getLinearVelocity: function() {
             return this.body.GetLinearVelocity();
         },
+        getPosition: function() {
+            return this.body.GetWorldCenter();
+        },
 		advance: function() {
             var angle = this.body.GetAngle();
             if( angle > this.maximumRotation ) {
@@ -1816,7 +1821,11 @@ var main = (function () {
     };
 
     var handleFailedObjective = function(objective) {
-        hud.announce("failure", 3.5, function() {
+        var playerPosition = Math.abs(this.player.getPosition().x); 
+        var ballPosition = Math.abs(this.ball.getPosition().x);
+        var overTaken =  playerPosition > ballPosition;
+        var reason = overTaken ? "foul!" : "fail!";
+        hud.announce(reason, 3.5, function() {
             manager.setObjective(objective);
         });
     }
