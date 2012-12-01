@@ -24,7 +24,7 @@ var manager = (function(){
         }
 
         this.isFailure = function(ball, player) {
-            var overTaken = Math.abs(player) > Math.abs(ball);
+            var overTaken = player < ball;
             var boundsOut = this.finishLine <= Math.abs(ball);
             return overTaken || boundsOut;
         }
@@ -1621,7 +1621,7 @@ var player = (function() {
             this.body.SetLinearVelocity(velocity);
         },
         makePhysical: function() {
-            this.fixture = physics.createPlayerFixture(0,0,75,75,1);
+            this.fixture = physics.createPlayerFixture(1,0,75,75,1);
             this.body = this.fixture.GetBody();
             this.body.SetUserData(this);
             return this;
@@ -1662,11 +1662,13 @@ var player = (function() {
             this.body.SetAngularVelocity(0);
 
             var position = this.body.GetWorldCenter();
-            position.x = 0, position.y = 0;
+            position.x = 1;
+            position.y = 0;
             this.body.SetPositionAndAngle(position,0);
 
             var velocity = this.body.GetLinearVelocity();
-            velocity.x = 0, velocity.y = 0;
+            velocity.x = 0;
+            velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
             this.body.SetAwake(true);
             this.gotoAndPlay("still");
@@ -1846,9 +1848,9 @@ var main = (function () {
     };
 
     var handleFailedObjective = function(objective) {
-        var playerPosition = Math.abs(this.player.getPosition().x); 
-        var ballPosition = Math.abs(this.ball.getPosition().x);
-        var overTaken =  playerPosition > ballPosition;
+        var playerPosition = this.player.getPosition().x; 
+        var ballPosition = this.ball.getPosition().x;
+        var overTaken =  playerPosition < ballPosition;
         var reason = overTaken ? "foul" : "fail";
         hud.announce(reason, 3.5, function() {
             manager.setObjective(objective);
