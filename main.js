@@ -1178,6 +1178,7 @@ var assets = (function() {
 
     return {
         onReady: undefined,
+        onUpdate: undefined,
         animations: {},
         initialize: function() {
             spriteSheetDescriptions.forEach( function(description) {
@@ -1198,8 +1199,10 @@ var assets = (function() {
         process: function(description, spriteSheet) {
 			var animation = new createjs.BitmapAnimation(spriteSheet);
             this.animations[description.name] = animation;
+            var expected = spriteSheetDescriptions.length;
             loadCount += 1;
-            if( loadCount == spriteSheetDescriptions.length ) {
+            this.onUpdate(loadCount, expected); 
+            if( loadCount == expected ) {
                 this.onReady();
             }
         },
@@ -1930,7 +1933,11 @@ var main = (function () {
 	return {
         preload: function() {
             assets.onReady = this.preloaded.bind(this);
+            assets.onUpdate = this.loading.bind(this);
             assets.initialize();
+        },
+        loading: function(loaded,expected) {
+            $("#play").html("Loaded "+loaded/expected*100+"%");
         },
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
@@ -1942,7 +1949,6 @@ var main = (function () {
             $("#play").addClass("ready").html("click here to play.");
         },
 		start: function () {
-            $("#intro").hide();
             video.initialize();
             audio.initialize();
             input.initialize();
