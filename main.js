@@ -1318,14 +1318,19 @@ var playspace = (function() {
             this.rightLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
             this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
 
-            for(var parallax = 3; parallax > 0; parallax-=1) {
+            var stack = [];
+            for(var parallax = 4; parallax > 1; parallax-=1) {
                 for(var index=-3; index<3; index++) {
                     var body = physics.createStaticBody(index*650,500-250/2-(parallax-1)*3,600,250,2);
                     var skin = assets.getAnimation("background").clone();
                     skin.gotoAndPlay( "a" );
-                    this.addStaticBody( body, skin, 1/parallax);
+                    stack.push( [body,skin,1/parallax] );
                 }
             }
+
+            stack.reverse().forEach( function(i) {
+                this.addStaticBody( i[0], i[1], i[2]);
+            },this);
         },
         addPlayer: function(entity) {
             this.player = entity.makePhysical();
