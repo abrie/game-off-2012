@@ -517,7 +517,7 @@ var hud = (function() {
         }
 
         initialize();
-
+        var alphaTable = [0.85,0.90,0.50,0.77,0.95];
         return {
             open: function(message, whenComplete) {
                 container.x = 0;
@@ -547,6 +547,8 @@ var hud = (function() {
                     if( container.y >  stage.canvas.height-paneHeight ) {
                         container.y -= 5;
                     }
+                    var index = Math.floor( Math.random()* 5 );
+                    masterChin.alpha = alphaTable[index];
                 } else if( container.y < stage.canvas.height ) {
                         container.y += 5;
                   }
