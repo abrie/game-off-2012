@@ -502,7 +502,6 @@ var hud = (function() {
             masterChin = assets.getAnimation("masterchin");
             masterChin.regX = 300;
             masterChin.x = stage.canvas.width;
-            masterChin.gotoAndPlay("ready");
             container.addChild(masterChin);
             text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
             text.x = 0;
@@ -524,7 +523,7 @@ var hud = (function() {
                 container.x = 0;
                 container.y = stage.canvas.height;
                 onComplete = whenComplete;
-                masterChin.gotoAndPlay("ready");
+                masterChin.gotoAndPlay("up");
                 text.text = message;
                 text.x = paneWidth - 300 - text.getMeasuredWidth() - 10;
                 text.y = 225;
@@ -539,6 +538,7 @@ var hud = (function() {
             },
             toggle: function() {
                 if( isTeaching ) {
+                    masterChin.gotoAndPlay("down");
                     this.close();
                 }
             },
@@ -549,7 +549,10 @@ var hud = (function() {
                     }
                 } else if( container.y < stage.canvas.height ) {
                         container.y += 5;
-                }
+                  }
+                  else {
+                      masterChin.stop();
+                  }
             },
         }
     };
@@ -1155,7 +1158,8 @@ var assets = (function() {
             images: ["assets/masterchin.png"],
             frames: {count:4, width:300, height:300,regX:0,regY:0},
             animations: {
-                ready: {frames:[0,1,2,3], next:true, frequency:1},
+                up: {frames:[0,1,2,3], next:true, frequency:2},
+                down: {frames:[3,2,1,0], next:true, frequency:1},
             }
         },
         {
