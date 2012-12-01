@@ -5,39 +5,51 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 
 var manager = (function(){
 	"use strict";
-    var Objective = function(title, lesson,targetVelocity, encodeActions, article) {
+    var Objective = function(title, praise, lesson, targetVelocity, velocity, restitution, encodeActions, article) {
         this.title = title;
+        this.praise = praise;
         this.lesson = lesson;
         this.finishLine = 10;
         this.article = article;
         this.isInitiated = false;
         this.isConcluded = false;
+        this.hasBeenAttempted = false;
         this.encodeActions = encodeActions;
         this.targetVelocity = targetVelocity;
+        this.initialVelocity = velocity;
+        this.initialRestitution = restitution;
 
         this.isSuccess = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
         }
 
-        this.isFailure = function(measuredPosition) {
-            return this.finishLine <= Math.abs(measuredPosition);
+        this.isFailure = function(ball, player) {
+            var overTaken = Math.abs(player) > Math.abs(ball);
+            var boundsOut = this.finishLine <= Math.abs(ball);
+            return overTaken || boundsOut;
         }
     }
 
     var objectives = [
-        new Objective("baby step", "Press L to take a step.", 0.2, function(root) {
+        new Objective("The One Foot Race", "", "You must learn to walk. Press L to take a few steps.",
+            0.20, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("little steps", "L then K to take two steps",  0.40, function(root) {
+        new Objective("Two Left Feet", "", "Use two feet, L then K. Watch the velocitometer as you do so.",
+            0.30, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("all three legs", "L-K-J for a little run", 0.80, function(root) {
+        new Objective("All Three Legs", "Very good, but you know little.", "Use three feet by pressing L-K-J.",
+            0.50, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -45,7 +57,19 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("boing!", "L-K-J x 3 gives 1 BOING!", 1.0, function(root) {
+        new Objective("Velocities and Gauges", "Velocitometer:", "The outer white arc indicates the winning condition.",
+            0.50, 0, 0,
+            function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
+            root.add(4, "STAND")
+                .add(4, "LAND");
+        }),
+        new Objective("Use The Boing", "You are ready for a combo.", "L-K-J x 3 will give you 1 BOING",
+            1.0,0,0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -60,7 +84,9 @@ var manager = (function(){
             root.add(4, "STAND")
                 .add(4, "LAND");
         }),
-        new Objective("reverse", "J-K-L backtracks a bit", 1.3, function(root) {
+        new Objective("Reversing is Useless", "Excellent, but can you move backwards?", "J-K-L goes the other way.",
+            1.2,0,0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -81,7 +107,9 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         },"cape"),
-        new Objective("haz a cape", "L-K-J x 3 + J gives the BOING some oomph", 1.3, function(root) {
+        new Objective("haz a cape", "Very stylish, wounded one.", "L-K-J x 3 + J will give OOMPH to a BOING",
+            1.3, 0, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -103,7 +131,9 @@ var manager = (function(){
                 .add(3, "USE")
                 .loop( root.seek([4]));
         }),
-        new Objective("want of wings", "L-K-J x 3 + J x 2 gives a CAPE DASH", 1.3, function(root) {
+        new Objective("want of wings", "You must use your fashion.", "L-K-J x 3 then J x 2 gives a CAPE DASH",
+            1.5, -0.25, 0,
+            function(root) {
             root.clear();
             root.add(1, "FWD_STEP1")
                 .add(2, "FWD_STEP2")
@@ -146,14 +176,16 @@ var manager = (function(){
             if( current.isConcluded ) {
                 return;
             }
-            if( current.isSuccess( this.ball.getLinearVelocity().x ) ) {
+            if( this.ball.isInPlay && current.isSuccess( this.ball.getLinearVelocity().x ) ) {
                 this.concludeObjective(current);
                 this.onPassedObjective(current);
+                current.hasBeenAttempted = true;
                 return;
             }           
-            if( current.isFailure( this.ball.getPosition().x ) ) {
+            if( this.ball.isInPlay && current.isFailure( this.ball.getPosition().x, this.player.getPosition().x ) ) {
                 this.concludeObjective(current);
                 this.onFailedObjective(current);
+                current.hasBeenAttempted = true;
                 return;
             }
             if( this.induceComplete ) {
@@ -316,17 +348,18 @@ var hud = (function() {
         return Math.min( value/range, 1);
     }          
 
+    var meter = {x:80,y:80};
     var drawMeter = function(radius, stroke, width, level) {
         context.strokeStyle=stroke;
         context.lineWidth=width;
         context.beginPath();
-        context.arc(100,100,radius,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
+        context.arc(meter.x,meter.y,radius,Math.PI-0.25,Math.PI-0.25+level*(Math.PI+0.5),false);
         context.stroke();
     };
 
     var drawNeedle = function(radius, stroke, width, level) {
         context.save();
-        context.translate(100,100);
+        context.translate(meter.x,meter.y);
         context.rotate(Math.PI-0.25+level*(Math.PI+0.5));
         context.strokeStyle=stroke;
         context.lineWidth=width;
@@ -337,8 +370,15 @@ var hud = (function() {
         context.restore();
     };
 
-    var drawDebug = function(text) {
-        debugText.text = text;
+    var labelText = undefined;
+    var initializeLabelText = function() {
+        labelText = new createjs.Text("velocitometer", "bold 16px Arial","#AAA");
+        labelText.regX = labelText.getMeasuredWidth()/2;
+        labelText.regY = labelText.getMeasuredHeight()/2;
+        labelText.x = meter.x;
+        labelText.y = meter.y+25;
+        labelText.skewX = 10;
+        stage.addChild(labelText);
     }
 
     var gradient = undefined;
@@ -374,18 +414,10 @@ var hud = (function() {
         });
     }
     
-    var debugText = undefined;
-    var initializeDebugText = function() {
-        debugText = new createjs.Text(0,"bold 16px Arial","#FFF");
-        debugText.x = 10;
-        debugText.y = 10;
-        stage.addChild(debugText);
-    }
-
     var menu = undefined;
     var toggleMenu = function() {
         if(!menu) {
-            menu = new Container;
+            menu = new createjs.Container;
             menu.regX = stage.canvas.width/2;
             menu.regY = stage.canvas.height/2;
             menu.x = stage.canvas.width/2, menu.y = stage.canvas.height/2;
@@ -433,20 +465,31 @@ var hud = (function() {
         var onComplete = undefined;
         var masterChin = undefined;
         var text = undefined;
+        var continueText = undefined;
         var isTeaching = false;
         var lessonTime = 5 * FPS;
-        container = new Container;
+        var paneHeight = 300;
+        var paneWidth = stage.canvas.width;
+        container = new createjs.Container;
         container.regX = 0;
         container.regY = 0;
         container.x = 0;
         container.y = stage.canvas.height;
         masterChin = assets.getAnimation("masterchin");
+        masterChin.regX = 300;
+        masterChin.x = stage.canvas.width;
         masterChin.gotoAndPlay("ready");
         container.addChild(masterChin);
-        text = new createjs.Text("nothing to teach","bold 24px Arial","#FFF");
-        text.x = 350;
-        text.y = 200;
+        text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
+        text.x = 0;
+        text.y = 225;
         container.addChild(text);
+        continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
+        continueText.regX = continueText.getMeasuredWidth()/2;
+        continueText.regY = continueText.getMeasuredHeight()/2;
+        continueText.x = paneWidth/2;
+        continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
+        container.addChild(continueText);
         stage.addChild(container);
 
         return {
@@ -456,6 +499,8 @@ var hud = (function() {
                 onComplete = whenComplete;
                 masterChin.gotoAndPlay("ready");
                 text.text = message;
+                text.x = paneWidth - 300 - text.getMeasuredWidth() - 10;
+                text.y = 225;
                 isTeaching = true;
                 lessonTime = 5 * FPS;
             },
@@ -465,21 +510,18 @@ var hud = (function() {
                 }
                 isTeaching = false;
             },
+            toggle: function() {
+                if( isTeaching ) {
+                    this.close();
+                }
+            },
             advance: function() {
                 if(isTeaching) {
-                    if( container.y >  stage.canvas.height-300 ) {
+                    if( container.y >  stage.canvas.height-paneHeight ) {
                         container.y -= 5;
                     }
-                    else {
-                        if(lessonTime-- === 0) {
-                            this.close();
-                        }
-                    }
-                }
-                else {
-                    if( container.y < stage.canvas.height ) {
+                } else if( container.y < stage.canvas.height ) {
                         container.y += 5;
-                    }
                 }
             },
         }
@@ -506,6 +548,9 @@ var hud = (function() {
         toggleMenu: function() {
             toggleMenu();
         },
+        toggleTeacher: function() {
+            teacher.toggle();
+        },
         flashTeachInput: function(index) {
             teachImages[index-1].text.alpha = 1.0;
         },
@@ -528,25 +573,27 @@ var hud = (function() {
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
             drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
 
-            var playerPosition = this.player.body.GetWorldCenter();
-            var ballPosition = this.ball.body.GetWorldCenter();
-            drawDebug(  "bv:"+ballVelocity.toFixed(3)+
-                        "pv:"+playerVelocity.toFixed(3)+
-                        "p:("+playerPosition.x.toFixed(3)+","+playerPosition.y.toFixed(3)+")");
-
+            var playerPosition = this.player.getPosition();
+            var ballPosition = this.ball.getPosition();
+            /*
+            labelText.text = "bv:"+ballVelocity.toFixed(3)+
+                             "pv:"+playerVelocity.toFixed(3)+
+                             "p:("+playerPosition.x.toFixed(3)+",
+                             "+playerPosition.y.toFixed(3)+")");
+            */
             announcements.update();
             advanceTeachImages();
             teacher.advance();
             stage.update();
         },
         initialize : function(canvas) {
-            stage = new Stage(canvas);
+            stage = new createjs.Stage(canvas);
             stage.autoClear = false;
             announcements = new Announcements(stage);
             teacher = new Teacher(stage);
             context = canvas.getContext("2d");
             initializeGradients();
-            initializeDebugText();
+            initializeLabelText();
             initializeTeachImages();
         }
     };
@@ -808,6 +855,8 @@ var menuInput = (function () {
         switch(id) {
             case 1: actionDelegate("TOGGLE");
                     break;
+            case 2: actionDelegate("LESSON");
+                    break;
         }
 	}
 
@@ -981,7 +1030,7 @@ var input = (function () {
         isInputOn[id] = false;
 	}
 
-    var menuKey = {27:1};
+    var menuKey = {27:1, 32:2};
 	var playKey = {76:1, 75:2, 74:3, 72:4};
 	function onKeyDown(keyCode) {
         if(menuKey[keyCode]) {
@@ -1133,9 +1182,9 @@ var playspace = (function() {
     var blings = (function (){
         var list = [];
 
-        var g = new Graphics();
+        var g = new createjs.Graphics();
         g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
-        var starShape = new Shape(g);
+        var starShape = new createjs.Shape(g);
         starShape.regX = 0;
         starShape.regY = 0;
 
@@ -1228,7 +1277,7 @@ var playspace = (function() {
         leftLine: undefined,
         rightLine: undefined,
         playerArticles: [],
-        container: new Container,
+        container: new createjs.Container,
         initialize: function() {
             blings.setContainer(this.container);
             this.setScene();
@@ -1236,21 +1285,21 @@ var playspace = (function() {
         setScene: function() {
             var world = {width:20000, height:1000};
             var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
-            var floorSkin = utility.generateFloorSprite(world.width,10,Graphics.getRGB(255,255,255),10);
+            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),10);
             this.addStaticBody( floorBody, floorSkin, 1 );
 
             var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
-            var leftWallSkin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(255,255,255),10);
+            var leftWallSkin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(255,255,255),10);
             this.addStaticBody( leftWallBody, leftWallSkin, 1 );
 
             this.leftLine = {};
             this.leftLine.body = physics.createStaticBody(-world.width/2,0,10,world.height,2);
-            this.leftLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.leftLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
             this.addStaticBody( this.leftLine.body, this.leftLine.skin, 1 );
 
             this.rightLine = {};
             this.rightLine.body = physics.createStaticBody(world.width/2,0,10,world.height,2);
-            this.rightLine.skin = utility.generateFloorSprite(10,world.height,Graphics.getRGB(0,255,0),10);
+            this.rightLine.skin = utility.generateFloorSprite(10,world.height,createjs.Graphics.getRGB(0,255,0),10);
             this.addStaticBody( this.rightLine.body, this.rightLine.skin, 1 );
 
             for(var parallax = 3; parallax > 0; parallax-=1) {
@@ -1265,10 +1314,14 @@ var playspace = (function() {
         addPlayer: function(entity) {
             this.player = entity.makePhysical();
             this.container.addChild(this.player.container);
+            this.playerPresent = true;
         },
         addBall: function(entity) {
             this.ball = entity.makePhysical();
             this.container.addChild(this.ball.skin);
+            this.ballPresent = true;
+        },
+        removeBall: function(entity) {
         },
         addBlingMessage: function(body, message) {
             blings.addMessage(body, message);
@@ -1317,14 +1370,14 @@ var playspace = (function() {
             }
         },
         updatePlayer: function() {
-            if( this.player ) {
+            if( this.playerPresent ) {
                 this.player.container.rotation = this.player.body.GetAngle() * (180 / Math.PI);
                 this.player.container.x = this.player.body.GetWorldCenter().x * PPM;
                 this.player.container.y = this.player.body.GetWorldCenter().y * PPM;
             }
         },
         updateBall: function() {
-            if( this.ball ) {
+            if( this.ballPresent ) {
                 this.ball.skin.rotation = this.ball.body.GetAngle() * (180 / Math.PI);
                 this.ball.skin.x = this.ball.body.GetWorldCenter().x * PPM;
                 this.ball.skin.y = this.ball.body.GetWorldCenter().y * PPM;
@@ -1463,6 +1516,7 @@ var ball = (function() {
     return {
         skin: undefined,
         body: new DeadBody,
+        isInPlay: false,
         makePhysical: function() {
             this.fixture = physics.createBallFixture(-1.5,1,25,1);
             this.body = this.fixture.GetBody();
@@ -1476,21 +1530,30 @@ var ball = (function() {
         handleBeginContact: function( entity ) {
             if (entity === player) {
                 audio.soundOn(6);
-                playspace.addBlingStar(ball.body);
+                if( this.isInPlay ) {
+                    playspace.addBlingStar(ball.body);
+                }
             }
         },
         handleEndContact: function( entity ) {
         },
-        reset: function() {
+        setInPlay: function(state) {
+            this.isInPlay = state;
+        },
+        reset: function(v,r) {
             this.body.SetAngularVelocity(0);
 
             var position = this.body.GetWorldCenter();
-            position.x = -1, position.y = 1;
+            position.x = -1;
+            position.y = 0;
             this.body.SetPositionAndAngle(position,0);
 
             var velocity = this.body.GetLinearVelocity();
-            velocity.x = 0, velocity.y = 0;
+            velocity.x = v;
+            velocity.y = 0;
             this.body.SetLinearVelocity(velocity);
+
+            this.fixture.SetRestitution(r);
             this.body.SetAwake(true);
 
             this.skin.gotoAndPlay("ready");
@@ -1543,7 +1606,7 @@ var player = (function() {
             return this;
         },
 		initialize: function() {
-            this.container = new Container;
+            this.container = new createjs.Container;
             this.container.regX = 75, this.container.regY = 110;
             this.skin = assets.getAnimation("player");
             this.container.addChild(this.skin);
@@ -1590,6 +1653,9 @@ var player = (function() {
         getLinearVelocity: function() {
             return this.body.GetLinearVelocity();
         },
+        getPosition: function() {
+            return this.body.GetWorldCenter();
+        },
 		advance: function() {
             var angle = this.body.GetAngle();
             if( angle > this.maximumRotation ) {
@@ -1632,6 +1698,9 @@ var main = (function () {
         switch(action) {
             case "TOGGLE":
                 hud.toggleMenu();
+                break;
+            case "LESSON":
+                hud.toggleTeacher();
                 break;
             default:
                 console.log("unknown menu action:", action);
@@ -1721,7 +1790,7 @@ var main = (function () {
             initialize: function() {
                 this.canvas = document.getElementById("testCanvas");
                 this.context = this.canvas.getContext("2d");
-                this.stage = new Stage(this.canvas);
+                this.stage = new createjs.Stage(this.canvas);
                 this.stage.autoClear = true;
             },
             update: function() {
@@ -1739,9 +1808,8 @@ var main = (function () {
     var handlePassedObjective = function(objective) {
         var gotoNext = function() {
             manager.nextObjective(objective);
-            camera.fix( {x:0,y:3.042} );
         }
-        hud.announce("winner", 2.5, function() {
+        hud.announce("success", 2.5, function() {
             if( objective.article ) {
                 player.giveArticle(objective.article);
                 hud.announce("awarded: "+objective.article, 3.5, gotoNext);
@@ -1753,43 +1821,58 @@ var main = (function () {
     };
 
     var handleFailedObjective = function(objective) {
-        hud.announce("failure", 3.5, function() {
+        var playerPosition = Math.abs(this.player.getPosition().x); 
+        var ballPosition = Math.abs(this.ball.getPosition().x);
+        var overTaken =  playerPosition > ballPosition;
+        var reason = overTaken ? "foul!" : "fail!";
+        hud.announce(reason, 3.5, function() {
             manager.setObjective(objective);
-            camera.fix( {x:0,y:3.042} );
         });
     }
 
     var handleConcludeObjective = function(objective) {
-        playInput.disable();
+        ball.setInPlay(false);
     };
 
+    var firstLoad = true;
     var handleInitiateObjective = function(objective) {
-        player.reset();
-        ball.reset();
-        playspace.reset();
-        playspace.setFinishLine(objective.finishLine);
-
         var runObjective = function() { 
+            if( firstLoad ) {
+                playspace.addBall(ball);
+                firstLoad = false;
+            }
+            else {
+                ball.reset(objective.initialVelocity, objective.initialRestitution);
+            }
+            ball.setInPlay(true);
             camera.watch( player );
-            objective.encodeActions( playInput.getRootAction() );
             playInput.enable();
+            hud.announce("GO!", 1);
         }
 
         var introduceObjective = function() {
+            camera.fix( {x:0,y:3.042} );
+            playInput.disable();
             player.reset();
-            ball.reset();
             playspace.reset();
             playspace.setFinishLine(objective.finishLine);
             hud.setTargetVelocity( objective.targetVelocity );
-            hud.announce(objective.title, 1, runObjective );
+            hud.announce(objective.title, 2.5, runObjective );
         }
 
         var teachLesson = function() {
-            hud.showTeacher(objective.lesson, function() {
+            objective.encodeActions( playInput.getRootAction() );
+            playInput.enable();
+            var message = objective.lesson;
+            if( !objective.hasBeenAttempted ) {
+                message = objective.praise + " " + message;
+            }
+            hud.showTeacher(message, function() {
                 introduceObjective();
             });
         }
 
+        camera.watch( player );
         teachLesson();
     };
 
@@ -1842,13 +1925,14 @@ var main = (function () {
             manager.setPlayer( player );
             manager.setBall( ball );
 
-            Ticker.setFPS(FPS);
-            Ticker.useRAF = true;
-            Ticker.addListener(this);
+            createjs.Ticker.setFPS(FPS);
+            createjs.Ticker.useRAF = true;
+            createjs.Ticker.addListener(this);
             hud.announce("Push, Chinchilla!",5, function() {
                 playspace.addPlayer( player );
-                playspace.addBall( ball );
-                manager.firstObjective();
+                hud.announce("", 2, function() {
+                    manager.firstObjective();
+                });
             });
 		},
         debugClear: function() {
