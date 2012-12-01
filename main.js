@@ -444,15 +444,19 @@ var hud = (function() {
         container.x = 0;
         container.y = stage.canvas.height;
         masterChin = assets.getAnimation("masterchin");
+        masterChin.regX = 300;
+        masterChin.x = stage.canvas.width;
         masterChin.gotoAndPlay("ready");
         container.addChild(masterChin);
         text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
         text.x = 350;
         text.y = 225;
         container.addChild(text);
-        continueText = new createjs.Text("press spacebar when ready...", "10px Arial", "#FFF");
-        continueText.x = paneWidth-continueText.getMeasuredWidth()-20;
-        continueText.y = paneHeight-continueText.getMeasuredHeight()-5;
+        continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
+        continueText.regX = continueText.getMeasuredWidth()/2;
+        continueText.regY = continueText.getMeasuredHeight()/2;
+        continueText.x = paneWidth/2;
+        continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
         container.addChild(continueText);
         stage.addChild(container);
 
