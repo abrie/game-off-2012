@@ -1,3 +1,4 @@
+var FASTSTART = true;
 var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
@@ -724,7 +725,7 @@ var physics = (function() {
 			world = new b2World( new b2Vec2(0, 10),  true );
             world.SetContactListener(contactEventQueue.listener);
 		},
-        removeBody: function(body) {
+        destroyBody: function(body) {
             world.DestroyBody(body);
         },
 		createPlayerFixture: function(x,y,width,height,mask) {
@@ -754,7 +755,7 @@ var physics = (function() {
 			fixtureDef.friction = 1.0;
 			fixtureDef.restitution = 0.2;
             fixtureDef.filter.maskBits = mask;
-			fixtureDef.shape = new b2CircleShape(radius/PPM);
+			fixtureDef.shape = new b2CircleShape(radius);
 
 			return body.CreateFixture(fixtureDef);
 		},
@@ -1269,7 +1270,7 @@ var playspace = (function() {
                 list.forEach( function(entity, index, array) {
                     if( entity.frames-- === 0 ) {
                         this.container.removeChild(entity.skin);
-                        physics.removeBody( entity.body );
+                        physics.destroyBody( entity.body );
                         array.splice(index, 1);
                     }
                     else {
@@ -1307,9 +1308,49 @@ var playspace = (function() {
         }
     }());
 
+    var rotate = function(p,theta) {
+        var cos = Math.cos(theta);
+        var sin = Math.sin(theta);
+        var x = p.x*cos-p.y*sin;
+        var y = p.x*sin+p.y*cos;
+        return {x:x,y:y};
+    }
+
+    var generateBearings = function(center, radius, angle) {
+        var points = [
+            rotate({x:1, y:1}, angle),
+            rotate({x:-1, y:1}, angle),
+            rotate({x:-1, y:-1}, angle),
+            rotate({x:1, y:-1}, angle)
+        ];
+        
+        points.forEach( function(point) {
+            point.x = center.x + radius*point.x;
+            point.y = center.y + radius*point.y;
+        });
+
+        var entities = points.map( function(p) {
+            var result = {};
+            result.fixture = physics.createBallFixture(p.x,p.y,radius/2,1);
+            result.body = result.fixture.GetBody();
+            result.destruct = function() { physics.destroyBody(result.body); };
+            var g = new createjs.Graphics();
+            g.setStrokeStyle(1);
+            g.beginStroke(createjs.Graphics.getRGB(0,0,0));
+            g.beginFill(createjs.Graphics.getRGB(255,0,0));
+            g.drawCircle(0,0,(radius/2)*PPM);
+            var skin = new createjs.Shape(g);
+            result.skin = skin;
+            return result;
+        },this);
+
+        return entities;
+    }
+
     return {
         layers: [],
         markers: [],
+        bearings: [],
         leftLine: undefined,
         rightLine: undefined,
         playerArticles: [],
@@ -1324,7 +1365,6 @@ var playspace = (function() {
             for(var parallax = 4; parallax > 1; parallax-=1) {
                 for(var index=-3; index<3; index++) {
                     var offset = Math.floor( Math.random() * 3 ) * 123;
-                    console.log(offset);
                     var body = physics.createStaticBody(index*650+offset,475-250/2-25*(4-parallax),600,250,2);
                     var skin = assets.getAnimation("background").clone();
                     skin.gotoAndPlay( backgroundAnimationNames[parallax-2] );
@@ -1376,6 +1416,18 @@ var playspace = (function() {
         },
         addBlingStar: function(body, message) {
             blings.addStar(body, message);
+        },
+        addBearings: function(source) {
+            this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle());
+            this.bearings.forEach( function(entity) {
+                this.container.addChild(entity.skin);
+            },this);
+        },
+        removeBearings: function(source) {
+            this.bearings.forEach( function(entity) {
+               this.container.removeChild(entity.skin);
+               entity.destruct();
+            },this);
         },
         addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
@@ -1439,6 +1491,14 @@ var playspace = (function() {
         updateLayers: function() {
             this.layers.forEach( this.updateLayer, this); 
         },
+        updateBearing: function(bearing) {
+            bearing.skin.rotation = bearing.body.GetAngle() * (180 / Math.PI);
+            bearing.skin.x = bearing.body.GetWorldCenter().x * PPM;
+            bearing.skin.y = bearing.body.GetWorldCenter().y * PPM;
+        },
+        updateBearings: function() {
+            this.bearings.forEach( this.updateBearing, this);
+        },
         reset: function() {
             this.updatePlayer();
             this.updateBall();
@@ -1449,6 +1509,7 @@ var playspace = (function() {
             this.updateBall();
             this.updateLayers();
             blings.advance();
+            this.updateBearings();
         },
         bindCamera: function(camera) {
             camera.onCamera = this.updateCamera.bind(this);
@@ -1561,12 +1622,14 @@ var DeadBody = function() {
 
 var ball = (function() {
 	"use strict";
+
     return {
         skin: undefined,
         body: new DeadBody,
         isInPlay: false,
+        isActive: true,
         makePhysical: function() {
-            this.fixture = physics.createBallFixture(-1.5,1,25,1);
+            this.fixture = physics.createBallFixture(-1.5,1,25/PPM,1);
             this.body = this.fixture.GetBody();
             this.body.SetUserData(this);
             return this;
@@ -1587,6 +1650,10 @@ var ball = (function() {
         },
         setInPlay: function(state) {
             this.isInPlay = state;
+        },
+        setActive: function(state) {
+            this.isActive = state;
+            this.body.SetActive(state);
         },
         reset: function(v,r) {
             this.body.SetAngularVelocity(0);
@@ -1611,6 +1678,9 @@ var ball = (function() {
         },
         getPosition: function() {
             return this.body.GetWorldCenter();
+        },
+        getAngle: function() {
+            return this.body.GetAngle();
         },
         advance: function() {
         }
@@ -1860,6 +1930,10 @@ var main = (function () {
     };
 
     var handlePassedObjective = function(objective) {
+        playspace.addBearings( ball );
+        ball.setActive(false);
+        ball.setInPlay(false);
+        ball.reset();
         var gotoNext = function() {
             manager.nextObjective(objective);
         }
@@ -1875,6 +1949,7 @@ var main = (function () {
     };
 
     var handleFailedObjective = function(objective) {
+        ball.setInPlay(false);
         var playerPosition = this.player.getPosition().x; 
         var ballPosition = this.ball.getPosition().x;
         var overTaken =  playerPosition < ballPosition;
@@ -1885,7 +1960,6 @@ var main = (function () {
     }
 
     var handleConcludeObjective = function(objective) {
-        ball.setInPlay(false);
     };
 
     var firstLoad = true;
@@ -1896,6 +1970,7 @@ var main = (function () {
                 firstLoad = false;
             }
             else {
+                ball.setActive(true);
                 ball.reset(objective.initialVelocity, objective.initialRestitution);
             }
             ball.setInPlay(true);
@@ -1941,12 +2016,17 @@ var main = (function () {
         },
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
-            var onClick = function() {
+            var begin = function() {
                 $("#screen").html(canvasHTML);
                 this.start();
             };
-            $("#play").click($.proxy( onClick, this ));
-            $("#play").addClass("ready").html("click here to play.");
+            if( FASTSTART) {
+                begin.apply(this);
+            }
+            else {
+                $("#play").click($.proxy( begin, this ));
+                $("#play").addClass("ready").html("click here to play.");
+            }
         },
 		start: function () {
             video.initialize();
