@@ -284,6 +284,55 @@ var manager = (function(){
             root.seek([4])
                 .add(3, "USE")
                 .loop( root.seek([4]));
+        }),
+        new Objective({
+                title:"take a step back",
+                trophy:"a piece of yew",
+                praise:"Outstanding.",
+                lesson:"Use your legs like a spring, (J,K,L)x2 then K for a good start.",
+                startingLine:1.3,
+                targetVelocity:1.8,
+                initialVelocity:-0.7,
+                initialRestitution:0
+            },
+            function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD", {expiration:30, recovery:5})
+                .add(3, "FLIGHT", {expiration:25, recovery:5})
+                .add(3, "DASH", {expiration:5, recovery:5});
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3")
+                .add(2, "LAUNCH1");
+            root.seek([3,2,1])
+                .add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3")
+                .add(2, "LAUNCH2");
+            root.seek([3,2,1,3,2,1])
+                .add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3")
+                .add(2, "LAUNCH3");
+            root.seek([3,2,1,3,2,1,3,2,1])
+                .add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3")
+                .add(2, "LAUNCH4");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
         })
     ];
 
@@ -1850,6 +1899,10 @@ var player = (function() {
 			this.impulse(-1, 3, 5);
             this.jump(1);
 		},
+		actionLaunch: function(max) {
+            this.jump(max/2);
+			this.impulse(-1, max, max*20);
+		},
 		actionBackward: function() {
 			this.impulse(1, 1, 5);
 		},
@@ -1928,6 +1981,34 @@ var main = (function () {
                 player.actionSuperforward();
                 player.gotoAndPlay("fly");
                 playspace.addBlingMessage(player.body, "dash!");
+                break;
+            case "LAUNCH1":
+                audio.soundOn(5);
+                audio.soundOn(2);
+                player.actionLaunch(1);
+                player.gotoAndPlay("fly");
+                playspace.addBlingMessage(player.body, "spring x 1");
+                break;
+            case "LAUNCH2":
+                audio.soundOn(5);
+                audio.soundOn(2);
+                player.actionLaunch(3);
+                player.gotoAndPlay("fly");
+                playspace.addBlingMessage(player.body, "spring x 2");
+                break;
+            case "LAUNCH3":
+                audio.soundOn(5);
+                audio.soundOn(2);
+                player.actionLaunch(4);
+                player.gotoAndPlay("fly");
+                playspace.addBlingMessage(player.body, "spring x 3");
+                break;
+            case "LAUNCH4":
+                audio.soundOn(5);
+                audio.soundOn(2);
+                player.actionLaunch(8);
+                player.gotoAndPlay("fly");
+                playspace.addBlingMessage(player.body, "SPRING!");
                 break;
             case "STAND":
                 audio.soundOn(4);
