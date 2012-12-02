@@ -52,7 +52,7 @@ var manager = (function(){
                 title:"Two Left Feet",
                 trophy:"a featureless twig",
                 praise:"",
-                lesson:"The velocitometer's red mark is the speed the ball must go. Press K, then L, then K, then L..",
+                lesson:"The velocitometer's red mark is the speed the ball must go. Press L, then K, then L, then K..",
                 targetVelocity:0.30,
                 initialVelocity:0,
                 initialRestitution:0
