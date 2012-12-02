@@ -1494,7 +1494,7 @@ var playspace = (function() {
 
             var world = {width:20000, height:1000};
             var floorBody = physics.createStaticBody(0,world.height/2,world.width,10,255);
-            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),12);
+            var floorSkin = utility.generateFloorSprite(world.width,10,createjs.Graphics.getRGB(255,255,255),6);
             this.addStaticBody( floorBody, floorSkin, 1 );
 
             var leftWallBody = physics.createStaticBody(-world.width/2,0,10,world.height,255);
