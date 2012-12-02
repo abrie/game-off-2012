@@ -255,6 +255,7 @@ var manager = (function(){
         new Objective({
                 title:"tough getting rough",
                 trophy:"a willow whip",
+                article:"tailfin",
                 praise:"Outstanding.",
                 lesson:"There is more to learn, maybe?",
                 startingLine:1.3,
@@ -289,9 +290,10 @@ var manager = (function(){
                 title:"take a step back",
                 trophy:"a piece of yew",
                 praise:"Outstanding.",
-                lesson:"Use your legs like a spring, (J,K,L)x2 then K for a good start.",
-                startingLine:1.3,
-                targetVelocity:1.8,
+                lesson:"Use your legs like a spring, (J,K,L) x X then K for a good start.",
+                startingLine:3.3,
+                finishLine:20,
+                targetVelocity:2.2,
                 initialVelocity:-0.7,
                 initialRestitution:0
             },
@@ -1225,6 +1227,22 @@ var assets = (function() {
         {
             name: "cape",
             images: ["assets/cape.png"],
+            frames: {count:9, width:150, height:150},
+            animations: {
+                stand:  {frames:[0], next:false, frequency:1},
+                land:   {frames:[1], next:false, frequency:1},
+                still:  {frames:[1], next:false, frequency:1 },
+                step1:  {frames:[1,2,1], next:"still", frequency:3 },
+                step2:  {frames:[3,4,3,2,1], next:"still", frequency:3 },
+                step3:  {frames:[3,5,5,3,2], next:"still", frequency:1 },
+                jump:   {frames:[4,5,5,5,3,2,1], next:false, frequency:2},
+                fly:    {frames:[6,6,6,5,4], next:"still", frequency:2},
+                use:    {frames:[7,8], next:"stand", frequency:5},
+            }
+        },
+        {
+            name: "tailfin",
+            images: ["assets/tailfin.png"],
             frames: {count:9, width:150, height:150},
             animations: {
                 stand:  {frames:[0], next:false, frequency:1},
