@@ -1,4 +1,4 @@
-var FASTSTART = true;
+var FASTSTART = false;
 var DEBUG = false;
 var FPS = 30;
 var PPM = 150;
