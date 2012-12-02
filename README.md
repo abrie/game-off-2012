@@ -10,8 +10,12 @@ Player controls are "L,K, and J" pressed in various combinations.
 
 ## Technical Details
 
-Written in Javascript, with [JQuery](http://jquery.com), [EaselJS](http://www.createjs.com/#!/EaselJS), and [Box2dWeb](http://code.google.com/p/box2dweb/) dependencies. Graphics were created with [Inkscape](http://inkscape.org) and [Gimp](http://www.gimp.org). A browser is required to play this game. Preferably one which uses a modern version of WebKit. Safari and Chrome were used for testing, and are thus recommended. 
+Written in Javascript, with [JQuery](http://jquery.com), [EaselJS](http://www.createjs.com/#!/EaselJS), and [Box2dWeb](http://code.google.com/p/box2dweb/) dependencies. Graphics were created with [Inkscape](http://inkscape.org) and [Gimp](http://www.gimp.org) with the [fuse layers](http://registry.gimp.org/node/25129) plugin. A browser is required to play this game. Preferably one which uses a modern version of WebKit. Safari and Chrome were used for testing, and are thus recommended. 
 
 ## Screenshot
 
 ![](https://raw.github.com/abrie/game-off-2012/master/screenshot.png)
+
+## Author
+
+[abrie](http://twitter.com/abrihe)
