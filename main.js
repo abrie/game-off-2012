@@ -11,6 +11,7 @@ var manager = (function(){
         this.praise = params.praise ? params.praise : "";
         this.lesson = params.lesson ? params.lesson : "";
         this.finishLine = params.finishLine ? params.finishLine : 10;
+        this.startingLine = params.startingLine ? params.startingLine : 0;
         this.article = params.article ? params.article : false;
         this.isInitiated = false;
         this.isConcluded = false;
@@ -36,7 +37,7 @@ var manager = (function(){
                 title:"The One Foot Race",
                 trophy:"the ugly stick",
                 praise:"", 
-                lesson:"You must learn to walk. Press L to take a few steps.",
+                lesson:"The first step is learning how to step. Press L repeatedly and learn to use a leg.",
                 targetVelocity:0.20,
                 initialVelocity:0,
                 initialRestitution:0
@@ -51,7 +52,7 @@ var manager = (function(){
                 title:"Two Left Feet",
                 trophy:"a featureless twig",
                 praise:"",
-                lesson:"Use two feet, L then K. Watch the velocitometer as you do so.",
+                lesson:"The velocitometer's red mark is the speed the ball must go. Press K, then L, then K, then L..",
                 targetVelocity:0.30,
                 initialVelocity:0,
                 initialRestitution:0
@@ -65,8 +66,9 @@ var manager = (function(){
         new Objective({
                 title:"All Three Legs",
                 trophy:"a spring of basil",
-                praise:"Very good, but you know little.",
-                lesson:"Use three feet by pressing L-K-J.",
+                praise:"",
+                lesson:"The needle rises higher as the ball goes faster. Push with 3 legs like this: L, K, J... ",
+                startingLine:1,
                 targetVelocity:0.50,
                 initialVelocity:0,
                 initialRestitution:0
@@ -82,8 +84,9 @@ var manager = (function(){
         new Objective({
                 title:"Velocities and Gauges",
                 trophy:"an apple branch",
-                praise:"Velocitometer:",
-                lesson:"The outer white arc indicates the winning condition.",
+                praise:"There is push in your ancestory.",
+                lesson:"Timing is important, step as fast as possible but not too fast.",
+                startingLine:1,
                 targetVelocity:0.50,
                 initialVelocity:0,
                 initialRestitution:0
@@ -99,8 +102,9 @@ var manager = (function(){
         new Objective({
                 title:"Use The Boing",
                 trophy:"a pear branch",
-                praise:"You are ready for a combo.",
-                lesson:"L-K-J x 3 will give you 1 BOING",
+                praise:"You are ready to learn a combo.",
+                lesson:"(L,K,J)x3 will give you 1 BOING",
+                startingLine:1.5,
                 targetVelocity:1.0,
                 initialVelocity:0,
                 initialRestitution:0
@@ -121,11 +125,12 @@ var manager = (function(){
                 .add(4, "LAND");
         }),
         new Objective({
-                title:"Reversing is Useless",
+                title:"Reversing is Useless?",
                 trophy:"a branch from blueberry bush",
                 praise:"Excellent, but can you move backwards?",
-                lesson:"J-K-L goes the other way.",
+                lesson:"(J,K,L) goes the other way.",
                 article: "cape",
+                startingLine:1.5,
                 targetVelocity:1.2,
                 initialVelocity:0,
                 initialRestitution:0
@@ -154,8 +159,9 @@ var manager = (function(){
         new Objective({
                 title:"haz a cape",
                 trophy:"a pomegranate branch",
-                praise:"Very stylish, wounded one.",
-                lesson:"L-K-J x 3 + J will give OOMPH to a BOING",
+                praise:"Very stylish, little tripod.",
+                lesson:"(L,K,J)x3 followed by (J) will give OOMPH to a BOING",
+                startingLine:1.5,
                 targetVelocity:1.3,
                 initialVelocity:0,
                 initialRestitution:0
@@ -186,7 +192,7 @@ var manager = (function(){
                 title:"want of wings",
                 trophy:"a cedar branch",
                 praise:"You must use your fashion.",
-                lesson:"L-K-J x 3 then J x 2 gives a CAPE DASH",
+                lesson:"(L,K,J)x3 then (J)x2 gives a CAPE DASH",
                 targetVelocity:1.5,
                 initialVelocity:-0.25,
                 initialRestitution:0
@@ -218,9 +224,42 @@ var manager = (function(){
                 title:"tough getting going",
                 trophy:"a spruce branch",
                 praise:"",
-                lesson:"You are a natural, but challenges grow.",
-                targetVelocity:1.5,
+                lesson:"You are a natural, and challenges continue to grow.",
+                targetVelocity:1.6,
                 initialVelocity:-0.55,
+                initialRestitution:0
+            },
+            function(root) {
+            root.clear();
+            root.add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3");
+            root.seek([1,2,3])
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FWD_STEP3")
+                .add(1, "FWD_STEP1")
+                .add(2, "FWD_STEP2")
+                .add(3, "FORWARD", {expiration:30, recovery:5})
+                .add(3, "FLIGHT", {expiration:25, recovery:5})
+                .add(3, "DASH", {expiration:5, recovery:5});
+            root.add(3, "BWD_STEP1")
+                .add(2, "BWD_STEP2")
+                .add(1, "BWD_STEP3");
+            root.add(4, "STAND")
+                .add(4, "LAND");
+            root.seek([4])
+                .add(3, "USE")
+                .loop( root.seek([4]));
+        }),
+        new Objective({
+                title:"tough getting rough",
+                trophy:"a willow whip",
+                praise:"Outstanding.",
+                lesson:"There is more to learn, maybe?",
+                startingLine:1.3,
+                targetVelocity:1.8,
+                initialVelocity:-0.7,
                 initialRestitution:0
             },
             function(root) {
@@ -504,14 +543,15 @@ var hud = (function() {
             masterChin.regX = 300;
             masterChin.x = stage.canvas.width;
             container.addChild(masterChin);
-            text = new createjs.Text("nothing to teach","bold 20px Arial","#FFF");
+            text = new createjs.Text("nothing to teach","bold 15px Arial","#FFF");
             text.x = 0;
             text.y = 225;
             container.addChild(text);
-            continueText = new createjs.Text("Practice, little chin. Press spacebar when ready...", "10px Arial", "#FFF");
-            continueText.regX = continueText.getMeasuredWidth()/2;
+            continueText = new createjs.Text("Practice, little chin. Press spacebar when ready for the ball.", "12px Arial", "#FFF");
+            continueText.skewX = 13;
+            continueText.regX = continueText.getMeasuredWidth();
             continueText.regY = continueText.getMeasuredHeight()/2;
-            continueText.x = paneWidth/2;
+            continueText.x = paneWidth-300;
             continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
             container.addChild(continueText);
             stage.addChild(container);
@@ -526,7 +566,7 @@ var hud = (function() {
                 onComplete = whenComplete;
                 masterChin.gotoAndPlay("up");
                 text.text = message;
-                text.x = paneWidth - 300 - text.getMeasuredWidth() - 10;
+                text.x = paneWidth-300 - text.getMeasuredWidth();
                 text.y = 225;
                 isTeaching = true;
                 lessonTime = 5 * FPS;
@@ -1766,11 +1806,11 @@ var player = (function() {
                 article.animation.gotoAndPlay(frame);
             },this);
         },
-        reset: function() {
+        reset: function(startPosition) {
             this.body.SetAngularVelocity(0);
 
             var position = this.body.GetWorldCenter();
-            position.x = 1;
+            position.x = startPosition;
             position.y = 0;
             this.body.SetPositionAndAngle(position,0);
 
@@ -1881,13 +1921,13 @@ var main = (function () {
                 audio.soundOn(5);
                 player.actionFlight();
                 player.gotoAndPlay("fly");
-                playspace.addBlingMessage(player.body, "super!");
+                playspace.addBlingMessage(player.body, "oomph!");
                 break;
             case "DASH":
                 audio.soundOn(5);
                 player.actionSuperforward();
                 player.gotoAndPlay("fly");
-                playspace.addBlingMessage(player.body, "duper!");
+                playspace.addBlingMessage(player.body, "dash!");
                 break;
             case "STAND":
                 audio.soundOn(4);
@@ -1993,7 +2033,7 @@ var main = (function () {
         var introduceObjective = function() {
             camera.fix( {x:0,y:3.042} );
             playInput.disable();
-            player.reset();
+            player.reset(objective.startingLine);
             playspace.reset();
             playspace.setFinishLine(objective.finishLine);
             hud.setTargetVelocity( objective.targetVelocity );
