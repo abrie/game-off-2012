@@ -1433,9 +1433,10 @@ var playspace = (function() {
             },this);
         },
         removeBearings: function(source) {
-            this.bearings.forEach( function(entity) {
+            this.bearings.forEach( function(entity,index,array) {
                this.container.removeChild(entity.skin);
                entity.destruct();
+               array.splice(index,0);
             },this);
         },
         addStaticBody: function(body,skin,parallax) {
@@ -1512,6 +1513,7 @@ var playspace = (function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
+            this.removeBearings();
         },
         advance: function() {
             this.updatePlayer();
