@@ -594,7 +594,7 @@ var hud = (function() {
             teacher.close();
         },
         update: function() {
-            var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
+            var ballVelocity = this.ball.isActive ? Math.abs(this.ball.getLinearVelocity().x) : 0; 
             var normalizedBallVelocity = normalize( ballVelocity, this.maximumVelocity);
             var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
             var normalizedPlayerVelocity = normalize( playerVelocity, this.maximumVelocity);
@@ -1325,14 +1325,22 @@ var playspace = (function() {
         ];
         
         points.forEach( function(point) {
+            point.vX = 3.0 * point.x;
+            point.vY = 3.0 * point.y;
             point.x = center.x + radius*point.x;
             point.y = center.y + radius*point.y;
         });
 
         var entities = points.map( function(p) {
             var result = {};
-            result.fixture = physics.createBallFixture(p.x,p.y,radius/2,1);
+            result.fixture = physics.createBallFixture(p.x,p.y,radius/2,8);
             result.body = result.fixture.GetBody();
+            result.fixture.SetRestitution(0.9);
+            var velocity = result.body.GetLinearVelocity();
+            velocity.x = p.vX;
+            velocity.y = p.vY;
+            result.body.SetLinearVelocity(velocity);
+
             result.destruct = function() { physics.destroyBody(result.body); };
             var g = new createjs.Graphics();
             g.setStrokeStyle(1);
