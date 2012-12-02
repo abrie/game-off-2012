@@ -594,7 +594,7 @@ var hud = (function() {
             teacher.close();
         },
         update: function() {
-            var ballVelocity = this.ball.isActive ? Math.abs(this.ball.getLinearVelocity().x) : 0; 
+            var ballVelocity = Math.abs(this.ball.getLinearVelocity().x); 
             var normalizedBallVelocity = normalize( ballVelocity, this.maximumVelocity);
             var playerVelocity = Math.abs(this.player.getLinearVelocity().x); 
             var normalizedPlayerVelocity = normalize( playerVelocity, this.maximumVelocity);
@@ -603,6 +603,7 @@ var hud = (function() {
             drawMeter( 40, "#555", 30, 1 );
             drawMeter( 30, gradient, 10, normalizedBallVelocity );
             drawMeter( 40, "#B7FA00", 10, normalizedPlayerVelocity );
+            drawMeter( 50, "#F00", 10, normalizedTargetVelocity+0.025);
             drawMeter( 50, "#FFF", 10, normalizedTargetVelocity );
             drawNeedle( 60, "#FFF", 3, normalizedBallVelocity );
 
@@ -1682,7 +1683,7 @@ var ball = (function() {
             this.skin.gotoAndPlay("ready");
         },
         getLinearVelocity: function() {
-            return this.body.GetLinearVelocity();
+            return this.isActive ? this.body.GetLinearVelocity() : {x:0,y:0};
         },
         getPosition: function() {
             return this.body.GetWorldCenter();
