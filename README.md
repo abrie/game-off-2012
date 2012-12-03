@@ -18,4 +18,8 @@ Written in Javascript, with [JQuery](http://jquery.com), [EaselJS](http://www.cr
 
 ## Author
 
-[abrie](http://twitter.com/abrihe)
+[abrie](http://twitter.com/abrihe) / gmail@abrhie
+
+## Licence
+
+trustful. please contact author.
