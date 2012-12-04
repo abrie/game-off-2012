@@ -1200,8 +1200,10 @@ var assets = (function() {
 var Blings = function (container) {
     var list = [];
  
-    var g = new createjs.Graphics();
-    g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
+    var g = new createjs.Graphics()
+            .beginFill("#FF0")
+            .drawPolyStar(0, 0, 25, 5, 0.6, -90);
+
     var starShape = new createjs.Shape(g);
     starShape.regX = 0;
     starShape.regY = 0;
@@ -1274,17 +1276,17 @@ var playspace = (function() {
             generateFloorSprite: function( width, height, fill, depth ) {
                 var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
                 var margins = blurFilter.getBounds();
-                var g = new createjs.Graphics();
-                g.setStrokeStyle(1);
-                g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-                g.beginFill(fill);
-                g.rect(0,0,width,height);
-                var displayObject = new createjs.Shape(g);
-                displayObject.regX = width/2;
-                displayObject.regY = height/2;
-                displayObject.filters = [blurFilter];
-                displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
-                return displayObject;
+                var g = new createjs.Graphics()
+                        .setStrokeStyle(1)
+                        .beginStroke(createjs.Graphics.getRGB(0,0,0))
+                        .beginFill(fill)
+                        .rect(0,0,width,height);
+                var s = new createjs.Shape(g);
+                s.regX = width/2;
+                s.regY = height/2;
+                s.filters = [blurFilter];
+                s.cache(margins.x,margins.y,width+margins.width,height+margins.height);
+                return s;
             }
         }
     }());
@@ -1325,14 +1327,13 @@ var playspace = (function() {
             result.body.SetLinearVelocity(velocity);
 
             result.destruct = function() { physics.destroyBody(result.body); };
-            var g = new createjs.Graphics();
-            g.setStrokeStyle(1);
-            g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-            g.beginFill(createjs.Graphics.getRGB(255,0,0));
-            g.drawCircle(0,0,(radius/2)*PPM);
-            var skin = new createjs.Shape(g);
-            result.skin = skin;
-            return result;
+            var g = new createjs.Graphics()
+                    .setStrokeStyle(1)
+                    .beginStroke(createjs.Graphics.getRGB(0,0,0))
+                    .beginFill(createjs.Graphics.getRGB(255,0,0))
+                    .drawCircle(0,0,(radius/2)*PPM);
+            result.skin = new createjs.Shape(g);
+            return result.skin;
         },this);
 
         return entities;
