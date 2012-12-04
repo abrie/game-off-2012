@@ -4,212 +4,214 @@ var FPS = 30;
 var PPM = 150;
 var DEFAULT_FIRST_OBJECTIVE = 0;
 
-var manager = (function(){
-	"use strict";
-    var Objective = function(params, encodeActions) {
-        this.title = "untitled";
-        this.praise = "";
-        this.lesson = "";
-        this.finishLine = 10;
-        this.startingLine = 0;
-        this.targetVelocity = 0;
-        this.initialVelocity = 0;
-        this.initialRestitution = 0;
-        this.article = false;
-        this.isInitiated = false;
-        this.isConcluded = false;
-        this.hasBeenAttempted = false;
+var Objective = function(params, encodeActions) {
+    "use strict";
+    this.title = "untitled";
+    this.praise = "";
+    this.lesson = "";
+    this.finishLine = 10;
+    this.startingLine = 0;
+    this.targetVelocity = 0;
+    this.initialVelocity = 0;
+    this.initialRestitution = 0;
+    this.article = false;
+    this.isInitiated = false;
+    this.isConcluded = false;
+    this.hasBeenAttempted = false;
 
-        for(var paramName in params) {
-            this[paramName] = params[paramName];
-        }
-
-        this.encodeActions = encodeActions;
-
-        this.isSuccess = function(measuredVelocity) {
-            return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
-        }
-
-        this.isFailure = function(ball, player) {
-            var overTaken = player < ball;
-            var boundsOut = this.finishLine <= Math.abs(ball);
-            return overTaken || boundsOut;
-        }
+    for(var paramName in params) {
+        this[paramName] = params[paramName];
     }
 
-    var objectives = [
-        new Objective({
-                title:"The One Foot Race",
-                trophy:"the ugly stick",
-                praise:"", 
-                lesson:"The first step is learning how to step. Press L repeatedly and learn to use a leg.",
-                targetVelocity:0.20,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"Two Left Feet",
-                trophy:"a featureless twig",
-                praise:"",
-                lesson:"The velocitometer's red mark is the speed the ball must go. Press L, then K, then L, then K..",
-                targetVelocity:0.30,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([1])
-                .add(2, "FWD_STEP2");
-        }),
-        new Objective({
-                title:"All Three Legs",
-                trophy:"a spring of basil",
-                praise:"",
-                lesson:"The needle rises higher as the ball goes faster. Push with 3 legs like this: L, K, J... ",
-                startingLine:1,
-                targetVelocity:0.50,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([1,2])
-                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
-        }),
-        new Objective({
-                title:"Velocities and Gauges",
-                trophy:"an apple branch",
-                praise:"There is push in your ancestory.",
-                lesson:"Timing is important, step as fast as possible but not too fast.",
-                startingLine:1,
-                targetVelocity:0.50,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) { // no new actions
-        }),
-        new Objective({
-                title:"Use The Boing",
-                trophy:"a pear branch",
-                praise:"You are ready to learn a combo.",
-                lesson:"(L,K,J)x3 will give you 1 BOING",
-                startingLine:1.5,
-                targetVelocity:1.0,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5});
-        }),
-        new Objective({
-                title:"Reversing is Useless?",
-                trophy:"a branch from blueberry bush",
-                praise:"Excellent, but can you move backwards?",
-                lesson:"(J,K,L) goes the other way.",
-                article: "cape",
-                startingLine:1.5,
-                targetVelocity:1.2,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"haz a cape",
-                trophy:"a pomegranate branch",
-                praise:"Very stylish, little tripod.",
-                lesson:"(L,K,J)x3 followed by (J) will give OOMPH to a BOING",
-                startingLine:1.5,
-                targetVelocity:1.3,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([1,2,3,1,2,3,1,2,3])
-                .add(3, "FLIGHT", {expiration:25, recovery:5});
-        }),
-        new Objective({
-                title:"want of wings",
-                trophy:"a cedar branch",
-                praise:"You must use your fashion.",
-                lesson:"(L,K,J)x3 then (J)x2 gives a CAPE DASH",
-                targetVelocity:1.5,
-                initialVelocity:-0.25,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([1,2,3,1,2,3,1,2,3,3])
-                .add(3, "DASH", {expiration:5, recovery:5});
-        }),
-        new Objective({
-                title:"tough getting going",
-                trophy:"a spruce branch",
-                praise:"",
-                lesson:"You are a natural, and challenges continue to grow.",
-                targetVelocity:1.6,
-                initialVelocity:-0.55,
-                initialRestitution:0
-            },
-            function(root) { // no new actions
-        }),
-        new Objective({
-                title:"tough getting rough",
-                trophy:"a willow whip",
-                article:"tailfin",
-                praise:"Outstanding.",
-                lesson:"There is more to learn, maybe?",
-                startingLine:1.3,
-                targetVelocity:1.8,
-                initialVelocity:-0.7,
-                initialRestitution:0
-            },
-            function(root) { // no new actions
-        }),
-        new Objective({
-                title:"take a step back",
-                trophy:"a piece of yew",
-                praise:"Outstanding.",
-                lesson:"Use your legs like a spring, (J,K,L) x X then K for a good start.",
-                startingLine:3.3,
-                finishLine:20,
-                targetVelocity:2.2,
-                initialVelocity:-0.7,
-                initialRestitution:0
-            },
-            function(root) {
-            root.seek([3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH2");
-            root.seek([3,2,1,3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH3");
-            root.seek([3,2,1,3,2,1,3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH4");
-        })
-    ];
+    this.encodeActions = encodeActions;
+
+    this.isSuccess = function(measuredVelocity) {
+        return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
+    }
+
+    this.isFailure = function(ball, player) {
+        var overTaken = player < ball;
+        var boundsOut = this.finishLine <= Math.abs(ball);
+        return overTaken || boundsOut;
+    }
+}
+
+var Objectives = [
+    new Objective({
+            title:"The One Foot Race",
+            trophy:"the ugly stick",
+            praise:"", 
+            lesson:"The first step is learning how to step. Press L repeatedly and learn to use a leg.",
+            targetVelocity:0.20,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.clear();
+        root.add(1, "FWD_STEP1");
+        root.add(4, "STAND")
+            .add(4, "LAND");
+    }),
+    new Objective({
+            title:"Two Left Feet",
+            trophy:"a featureless twig",
+            praise:"",
+            lesson:"The velocitometer's red mark is the speed the ball must go. Press L, then K, then L, then K..",
+            targetVelocity:0.30,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1])
+            .add(2, "FWD_STEP2");
+    }),
+    new Objective({
+            title:"All Three Legs",
+            trophy:"a spring of basil",
+            praise:"",
+            lesson:"The needle rises higher as the ball goes faster. Push with 3 legs like this: L, K, J... ",
+            startingLine:1,
+            targetVelocity:0.50,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2])
+            .add(3, "FWD_STEP3", {expiration:30, recovery:0});
+    }),
+    new Objective({
+            title:"Velocities and Gauges",
+            trophy:"an apple branch",
+            praise:"There is push in your ancestory.",
+            lesson:"Timing is important, step as fast as possible but not too fast.",
+            startingLine:1,
+            targetVelocity:0.50,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"Use The Boing",
+            trophy:"a pear branch",
+            praise:"You are ready to learn a combo.",
+            lesson:"(L,K,J)x3 will give you 1 BOING",
+            startingLine:1.5,
+            targetVelocity:1.0,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3])
+            .add(1, "FWD_STEP1")
+            .add(2, "FWD_STEP2")
+            .add(3, "FWD_STEP3")
+            .add(1, "FWD_STEP1")
+            .add(2, "FWD_STEP2")
+            .add(3, "FORWARD", {expiration:30, recovery:5});
+    }),
+    new Objective({
+            title:"Reversing is Useless?",
+            trophy:"a branch from blueberry bush",
+            praise:"Excellent, but can you move backwards?",
+            lesson:"(J,K,L) goes the other way.",
+            article: "cape",
+            startingLine:1.5,
+            targetVelocity:1.2,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3");
+        root.seek([4])
+            .add(3, "USE")
+            .loop( root.seek([4]));
+    }),
+    new Objective({
+            title:"haz a cape",
+            trophy:"a pomegranate branch",
+            praise:"Very stylish, little tripod.",
+            lesson:"(L,K,J)x3 followed by (J) will give OOMPH to a BOING",
+            startingLine:1.5,
+            targetVelocity:1.3,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3,1,2,3,1,2,3])
+            .add(3, "FLIGHT", {expiration:25, recovery:5});
+    }),
+    new Objective({
+            title:"want of wings",
+            trophy:"a cedar branch",
+            praise:"You must use your fashion.",
+            lesson:"(L,K,J)x3 then (J)x2 gives a CAPE DASH",
+            targetVelocity:1.5,
+            initialVelocity:-0.25,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3,1,2,3,1,2,3,3])
+            .add(3, "DASH", {expiration:5, recovery:5});
+    }),
+    new Objective({
+            title:"tough getting going",
+            trophy:"a spruce branch",
+            praise:"",
+            lesson:"You are a natural, and challenges continue to grow.",
+            targetVelocity:1.6,
+            initialVelocity:-0.55,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"tough getting rough",
+            trophy:"a willow whip",
+            article:"tailfin",
+            praise:"Outstanding.",
+            lesson:"There is more to learn, maybe?",
+            startingLine:1.3,
+            targetVelocity:1.8,
+            initialVelocity:-0.7,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"take a step back",
+            trophy:"a piece of yew",
+            praise:"Outstanding.",
+            lesson:"Use your legs like a spring, (J,K,L) x X then K for a good start.",
+            startingLine:3.3,
+            finishLine:20,
+            targetVelocity:2.2,
+            initialVelocity:-0.7,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH2");
+        root.seek([3,2,1,3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH3");
+        root.seek([3,2,1,3,2,1,3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH4");
+    })
+];
+
+var manager = (function() {
+	"use strict";
 
     var current = undefined;
 
@@ -280,14 +282,14 @@ var manager = (function(){
             this.induceRollback = true;
         },
         firstObjective: function() {
-            this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
+            this.setObjective( Objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
         previousObjective: function( objective ) {
-            var previous = objectives[ objectives.indexOf(objective)-1 ];
+            var previous = Objectives[ Objectives.indexOf(objective)-1 ];
             previous ? this.setObjective(previous) : console.log("no more objectives");
         },
         nextObjective: function( objective ) {
-            var next = objectives[ objectives.indexOf(objective)+1 ];
+            var next = Objectives[ Objectives.indexOf(objective)+1 ];
             next ? this.setObjective(next) : this.gameOver();
         },
         setObjective: function(newObjective) {
