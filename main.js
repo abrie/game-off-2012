@@ -1341,7 +1341,6 @@ var playspace = (function() {
 
     return {
         layers: [],
-        markers: [],
         bearings: [],
         blings: undefined,
         leftLine: undefined,
