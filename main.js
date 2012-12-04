@@ -437,7 +437,6 @@ var Announcements = function(container) {
             });
         }
     };
-
 };
 
 var hud = (function() {
@@ -1198,80 +1197,77 @@ var assets = (function() {
     }
 }());
 
+var Blings = function (container) {
+    var list = [];
+ 
+    var g = new createjs.Graphics();
+    g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
+    var starShape = new createjs.Shape(g);
+    starShape.regX = 0;
+    starShape.regY = 0;
+
+    return {
+        container: container,
+        addStar: function(body) {
+            var origin = body.GetWorldCenter();
+            var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+            var sprite = starShape.clone();
+            sprite.alpha = 0;
+            sprite.rotation = body.GetAngle() * (180 / Math.PI);
+            this.container.addChild(sprite);
+
+            list.push( {
+                body:fixture.GetBody(),
+                skin:sprite,
+                frames:30,
+                fixture:fixture,
+                rotate:true,
+                velocity:body.GetLinearVelocity().x
+            });
+
+        },
+        addMessage: function(body, message) {
+            var origin = body.GetWorldCenter();
+            var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+            var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
+            sprite.alpha = 0;
+            this.container.addChild(sprite);
+
+            list.push( {
+                body:fixture.GetBody(),
+                skin:sprite,
+                frames:30,
+                fixture:fixture,
+                rotate:false
+            });
+
+        },
+        advance: function() {
+            list.forEach( function(entity, index, array) {
+                if( entity.frames-- === 0 ) {
+                    this.container.removeChild(entity.skin);
+                    physics.destroyBody( entity.body );
+                    array.splice(index, 1);
+                }
+                else {
+                    var center = entity.body.GetWorldCenter();
+                    if( entity.rotate ) {
+                        entity.skin.skewX += 4*entity.velocity;
+                        entity.skin.rotation += 30-entity.frames;
+                    }
+                    entity.skin.x = center.x * PPM;
+                    entity.skin.y = center.y * PPM;
+                    entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
+                }
+            }, this);
+        }
+    }
+}
+
 var playspace = (function() {
 	"use strict";
-
-    var blings = (function (){
-        var list = [];
-
-        var g = new createjs.Graphics();
-        g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
-        var starShape = new createjs.Shape(g);
-        starShape.regX = 0;
-        starShape.regY = 0;
-
-        return {
-            container: undefined,
-            setContainer: function(container) {
-                this.container = container;
-            },
-            addStar: function(body) {
-                var origin = body.GetWorldCenter();
-                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
-                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
-                var sprite = starShape.clone();
-                sprite.alpha = 0;
-                sprite.rotation = body.GetAngle() * (180 / Math.PI);
-                this.container.addChild(sprite);
-
-                list.push( {
-                    body:fixture.GetBody(),
-                    skin:sprite,
-                    frames:30,
-                    fixture:fixture,
-                    rotate:true,
-                    velocity:body.GetLinearVelocity().x
-                });
-
-            },
-            addMessage: function(body, message) {
-                var origin = body.GetWorldCenter();
-                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
-                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
-                var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
-                sprite.alpha = 0;
-                this.container.addChild(sprite);
-
-                list.push( {
-                    body:fixture.GetBody(),
-                    skin:sprite,
-                    frames:30,
-                    fixture:fixture,
-                    rotate:false
-                });
-
-            },
-            advance: function() {
-                list.forEach( function(entity, index, array) {
-                    if( entity.frames-- === 0 ) {
-                        this.container.removeChild(entity.skin);
-                        physics.destroyBody( entity.body );
-                        array.splice(index, 1);
-                    }
-                    else {
-                        var center = entity.body.GetWorldCenter();
-                        if( entity.rotate ) {
-                            entity.skin.skewX += 4*entity.velocity;
-                            entity.skin.rotation += 30-entity.frames;
-                        }
-                        entity.skin.x = center.x * PPM;
-                        entity.skin.y = center.y * PPM;
-                        entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
-                    }
-                }, this);
-            }
-        }
-    }());
 
     var utility = (function (){
         return {
@@ -1346,12 +1342,13 @@ var playspace = (function() {
         layers: [],
         markers: [],
         bearings: [],
+        blings: undefined,
         leftLine: undefined,
         rightLine: undefined,
         playerArticles: [],
         container: new createjs.Container,
         initialize: function() {
-            blings.setContainer(this.container);
+            this.blings = new Blings(this.container);
             this.setScene();
         },
         setScene: function() {
@@ -1407,10 +1404,10 @@ var playspace = (function() {
         removeBall: function(entity) {
         },
         addBlingMessage: function(body, message) {
-            blings.addMessage(body, message);
+            this.blings.addMessage(body, message);
         },
         addBlingStar: function(body, message) {
-            blings.addStar(body, message);
+            this.blings.addStar(body, message);
         },
         addBearings: function(source) {
             this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
@@ -1495,6 +1492,9 @@ var playspace = (function() {
         updateBearings: function() {
             this.bearings.forEach( this.updateBearing, this);
         },
+        updateBlings: function() {
+            this.blings.advance();
+        },
         reset: function() {
             this.updatePlayer();
             this.updateBall();
@@ -1505,7 +1505,7 @@ var playspace = (function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
-            blings.advance();
+            this.updateBlings();
             this.updateBearings();
         },
         bindCamera: function(camera) {
