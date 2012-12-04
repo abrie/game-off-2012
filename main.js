@@ -341,7 +341,7 @@ var Teacher = function(stage) {
         stage.addChild(container);
     }());
 
-    var alphaTable = [0.85,0.90,0.50,0.77,0.95];
+    var alphaTable = [0.55,0.90,0.93,0.97,0.95];
     return {
         open: function(message, whenComplete) {
             container.x = 0;
@@ -1951,7 +1951,6 @@ var main = (function () {
 				break;
 		}
 	}
-
 
     var video = (function(){
         return {
