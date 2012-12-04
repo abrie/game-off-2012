@@ -1435,8 +1435,8 @@ var playspace = (function() {
         points.forEach( function(point) {
             var rotationalDirection = angularVelocity && angularVelocity / Math.abs(angularVelocity);
             var tangent = rotate(point, rotationalDirection * Math.PI/4); 
-            point.vX = 3.0 * tangent.x;
-            point.vY = 3.0 * tangent.y;
+            point.vX = angularVelocity * tangent.x;
+            point.vY = angularVelocity * tangent.y;
             point.x = center.x + radius*point.x;
             point.y = center.y + radius*point.y;
         });
