@@ -1268,29 +1268,7 @@ var Blings = function (container) {
     }
 }
 
-var playspace = (function() {
-	"use strict";
-
-    var utility = (function (){
-        return {
-            generateFloorSprite: function( width, height, fill, depth ) {
-                var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
-                var margins = blurFilter.getBounds();
-                var g = new createjs.Graphics()
-                        .setStrokeStyle(1)
-                        .beginStroke(createjs.Graphics.getRGB(0,0,0))
-                        .beginFill(fill)
-                        .rect(0,0,width,height);
-                var s = new createjs.Shape(g);
-                s.regX = width/2;
-                s.regY = height/2;
-                s.filters = [blurFilter];
-                s.cache(margins.x,margins.y,width+margins.width,height+margins.height);
-                return s;
-            }
-        }
-    }());
-
+var Bearings = function(container) {
     var rotate = function(p,theta) {
         var cos = Math.cos(theta);
         var sin = Math.sin(theta);
@@ -1333,11 +1311,63 @@ var playspace = (function() {
                     .beginFill(createjs.Graphics.getRGB(255,0,0))
                     .drawCircle(0,0,(radius/2)*PPM);
             result.skin = new createjs.Shape(g);
-            return result.skin;
+            return result;
         },this);
 
         return entities;
     }
+
+    function updateBearing(bearing) {
+        bearing.skin.rotation = bearing.body.GetAngle() * (180 / Math.PI);
+        bearing.skin.x = bearing.body.GetWorldCenter().x * PPM;
+        bearing.skin.y = bearing.body.GetWorldCenter().y * PPM;
+    }
+
+    var list = [];
+    return {
+        container:container,
+        generate: function(source) {
+            list = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
+            console.log("generated",list);
+            list.forEach( function(entity) {
+                this.container.addChild(entity.skin);
+            }, this);
+        },
+        clear: function() {
+            list.forEach( function(entity,index,array) {
+               this.container.removeChild(entity.skin);
+               entity.destruct();
+               array.splice(index,0);
+            }, this);
+        },
+        advance: function() {
+            list.forEach( updateBearing, this);
+        },
+    }
+}
+
+var playspace = (function() {
+	"use strict";
+
+    var utility = (function (){
+        return {
+            generateFloorSprite: function( width, height, fill, depth ) {
+                var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
+                var margins = blurFilter.getBounds();
+                var g = new createjs.Graphics()
+                        .setStrokeStyle(1)
+                        .beginStroke(createjs.Graphics.getRGB(0,0,0))
+                        .beginFill(fill)
+                        .rect(0,0,width,height);
+                var s = new createjs.Shape(g);
+                s.regX = width/2;
+                s.regY = height/2;
+                s.filters = [blurFilter];
+                s.cache(margins.x,margins.y,width+margins.width,height+margins.height);
+                return s;
+            }
+        }
+    }());
 
     return {
         layers: [],
@@ -1349,6 +1379,7 @@ var playspace = (function() {
         container: new createjs.Container,
         initialize: function() {
             this.blings = new Blings(this.container);
+            this.bearings = new Bearings(this.container);
             this.setScene();
         },
         setScene: function() {
@@ -1410,17 +1441,10 @@ var playspace = (function() {
             this.blings.addStar(body, message);
         },
         addBearings: function(source) {
-            this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
-            this.bearings.forEach( function(entity) {
-                this.container.addChild(entity.skin);
-            },this);
+            this.bearings.generate( source );
         },
         removeBearings: function(source) {
-            this.bearings.forEach( function(entity,index,array) {
-               this.container.removeChild(entity.skin);
-               entity.destruct();
-               array.splice(index,0);
-            },this);
+            this.bearings.clear();
         },
         addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
@@ -1484,13 +1508,8 @@ var playspace = (function() {
         updateLayers: function() {
             this.layers.forEach( this.updateLayer, this); 
         },
-        updateBearing: function(bearing) {
-            bearing.skin.rotation = bearing.body.GetAngle() * (180 / Math.PI);
-            bearing.skin.x = bearing.body.GetWorldCenter().x * PPM;
-            bearing.skin.y = bearing.body.GetWorldCenter().y * PPM;
-        },
         updateBearings: function() {
-            this.bearings.forEach( this.updateBearing, this);
+            this.bearings.advance();
         },
         updateBlings: function() {
             this.blings.advance();
@@ -1499,7 +1518,7 @@ var playspace = (function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
-            this.removeBearings();
+            this.bearings.clear();
         },
         advance: function() {
             this.updatePlayer();
