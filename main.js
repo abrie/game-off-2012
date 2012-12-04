@@ -1424,7 +1424,7 @@ var playspace = (function() {
         return {x:x,y:y};
     }
 
-    var generateBearings = function(center, radius, angle) {
+    var generateBearings = function(center, radius, angle, angularVelocity) {
         var points = [
             rotate({x:1, y:1}, angle),
             rotate({x:-1, y:1}, angle),
@@ -1433,8 +1433,10 @@ var playspace = (function() {
         ];
         
         points.forEach( function(point) {
-            point.vX = 3.0 * point.x;
-            point.vY = 3.0 * point.y;
+            var rotationalDirection = angularVelocity && angularVelocity / Math.abs(angularVelocity);
+            var tangent = rotate(point, rotationalDirection * Math.PI/4); 
+            point.vX = 3.0 * tangent.x;
+            point.vY = 3.0 * tangent.y;
             point.x = center.x + radius*point.x;
             point.y = center.y + radius*point.y;
         });
@@ -1534,7 +1536,7 @@ var playspace = (function() {
             blings.addStar(body, message);
         },
         addBearings: function(source) {
-            this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle());
+            this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
             this.bearings.forEach( function(entity) {
                 this.container.addChild(entity.skin);
             },this);
@@ -1799,6 +1801,9 @@ var ball = (function() {
         },
         getAngle: function() {
             return this.body.GetAngle();
+        },
+        getAngularVelocity: function() {
+            return this.body.GetAngularVelocity();
         },
         advance: function() {
         }
