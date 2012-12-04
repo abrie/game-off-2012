@@ -383,65 +383,65 @@ var Teacher = function(stage) {
     }
 };
 
-var hud = (function() {
-	"use strict";
-    var Announcements = function(container) {
-        var list = [];
-
-        var Announcement = function(message, frames, whenDone) {
-            var count = 0;
-            var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
-            sprite.regX = sprite.getMeasuredWidth()/2;
-            sprite.regY = sprite.getMeasuredHeight()/2;
-            sprite.x = container.canvas.width/2;
-            sprite.y = container.canvas.height/2 - sprite.getMeasuredHeight();
-            
-            return {
-                whenDone: whenDone,
-                frames: frames,
-                initialize: function() {
-                    return this;
-                },
-                show: function() {
-                    container.addChild(sprite);
-                    return this;
-                },
-                remove: function() {
-                    if( this.whenDone ) {
-                        this.whenDone();
+var Announcements = function(container) {
+    var Announcement = function(message, frames, whenDone) {
+        var count = 0;
+        var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
+        sprite.regX = sprite.getMeasuredWidth()/2;
+        sprite.regY = sprite.getMeasuredHeight()/2;
+        sprite.x = container.canvas.width/2;
+        sprite.y = container.canvas.height/2 - sprite.getMeasuredHeight();
+        
+        return {
+            whenDone: whenDone,
+            frames: frames,
+            initialize: function() {
+                return this;
+            },
+            show: function() {
+                container.addChild(sprite);
+                return this;
+            },
+            remove: function() {
+                if( this.whenDone ) {
+                    this.whenDone();
+                }
+                container.removeChild(sprite);
+            },
+            advance: function() {
+                if( count == this.frames ) {
+                    this.remove();
+                    return false;
+                }
+                else {
+                    if(++count > this.frames - this.frames/4) {
+                        sprite.alpha -= 0.025;
                     }
-                    container.removeChild(sprite);
-                },
-                advance: function() {
-                    if( count == this.frames ) {
-                        this.remove();
-                        return false;
-                    }
-                    else {
-                        if(++count > this.frames - this.frames/4) {
-                            sprite.alpha -= 0.025;
-                        }
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
+    }
 
-        return {
-            add: function(message, seconds, whenDone) {
-                var announcement = new Announcement(message, seconds*FPS, whenDone)
-                list.push( announcement.show() );
-            },
-            update: function() {
-                list.forEach( function(announcement, index, array) {
-                    if(!announcement.advance()) {
-                        array.splice(index,1);
-                    }
-                });
-            }
-        };
-
+    var list = [];
+    return {
+        add: function(message, seconds, whenDone) {
+            var announcement = new Announcement(message, seconds*FPS, whenDone)
+            list.push( announcement.show() );
+        },
+        update: function() {
+            list.forEach( function(announcement, index, array) {
+                if(!announcement.advance()) {
+                    array.splice(index,1);
+                }
+            });
+        }
     };
+
+};
+
+var hud = (function() {
+	"use strict";
 
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
@@ -527,7 +527,6 @@ var hud = (function() {
             menu = undefined;
         }
     }
-
 
     var stage = undefined;
     var announcements = undefined;
