@@ -305,6 +305,84 @@ var manager = (function() {
     }
 }());
 
+var Teacher = function(stage) {
+    var stage = stage;
+    var container = undefined;
+    var onComplete = undefined;
+    var masterChin = undefined;
+    var text = undefined;
+    var continueText = undefined;
+    var isTeaching = false;
+    var lessonTime = 5 * FPS;
+    var paneHeight = 300;
+    var paneWidth = stage.canvas.width;
+
+    var initialize = (function() {
+        container = new createjs.Container;
+        container.regX = 0;
+        container.regY = 0;
+        container.x = 0;
+        container.y = stage.canvas.height;
+        masterChin = assets.getAnimation("masterchin");
+        masterChin.regX = 300;
+        masterChin.x = stage.canvas.width;
+        container.addChild(masterChin);
+        text = new createjs.Text("nothing to teach","bold 15px Arial","#FFF");
+        text.x = 0;
+        text.y = 225;
+        container.addChild(text);
+        continueText = new createjs.Text("Practice, little chin. Press spacebar when ready for the ball.", "12px Arial", "#FFF");
+        continueText.skewX = 13;
+        continueText.regX = continueText.getMeasuredWidth();
+        continueText.regY = continueText.getMeasuredHeight()/2;
+        continueText.x = paneWidth-300;
+        continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
+        container.addChild(continueText);
+        stage.addChild(container);
+    }());
+
+    var alphaTable = [0.85,0.90,0.50,0.77,0.95];
+    return {
+        open: function(message, whenComplete) {
+            container.x = 0;
+            container.y = stage.canvas.height;
+            onComplete = whenComplete;
+            masterChin.gotoAndPlay("up");
+            text.text = message;
+            text.x = paneWidth-300 - text.getMeasuredWidth();
+            text.y = 225;
+            isTeaching = true;
+            lessonTime = 5 * FPS;
+        },
+        close: function() {
+            if( onComplete ) {
+                onComplete();
+            }
+            isTeaching = false;
+        },
+        toggle: function() {
+            if( isTeaching ) {
+                masterChin.gotoAndPlay("down");
+                this.close();
+            }
+        },
+        advance: function() {
+            if(isTeaching) {
+                if( container.y >  stage.canvas.height-paneHeight ) {
+                    container.y -= 5;
+                }
+                var index = Math.floor( Math.random()* 5 );
+                masterChin.alpha = alphaTable[index];
+            } else if( container.y < stage.canvas.height ) {
+                    container.y += 5;
+              }
+              else {
+                  masterChin.stop();
+              }
+        },
+    }
+};
+
 var hud = (function() {
 	"use strict";
     var Announcements = function(container) {
@@ -321,6 +399,9 @@ var hud = (function() {
             return {
                 whenDone: whenDone,
                 frames: frames,
+                initialize: function() {
+                    return this;
+                },
                 show: function() {
                     container.addChild(sprite);
                     return this;
@@ -447,84 +528,6 @@ var hud = (function() {
         }
     }
 
-    var Teacher = function(stage) {
-        var stage = stage;
-        var container = undefined;
-        var onComplete = undefined;
-        var masterChin = undefined;
-        var text = undefined;
-        var continueText = undefined;
-        var isTeaching = false;
-        var lessonTime = 5 * FPS;
-        var paneHeight = 300;
-        var paneWidth = stage.canvas.width;
-
-        var initialize = function() {
-            container = new createjs.Container;
-            container.regX = 0;
-            container.regY = 0;
-            container.x = 0;
-            container.y = stage.canvas.height;
-            masterChin = assets.getAnimation("masterchin");
-            masterChin.regX = 300;
-            masterChin.x = stage.canvas.width;
-            container.addChild(masterChin);
-            text = new createjs.Text("nothing to teach","bold 15px Arial","#FFF");
-            text.x = 0;
-            text.y = 225;
-            container.addChild(text);
-            continueText = new createjs.Text("Practice, little chin. Press spacebar when ready for the ball.", "12px Arial", "#FFF");
-            continueText.skewX = 13;
-            continueText.regX = continueText.getMeasuredWidth();
-            continueText.regY = continueText.getMeasuredHeight()/2;
-            continueText.x = paneWidth-300;
-            continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
-            container.addChild(continueText);
-            stage.addChild(container);
-        }
-
-        initialize();
-        var alphaTable = [0.85,0.90,0.50,0.77,0.95];
-        return {
-            open: function(message, whenComplete) {
-                container.x = 0;
-                container.y = stage.canvas.height;
-                onComplete = whenComplete;
-                masterChin.gotoAndPlay("up");
-                text.text = message;
-                text.x = paneWidth-300 - text.getMeasuredWidth();
-                text.y = 225;
-                isTeaching = true;
-                lessonTime = 5 * FPS;
-            },
-            close: function() {
-                if( onComplete ) {
-                    onComplete();
-                }
-                isTeaching = false;
-            },
-            toggle: function() {
-                if( isTeaching ) {
-                    masterChin.gotoAndPlay("down");
-                    this.close();
-                }
-            },
-            advance: function() {
-                if(isTeaching) {
-                    if( container.y >  stage.canvas.height-paneHeight ) {
-                        container.y -= 5;
-                    }
-                    var index = Math.floor( Math.random()* 5 );
-                    masterChin.alpha = alphaTable[index];
-                } else if( container.y < stage.canvas.height ) {
-                        container.y += 5;
-                  }
-                  else {
-                      masterChin.stop();
-                  }
-            },
-        }
-    };
 
     var stage = undefined;
     var announcements = undefined;
