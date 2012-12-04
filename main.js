@@ -7,19 +7,24 @@ var DEFAULT_FIRST_OBJECTIVE = 0;
 var manager = (function(){
 	"use strict";
     var Objective = function(params, encodeActions) {
-        this.title = params.title ? params.title : "untitled";
-        this.praise = params.praise ? params.praise : "";
-        this.lesson = params.lesson ? params.lesson : "";
-        this.finishLine = params.finishLine ? params.finishLine : 10;
-        this.startingLine = params.startingLine ? params.startingLine : 0;
-        this.article = params.article ? params.article : false;
+        this.title = "untitled";
+        this.praise = "";
+        this.lesson = "";
+        this.finishLine = 10;
+        this.startingLine = 0;
+        this.targetVelocity = 0;
+        this.initialVelocity = 0;
+        this.initialRestitution = 0;
+        this.article = false;
         this.isInitiated = false;
         this.isConcluded = false;
         this.hasBeenAttempted = false;
+
+        for(var paramName in params) {
+            this[paramName] = params[paramName];
+        }
+
         this.encodeActions = encodeActions;
-        this.targetVelocity = params.targetVelocity ? params.targetVelocity : 0;
-        this.initialVelocity = params.initialVelocity ? params.initialVelocity : 0;
-        this.initialRestitution = params.restitution ? params.restitution : 0;
 
         this.isSuccess = function(measuredVelocity) {
             return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
