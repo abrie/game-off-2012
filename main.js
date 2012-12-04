@@ -1329,7 +1329,6 @@ var Bearings = function(container) {
         generate: function(source) {
             this.clear();
             list = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
-            console.log("generated",list);
             list.forEach( function(entity) {
                 this.container.addChild(entity.skin);
             }, this);
