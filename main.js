@@ -1552,6 +1552,10 @@ var playspace = (function() {
 var camera = (function() {
 	"use strict";
 
+    var tweenDelta = function(p1, p2, frames) {
+        return Math.abs(p1-p2) / frames;
+    }
+
     var tween = function(target, current, delta) {
         if( target != current ) {
             if( target > current ) {
@@ -1608,15 +1612,15 @@ var camera = (function() {
             this.entityOfInterest = entity;
         },
         advance: function() {
-            var factor = tween( this.zoomFactorTarget, this.zoomFactor, 0.01 );
+            var factor = tween( this.zoomFactorTarget, this.zoomFactor, tweenDelta(this.zoomFactorTarget, this.zoomFactor, 60) );
             this.setZoom( factor );
 
             if( this.entityOfInterest ) {
                 this.lookAt(this.entityOfInterest.body.GetWorldCenter());
             }
             
-            this.current.x = tween( this.target.x, this.current.x, 0.1 );
-            this.current.y = tween( this.target.y, this.current.y, 0.1 );
+            this.current.x = tween( this.target.x, this.current.x, tweenDelta( this.target.x, this.current.x, 5 ) );
+            this.current.y = tween( this.target.y, this.current.y, tweenDelta( this.target.y, this.current.y, 5 ) );
             this.updateRequiredTranslation();
         }
     }
