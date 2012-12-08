@@ -2066,7 +2066,7 @@ var main = (function () {
             assets.initialize();
         },
         loading: function(loaded,expected) {
-            $("#play").html("Loaded "+loaded/expected*100+"%");
+            $("#play").html("Loaded "+(loaded/expected*100).toFixed(1)+"%");
         },
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
