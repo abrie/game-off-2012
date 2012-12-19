@@ -4,339 +4,214 @@ var FPS = 30;
 var PPM = 150;
 var DEFAULT_FIRST_OBJECTIVE = 0;
 
-var manager = (function(){
-	"use strict";
-    var Objective = function(params, encodeActions) {
-        this.title = params.title ? params.title : "untitled";
-        this.praise = params.praise ? params.praise : "";
-        this.lesson = params.lesson ? params.lesson : "";
-        this.finishLine = params.finishLine ? params.finishLine : 10;
-        this.startingLine = params.startingLine ? params.startingLine : 0;
-        this.article = params.article ? params.article : false;
-        this.isInitiated = false;
-        this.isConcluded = false;
-        this.hasBeenAttempted = false;
-        this.encodeActions = encodeActions;
-        this.targetVelocity = params.targetVelocity ? params.targetVelocity : 0;
-        this.initialVelocity = params.initialVelocity ? params.initialVelocity : 0;
-        this.initialRestitution = params.restitution ? params.restitution : 0;
+var Objective = function(params, encodeActions) {
+    "use strict";
+    this.title = "untitled";
+    this.praise = "";
+    this.lesson = "";
+    this.finishLine = 10;
+    this.startingLine = 0;
+    this.targetVelocity = 0;
+    this.initialVelocity = 0;
+    this.initialRestitution = 0;
+    this.article = false;
+    this.isInitiated = false;
+    this.isConcluded = false;
+    this.hasBeenAttempted = false;
 
-        this.isSuccess = function(measuredVelocity) {
-            return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
-        }
-
-        this.isFailure = function(ball, player) {
-            var overTaken = player < ball;
-            var boundsOut = this.finishLine <= Math.abs(ball);
-            return overTaken || boundsOut;
-        }
+    for(var paramName in params) {
+        this[paramName] = params[paramName];
     }
 
-    var objectives = [
-        new Objective({
-                title:"The One Foot Race",
-                trophy:"the ugly stick",
-                praise:"", 
-                lesson:"The first step is learning how to step. Press L repeatedly and learn to use a leg.",
-                targetVelocity:0.20,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"Two Left Feet",
-                trophy:"a featureless twig",
-                praise:"",
-                lesson:"The velocitometer's red mark is the speed the ball must go. Press L, then K, then L, then K..",
-                targetVelocity:0.30,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1").add(2, "FWD_STEP2");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"All Three Legs",
-                trophy:"a spring of basil",
-                praise:"",
-                lesson:"The needle rises higher as the ball goes faster. Push with 3 legs like this: L, K, J... ",
-                startingLine:1,
-                targetVelocity:0.50,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"Velocities and Gauges",
-                trophy:"an apple branch",
-                praise:"There is push in your ancestory.",
-                lesson:"Timing is important, step as fast as possible but not too fast.",
-                startingLine:1,
-                targetVelocity:0.50,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3", {expiration:30, recovery:0});
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"Use The Boing",
-                trophy:"a pear branch",
-                praise:"You are ready to learn a combo.",
-                lesson:"(L,K,J)x3 will give you 1 BOING",
-                startingLine:1.5,
-                targetVelocity:1.0,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:15});
-            root.add(4, "STAND")
-                .add(4, "LAND");
-        }),
-        new Objective({
-                title:"Reversing is Useless?",
-                trophy:"a branch from blueberry bush",
-                praise:"Excellent, but can you move backwards?",
-                lesson:"(J,K,L) goes the other way.",
-                article: "cape",
-                startingLine:1.5,
-                targetVelocity:1.2,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:15});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"haz a cape",
-                trophy:"a pomegranate branch",
-                praise:"Very stylish, little tripod.",
-                lesson:"(L,K,J)x3 followed by (J) will give OOMPH to a BOING",
-                startingLine:1.5,
-                targetVelocity:1.3,
-                initialVelocity:0,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5})
-                .add(3, "FLIGHT", {expiration:25, recovery:5});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"want of wings",
-                trophy:"a cedar branch",
-                praise:"You must use your fashion.",
-                lesson:"(L,K,J)x3 then (J)x2 gives a CAPE DASH",
-                targetVelocity:1.5,
-                initialVelocity:-0.25,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5})
-                .add(3, "FLIGHT", {expiration:25, recovery:5})
-                .add(3, "DASH", {expiration:5, recovery:5});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"tough getting going",
-                trophy:"a spruce branch",
-                praise:"",
-                lesson:"You are a natural, and challenges continue to grow.",
-                targetVelocity:1.6,
-                initialVelocity:-0.55,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5})
-                .add(3, "FLIGHT", {expiration:25, recovery:5})
-                .add(3, "DASH", {expiration:5, recovery:5});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"tough getting rough",
-                trophy:"a willow whip",
-                article:"tailfin",
-                praise:"Outstanding.",
-                lesson:"There is more to learn, maybe?",
-                startingLine:1.3,
-                targetVelocity:1.8,
-                initialVelocity:-0.7,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5})
-                .add(3, "FLIGHT", {expiration:25, recovery:5})
-                .add(3, "DASH", {expiration:5, recovery:5});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        }),
-        new Objective({
-                title:"take a step back",
-                trophy:"a piece of yew",
-                praise:"Outstanding.",
-                lesson:"Use your legs like a spring, (J,K,L) x X then K for a good start.",
-                startingLine:3.3,
-                finishLine:20,
-                targetVelocity:2.2,
-                initialVelocity:-0.7,
-                initialRestitution:0
-            },
-            function(root) {
-            root.clear();
-            root.add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3");
-            root.seek([1,2,3])
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FWD_STEP3")
-                .add(1, "FWD_STEP1")
-                .add(2, "FWD_STEP2")
-                .add(3, "FORWARD", {expiration:30, recovery:5})
-                .add(3, "FLIGHT", {expiration:25, recovery:5})
-                .add(3, "DASH", {expiration:5, recovery:5});
-            root.add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH1");
-            root.seek([3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH2");
-            root.seek([3,2,1,3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH3");
-            root.seek([3,2,1,3,2,1,3,2,1])
-                .add(3, "BWD_STEP1")
-                .add(2, "BWD_STEP2")
-                .add(1, "BWD_STEP3")
-                .add(2, "LAUNCH4");
-            root.add(4, "STAND")
-                .add(4, "LAND");
-            root.seek([4])
-                .add(3, "USE")
-                .loop( root.seek([4]));
-        })
-    ];
+    this.encodeActions = encodeActions;
+
+    this.isSuccess = function(measuredVelocity) {
+        return this.targetVelocity - Math.abs(measuredVelocity) <= 0; 
+    }
+
+    this.isFailure = function(ball, player) {
+        var overTaken = player < ball;
+        var boundsOut = this.finishLine <= Math.abs(ball);
+        return overTaken || boundsOut;
+    }
+}
+
+var Objectives = [
+    new Objective({
+            title:"The One Foot Race",
+            trophy:"the ugly stick",
+            praise:"", 
+            lesson:"The first step is learning how to step. Press L repeatedly and learn to use a leg.",
+            targetVelocity:0.20,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.clear();
+        root.add(1, "FWD_STEP1");
+        root.add(4, "STAND")
+            .add(4, "LAND");
+    }),
+    new Objective({
+            title:"Two Left Feet",
+            trophy:"a featureless twig",
+            praise:"",
+            lesson:"The velocitometer's red mark is the speed the ball must go. Press L, then K, then L, then K..",
+            targetVelocity:0.30,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1])
+            .add(2, "FWD_STEP2");
+    }),
+    new Objective({
+            title:"All Three Legs",
+            trophy:"a spring of basil",
+            praise:"",
+            lesson:"The needle rises higher as the ball goes faster. Push with 3 legs like this: L, K, J... ",
+            startingLine:1,
+            targetVelocity:0.50,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2])
+            .add(3, "FWD_STEP3", {expiration:30, recovery:0});
+    }),
+    new Objective({
+            title:"Velocities and Gauges",
+            trophy:"an apple branch",
+            praise:"There is push in your ancestory.",
+            lesson:"Timing is important, step as fast as possible but not too fast.",
+            startingLine:1,
+            targetVelocity:0.50,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"Use The Boing",
+            trophy:"a pear branch",
+            praise:"You are ready to learn a combo.",
+            lesson:"(L,K,J)x3 will give you 1 BOING",
+            startingLine:1.5,
+            targetVelocity:1.0,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3])
+            .add(1, "FWD_STEP1")
+            .add(2, "FWD_STEP2")
+            .add(3, "FWD_STEP3")
+            .add(1, "FWD_STEP1")
+            .add(2, "FWD_STEP2")
+            .add(3, "FORWARD", {expiration:30, recovery:5});
+    }),
+    new Objective({
+            title:"Reversing is Useless?",
+            trophy:"a branch from blueberry bush",
+            praise:"Excellent, but can you move backwards?",
+            lesson:"(J,K,L) goes the other way.",
+            article: "cape",
+            startingLine:1.5,
+            targetVelocity:1.2,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3");
+        root.seek([4])
+            .add(3, "USE")
+            .loop( root.seek([4]));
+    }),
+    new Objective({
+            title:"haz a cape",
+            trophy:"a pomegranate branch",
+            praise:"Very stylish, little tripod.",
+            lesson:"(L,K,J)x3 followed by (J) will give OOMPH to a BOING",
+            startingLine:1.5,
+            targetVelocity:1.3,
+            initialVelocity:0,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3,1,2,3,1,2,3])
+            .add(3, "FLIGHT", {expiration:25, recovery:5});
+    }),
+    new Objective({
+            title:"want of wings",
+            trophy:"a cedar branch",
+            praise:"You must use your fashion.",
+            lesson:"(L,K,J)x3 then (J)x2 gives a CAPE DASH",
+            targetVelocity:1.5,
+            initialVelocity:-0.25,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([1,2,3,1,2,3,1,2,3,3])
+            .add(3, "DASH", {expiration:5, recovery:5});
+    }),
+    new Objective({
+            title:"tough getting going",
+            trophy:"a spruce branch",
+            praise:"",
+            lesson:"You are a natural, and challenges continue to grow.",
+            targetVelocity:1.6,
+            initialVelocity:-0.55,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"tough getting rough",
+            trophy:"a willow whip",
+            article:"tailfin",
+            praise:"Outstanding.",
+            lesson:"There is more to learn, maybe?",
+            startingLine:1.3,
+            targetVelocity:1.8,
+            initialVelocity:-0.7,
+            initialRestitution:0
+        },
+        function(root) { // no new actions
+    }),
+    new Objective({
+            title:"take a step back",
+            trophy:"a piece of yew",
+            praise:"Outstanding.",
+            lesson:"Use your legs like a spring, (J,K,L) x X then K for a good start.",
+            startingLine:3.3,
+            finishLine:20,
+            targetVelocity:2.2,
+            initialVelocity:-0.7,
+            initialRestitution:0
+        },
+        function(root) {
+        root.seek([3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH2");
+        root.seek([3,2,1,3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH3");
+        root.seek([3,2,1,3,2,1,3,2,1])
+            .add(3, "BWD_STEP1")
+            .add(2, "BWD_STEP2")
+            .add(1, "BWD_STEP3")
+            .add(2, "LAUNCH4");
+    })
+];
+
+var manager = (function() {
+	"use strict";
 
     var current = undefined;
 
@@ -407,14 +282,14 @@ var manager = (function(){
             this.induceRollback = true;
         },
         firstObjective: function() {
-            this.setObjective( objectives[DEFAULT_FIRST_OBJECTIVE] );
+            this.setObjective( Objectives[DEFAULT_FIRST_OBJECTIVE] );
         },
         previousObjective: function( objective ) {
-            var previous = objectives[ objectives.indexOf(objective)-1 ];
+            var previous = Objectives[ Objectives.indexOf(objective)-1 ];
             previous ? this.setObjective(previous) : console.log("no more objectives");
         },
         nextObjective: function( objective ) {
-            var next = objectives[ objectives.indexOf(objective)+1 ];
+            var next = Objectives[ Objectives.indexOf(objective)+1 ];
             next ? this.setObjective(next) : this.gameOver();
         },
         setObjective: function(newObjective) {
@@ -430,62 +305,142 @@ var manager = (function(){
     }
 }());
 
-var hud = (function() {
-	"use strict";
-    var Announcements = function(container) {
-        var list = [];
+var Teacher = function(stage) {
+    var stage = stage;
+    var container = undefined;
+    var onComplete = undefined;
+    var masterChin = undefined;
+    var text = undefined;
+    var continueText = undefined;
+    var isTeaching = false;
+    var lessonTime = 5 * FPS;
+    var paneHeight = 300;
+    var paneWidth = stage.canvas.width;
 
-        var Announcement = function(message, frames, whenDone) {
-            var count = 0;
-            var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
-            sprite.regX = sprite.getMeasuredWidth()/2;
-            sprite.regY = sprite.getMeasuredHeight()/2;
-            sprite.x = container.canvas.width/2;
-            sprite.y = container.canvas.height/2 - sprite.getMeasuredHeight();
-            
-            return {
-                whenDone: whenDone,
-                frames: frames,
-                show: function() {
-                    container.addChild(sprite);
-                    return this;
-                },
-                remove: function() {
-                    if( this.whenDone ) {
-                        this.whenDone();
+    var initialize = (function() {
+        container = new createjs.Container;
+        container.regX = 0;
+        container.regY = 0;
+        container.x = 0;
+        container.y = stage.canvas.height;
+        masterChin = assets.getAnimation("masterchin");
+        masterChin.regX = 300;
+        masterChin.x = stage.canvas.width;
+        container.addChild(masterChin);
+        text = new createjs.Text("nothing to teach","bold 15px Arial","#FFF");
+        text.x = 0;
+        text.y = 225;
+        container.addChild(text);
+        continueText = new createjs.Text("Practice, little chin. Press spacebar when ready for the ball.", "12px Arial", "#FFF");
+        continueText.skewX = 13;
+        continueText.regX = continueText.getMeasuredWidth();
+        continueText.regY = continueText.getMeasuredHeight()/2;
+        continueText.x = paneWidth-300;
+        continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
+        container.addChild(continueText);
+        stage.addChild(container);
+    }());
+
+    var alphaTable = [0.55,0.90,0.93,0.97,0.95];
+    return {
+        open: function(message, whenComplete) {
+            container.x = 0;
+            container.y = stage.canvas.height;
+            onComplete = whenComplete;
+            masterChin.gotoAndPlay("up");
+            text.text = message;
+            text.x = paneWidth-300 - text.getMeasuredWidth();
+            text.y = 225;
+            isTeaching = true;
+            lessonTime = 5 * FPS;
+        },
+        close: function() {
+            if( onComplete ) {
+                onComplete();
+            }
+            isTeaching = false;
+        },
+        toggle: function() {
+            if( isTeaching ) {
+                masterChin.gotoAndPlay("down");
+                this.close();
+            }
+        },
+        advance: function() {
+            if(isTeaching) {
+                if( container.y >  stage.canvas.height-paneHeight ) {
+                    container.y -= 5;
+                }
+                var index = Math.floor( Math.random()* 5 );
+                masterChin.alpha = alphaTable[index];
+            } else if( container.y < stage.canvas.height ) {
+                    container.y += 5;
+              }
+              else {
+                  masterChin.stop();
+              }
+        },
+    }
+};
+
+var Announcements = function(container) {
+    var Announcement = function(message, frames, whenDone) {
+        var count = 0;
+        var sprite = new createjs.Text(message,"bold 64px Arial", "#FFF");
+        sprite.regX = sprite.getMeasuredWidth()/2;
+        sprite.regY = sprite.getMeasuredHeight()/2;
+        sprite.x = container.canvas.width/2;
+        sprite.y = container.canvas.height/2 - sprite.getMeasuredHeight();
+        
+        return {
+            whenDone: whenDone,
+            frames: frames,
+            initialize: function() {
+                return this;
+            },
+            show: function() {
+                container.addChild(sprite);
+                return this;
+            },
+            remove: function() {
+                if( this.whenDone ) {
+                    this.whenDone();
+                }
+                container.removeChild(sprite);
+            },
+            advance: function() {
+                if( count == this.frames ) {
+                    this.remove();
+                    return false;
+                }
+                else {
+                    if(++count > this.frames - this.frames/4) {
+                        sprite.alpha -= 0.025;
                     }
-                    container.removeChild(sprite);
-                },
-                advance: function() {
-                    if( count == this.frames ) {
-                        this.remove();
-                        return false;
-                    }
-                    else {
-                        if(++count > this.frames - this.frames/4) {
-                            sprite.alpha -= 0.025;
-                        }
-                        return true;
-                    }
+                    return true;
                 }
             }
         }
+    }
 
-        return {
-            add: function(message, seconds, whenDone) {
-                var announcement = new Announcement(message, seconds*FPS, whenDone)
-                list.push( announcement.show() );
-            },
-            update: function() {
-                list.forEach( function(announcement, index, array) {
-                    if(!announcement.advance()) {
-                        array.splice(index,1);
-                    }
-                });
-            }
-        };
-
+    var list = [];
+    return {
+        add: function(message, seconds, whenDone) {
+            var announcement = new Announcement(message, seconds*FPS, whenDone)
+            list.push( announcement.show() );
+        },
+        update: function() {
+            list.forEach( function(announcement, index, array) {
+                if(!announcement.advance()) {
+                    array.splice(index,1);
+                }
+            });
+        }
     };
+};
+
+var hud = (function() {
+	"use strict";
 
     var normalize = function(value, range) {
         return Math.min( value/range, 1);
@@ -571,85 +526,6 @@ var hud = (function() {
             menu = undefined;
         }
     }
-
-    var Teacher = function(stage) {
-        var stage = stage;
-        var container = undefined;
-        var onComplete = undefined;
-        var masterChin = undefined;
-        var text = undefined;
-        var continueText = undefined;
-        var isTeaching = false;
-        var lessonTime = 5 * FPS;
-        var paneHeight = 300;
-        var paneWidth = stage.canvas.width;
-
-        var initialize = function() {
-            container = new createjs.Container;
-            container.regX = 0;
-            container.regY = 0;
-            container.x = 0;
-            container.y = stage.canvas.height;
-            masterChin = assets.getAnimation("masterchin");
-            masterChin.regX = 300;
-            masterChin.x = stage.canvas.width;
-            container.addChild(masterChin);
-            text = new createjs.Text("nothing to teach","bold 15px Arial","#FFF");
-            text.x = 0;
-            text.y = 225;
-            container.addChild(text);
-            continueText = new createjs.Text("Practice, little chin. Press spacebar when ready for the ball.", "12px Arial", "#FFF");
-            continueText.skewX = 13;
-            continueText.regX = continueText.getMeasuredWidth();
-            continueText.regY = continueText.getMeasuredHeight()/2;
-            continueText.x = paneWidth-300;
-            continueText.y = paneHeight - continueText.getMeasuredHeight() - 10;
-            container.addChild(continueText);
-            stage.addChild(container);
-        }
-
-        initialize();
-        var alphaTable = [0.85,0.90,0.50,0.77,0.95];
-        return {
-            open: function(message, whenComplete) {
-                container.x = 0;
-                container.y = stage.canvas.height;
-                onComplete = whenComplete;
-                masterChin.gotoAndPlay("up");
-                text.text = message;
-                text.x = paneWidth-300 - text.getMeasuredWidth();
-                text.y = 225;
-                isTeaching = true;
-                lessonTime = 5 * FPS;
-            },
-            close: function() {
-                if( onComplete ) {
-                    onComplete();
-                }
-                isTeaching = false;
-            },
-            toggle: function() {
-                if( isTeaching ) {
-                    masterChin.gotoAndPlay("down");
-                    this.close();
-                }
-            },
-            advance: function() {
-                if(isTeaching) {
-                    if( container.y >  stage.canvas.height-paneHeight ) {
-                        container.y -= 5;
-                    }
-                    var index = Math.floor( Math.random()* 5 );
-                    masterChin.alpha = alphaTable[index];
-                } else if( container.y < stage.canvas.height ) {
-                        container.y += 5;
-                  }
-                  else {
-                      masterChin.stop();
-                  }
-            },
-        }
-    };
 
     var stage = undefined;
     var announcements = undefined;
@@ -1321,101 +1197,78 @@ var assets = (function() {
     }
 }());
 
-var playspace = (function() {
-	"use strict";
+var Blings = function (container) {
+    var list = [];
+ 
+    var g = new createjs.Graphics()
+            .beginFill("#FF0")
+            .drawPolyStar(0, 0, 25, 5, 0.6, -90);
 
-    var blings = (function (){
-        var list = [];
+    var starShape = new createjs.Shape(g);
+    starShape.regX = 0;
+    starShape.regY = 0;
 
-        var g = new createjs.Graphics();
-        g.beginFill("#FF0").drawPolyStar(0, 0, 25, 5, 0.6, -90);
-        var starShape = new createjs.Shape(g);
-        starShape.regX = 0;
-        starShape.regY = 0;
+    return {
+        container: container,
+        addStar: function(body) {
+            var origin = body.GetWorldCenter();
+            var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+            var sprite = starShape.clone();
+            sprite.alpha = 0;
+            sprite.rotation = body.GetAngle() * (180 / Math.PI);
+            this.container.addChild(sprite);
 
-        return {
-            container: undefined,
-            setContainer: function(container) {
-                this.container = container;
-            },
-            addStar: function(body) {
-                var origin = body.GetWorldCenter();
-                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
-                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
-                var sprite = starShape.clone();
-                sprite.alpha = 0;
-                sprite.rotation = body.GetAngle() * (180 / Math.PI);
-                this.container.addChild(sprite);
+            list.push( {
+                body:fixture.GetBody(),
+                skin:sprite,
+                frames:30,
+                fixture:fixture,
+                rotate:true,
+                velocity:body.GetLinearVelocity().x
+            });
 
-                list.push( {
-                    body:fixture.GetBody(),
-                    skin:sprite,
-                    frames:30,
-                    fixture:fixture,
-                    rotate:true,
-                    velocity:body.GetLinearVelocity().x
-                });
+        },
+        addMessage: function(body, message) {
+            var origin = body.GetWorldCenter();
+            var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
+            fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
+            var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
+            sprite.alpha = 0;
+            this.container.addChild(sprite);
 
-            },
-            addMessage: function(body, message) {
-                var origin = body.GetWorldCenter();
-                var fixture = physics.createMarkerFixture( origin.x, origin.y, 0.5, 0.5, 0 );
-                fixture.GetBody().ApplyImpulse( new b2Vec2(0.5,-0.5), origin );
-                var sprite = new createjs.Text(message,"bold 32px Arial","#FFF");
-                sprite.alpha = 0;
-                this.container.addChild(sprite);
+            list.push( {
+                body:fixture.GetBody(),
+                skin:sprite,
+                frames:30,
+                fixture:fixture,
+                rotate:false
+            });
 
-                list.push( {
-                    body:fixture.GetBody(),
-                    skin:sprite,
-                    frames:30,
-                    fixture:fixture,
-                    rotate:false
-                });
-
-            },
-            advance: function() {
-                list.forEach( function(entity, index, array) {
-                    if( entity.frames-- === 0 ) {
-                        this.container.removeChild(entity.skin);
-                        physics.destroyBody( entity.body );
-                        array.splice(index, 1);
+        },
+        advance: function() {
+            list.forEach( function(entity, index, array) {
+                if( entity.frames-- === 0 ) {
+                    this.container.removeChild(entity.skin);
+                    physics.destroyBody( entity.body );
+                    array.splice(index, 1);
+                }
+                else {
+                    var center = entity.body.GetWorldCenter();
+                    if( entity.rotate ) {
+                        entity.skin.skewX += 4*entity.velocity;
+                        entity.skin.rotation += 30-entity.frames;
                     }
-                    else {
-                        var center = entity.body.GetWorldCenter();
-                        if( entity.rotate ) {
-                            entity.skin.skewX += 4*entity.velocity;
-                            entity.skin.rotation += 30-entity.frames;
-                        }
-                        entity.skin.x = center.x * PPM;
-                        entity.skin.y = center.y * PPM;
-                        entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
-                    }
-                }, this);
-            }
+                    entity.skin.x = center.x * PPM;
+                    entity.skin.y = center.y * PPM;
+                    entity.skin.alpha += entity.frames < 25 ? -0.05 : 0.20;
+                }
+            }, this);
         }
-    }());
+    }
+}
 
-    var utility = (function (){
-        return {
-            generateFloorSprite: function( width, height, fill, depth ) {
-                var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
-                var margins = blurFilter.getBounds();
-                var g = new createjs.Graphics();
-                g.setStrokeStyle(1);
-                g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-                g.beginFill(fill);
-                g.rect(0,0,width,height);
-                var displayObject = new createjs.Shape(g);
-                displayObject.regX = width/2;
-                displayObject.regY = height/2;
-                displayObject.filters = [blurFilter];
-                displayObject.cache(margins.x,margins.y,width+margins.width,height+margins.height);
-                return displayObject;
-            }
-        }
-    }());
-
+var Bearings = function(container) {
     var rotate = function(p,theta) {
         var cos = Math.cos(theta);
         var sin = Math.sin(theta);
@@ -1424,7 +1277,7 @@ var playspace = (function() {
         return {x:x,y:y};
     }
 
-    var generateBearings = function(center, radius, angle) {
+    var generateBearings = function(center, radius, angle, angularVelocity) {
         var points = [
             rotate({x:1, y:1}, angle),
             rotate({x:-1, y:1}, angle),
@@ -1433,8 +1286,10 @@ var playspace = (function() {
         ];
         
         points.forEach( function(point) {
-            point.vX = 3.0 * point.x;
-            point.vY = 3.0 * point.y;
+            var rotationalDirection = angularVelocity && angularVelocity / Math.abs(angularVelocity);
+            var tangent = rotate(point, rotationalDirection * Math.PI/4); 
+            point.vX = angularVelocity * tangent.x;
+            point.vY = angularVelocity * tangent.y;
             point.x = center.x + radius*point.x;
             point.y = center.y + radius*point.y;
         });
@@ -1450,29 +1305,81 @@ var playspace = (function() {
             result.body.SetLinearVelocity(velocity);
 
             result.destruct = function() { physics.destroyBody(result.body); };
-            var g = new createjs.Graphics();
-            g.setStrokeStyle(1);
-            g.beginStroke(createjs.Graphics.getRGB(0,0,0));
-            g.beginFill(createjs.Graphics.getRGB(255,0,0));
-            g.drawCircle(0,0,(radius/2)*PPM);
-            var skin = new createjs.Shape(g);
-            result.skin = skin;
+            var g = new createjs.Graphics()
+                    .setStrokeStyle(1)
+                    .beginStroke(createjs.Graphics.getRGB(0,0,0))
+                    .beginFill(createjs.Graphics.getRGB(255,0,0))
+                    .drawCircle(0,0,(radius/2)*PPM);
+            result.skin = new createjs.Shape(g);
             return result;
         },this);
 
         return entities;
     }
 
+    function updateBearing(bearing) {
+        bearing.skin.rotation = bearing.body.GetAngle() * (180 / Math.PI);
+        bearing.skin.x = bearing.body.GetWorldCenter().x * PPM;
+        bearing.skin.y = bearing.body.GetWorldCenter().y * PPM;
+    }
+
+    var list = [];
+    return {
+        container:container,
+        generate: function(source) {
+            this.clear();
+            list = generateBearings(source.getPosition(), 24/PPM, source.getAngle(), source.getAngularVelocity());
+            list.forEach( function(entity) {
+                this.container.addChild(entity.skin);
+            }, this);
+        },
+        clear: function() {
+            list.forEach( function(entity,index,array) {
+               this.container.removeChild(entity.skin);
+               entity.destruct();
+               array.splice(index,0);
+            }, this);
+        },
+        advance: function() {
+            list.forEach( updateBearing, this);
+        },
+    }
+}
+
+var playspace = (function() {
+	"use strict";
+
+    var utility = (function (){
+        return {
+            generateFloorSprite: function( width, height, fill, depth ) {
+                var blurFilter = new createjs.BoxBlurFilter(depth,depth,depth);
+                var margins = blurFilter.getBounds();
+                var g = new createjs.Graphics()
+                        .setStrokeStyle(1)
+                        .beginStroke(createjs.Graphics.getRGB(0,0,0))
+                        .beginFill(fill)
+                        .rect(0,0,width,height);
+                var s = new createjs.Shape(g);
+                s.regX = width/2;
+                s.regY = height/2;
+                s.filters = [blurFilter];
+                s.cache(margins.x,margins.y,width+margins.width,height+margins.height);
+                return s;
+            }
+        }
+    }());
+
     return {
         layers: [],
-        markers: [],
         bearings: [],
+        blings: undefined,
         leftLine: undefined,
         rightLine: undefined,
         playerArticles: [],
         container: new createjs.Container,
         initialize: function() {
-            blings.setContainer(this.container);
+            this.blings = new Blings(this.container);
+            this.bearings = new Bearings(this.container);
             this.setScene();
         },
         setScene: function() {
@@ -1528,23 +1435,16 @@ var playspace = (function() {
         removeBall: function(entity) {
         },
         addBlingMessage: function(body, message) {
-            blings.addMessage(body, message);
+            this.blings.addMessage(body, message);
         },
         addBlingStar: function(body, message) {
-            blings.addStar(body, message);
+            this.blings.addStar(body, message);
         },
         addBearings: function(source) {
-            this.bearings = generateBearings(source.getPosition(), 24/PPM, source.getAngle());
-            this.bearings.forEach( function(entity) {
-                this.container.addChild(entity.skin);
-            },this);
+            this.bearings.generate( source );
         },
         removeBearings: function(source) {
-            this.bearings.forEach( function(entity,index,array) {
-               this.container.removeChild(entity.skin);
-               entity.destruct();
-               array.splice(index,0);
-            },this);
+            this.bearings.clear();
         },
         addStaticBody: function(body,skin,parallax) {
             var origin = body.GetWorldCenter();
@@ -1608,25 +1508,23 @@ var playspace = (function() {
         updateLayers: function() {
             this.layers.forEach( this.updateLayer, this); 
         },
-        updateBearing: function(bearing) {
-            bearing.skin.rotation = bearing.body.GetAngle() * (180 / Math.PI);
-            bearing.skin.x = bearing.body.GetWorldCenter().x * PPM;
-            bearing.skin.y = bearing.body.GetWorldCenter().y * PPM;
-        },
         updateBearings: function() {
-            this.bearings.forEach( this.updateBearing, this);
+            this.bearings.advance();
+        },
+        updateBlings: function() {
+            this.blings.advance();
         },
         reset: function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
-            this.removeBearings();
+            this.bearings.clear();
         },
         advance: function() {
             this.updatePlayer();
             this.updateBall();
             this.updateLayers();
-            blings.advance();
+            this.updateBlings();
             this.updateBearings();
         },
         bindCamera: function(camera) {
@@ -1653,6 +1551,10 @@ var playspace = (function() {
 
 var camera = (function() {
 	"use strict";
+
+    var tweenDelta = function(p1, p2, frames) {
+        return Math.abs(p1-p2) / frames;
+    }
 
     var tween = function(target, current, delta) {
         if( target != current ) {
@@ -1710,15 +1612,15 @@ var camera = (function() {
             this.entityOfInterest = entity;
         },
         advance: function() {
-            var factor = tween( this.zoomFactorTarget, this.zoomFactor, 0.01 );
+            var factor = tween( this.zoomFactorTarget, this.zoomFactor, tweenDelta(this.zoomFactorTarget, this.zoomFactor, 60) );
             this.setZoom( factor );
 
             if( this.entityOfInterest ) {
                 this.lookAt(this.entityOfInterest.body.GetWorldCenter());
             }
             
-            this.current.x = tween( this.target.x, this.current.x, 0.1 );
-            this.current.y = tween( this.target.y, this.current.y, 0.1 );
+            this.current.x = tween( this.target.x, this.current.x, tweenDelta( this.target.x, this.current.x, 5 ) );
+            this.current.y = tween( this.target.y, this.current.y, tweenDelta( this.target.y, this.current.y, 5 ) );
             this.updateRequiredTranslation();
         }
     }
@@ -1799,6 +1701,9 @@ var ball = (function() {
         },
         getAngle: function() {
             return this.body.GetAngle();
+        },
+        getAngularVelocity: function() {
+            return this.body.GetAngularVelocity();
         },
         advance: function() {
         }
@@ -2051,7 +1956,6 @@ var main = (function () {
 		}
 	}
 
-
     var video = (function(){
         return {
             canvas: undefined,
@@ -2162,7 +2066,7 @@ var main = (function () {
             assets.initialize();
         },
         loading: function(loaded,expected) {
-            $("#play").html("Loaded "+loaded/expected*100+"%");
+            $("#play").html("Loaded "+(loaded/expected*100).toFixed(1)+"%");
         },
         preloaded: function () {
             var canvasHTML = $("<canvas id='testCanvas' width='1000' height='500'></canvas>");
